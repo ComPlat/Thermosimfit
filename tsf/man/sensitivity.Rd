@@ -4,7 +4,14 @@
 \alias{sensitivity}
 \title{Optimize algebraic systems which describe thermodynamic binding systems}
 \usage{
-sensitivity(case, parameters, path, additionalParameters)
+sensitivity(
+  case,
+  parameters,
+  path,
+  additionalParameters,
+  percentage = NULL,
+  OffsetBoundaries = NULL
+)
 }
 \arguments{
 \item{case}{is a character describing which system should be investigated. Either: "hg", "ida" or "gda".}
@@ -19,6 +26,10 @@ In case of \emph{ida} and \emph{ga} the order of the parameters is: \emph{kg}, \
 In case of \emph{hg} a numeric vector of length 1 is expected which contains the concentration of the host.
 In case of \emph{ida} a numeric vector of length 3 is expected which contains the concentration of the host, dye and the \emph{khd} parameter.
 In case of \emph{gda} a numeric vector of length 3 is expected which contains the concentration of the host, guest and the \emph{khd} parameter.}
+
+\item{percentage}{is the percentage $\pm$ from parameters in which the sensitivity should be analysed.}
+
+\item{OffsetBoundaries}{in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.}
 }
 \value{
 either an instance of ErrorClass if something went wrong. Otherwise plots showing the sensitivity are returned.
@@ -29,5 +40,5 @@ Optimize algebraic systems which describe thermodynamic binding systems
 \examples{
 path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
 res <- opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458)) 
-sensitivity("ida", res[[2]], path, c(4.3, 6.0, 7079458))
+sensitivity("ida", res[[2]], path, c(4.3, 6.0, 7079458), 20)
 }

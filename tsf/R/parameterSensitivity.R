@@ -1,31 +1,34 @@
-
-# is also called variance based sensitivity analysis
-# https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis
-# issue: check again
-calculateSobolIndices <- function(lossFct, env, perturbed, meanError, varError) {
-  num_params <- ncol(perturbed)
-  sobol_indices <- numeric(num_params)
-  
-  for (i in 1:num_params) {
-    perturbed_high <- perturbed
-    perturbed_low <- perturbed
-    perturbed_high[, i] <- perturbed_high[, i] + perturbed_high[, i] * 0.1
-    perturbed_low[, i] <- perturbed_low[, i] - perturbed_low[, i] * 0.1
-    
-    errors_high <- apply(perturbed_high, 1, function(row) lossFct(row, env, FALSE))
-    errors_low <- apply(perturbed_low, 1, function(row) lossFct(row, env, FALSE))
-    
-    sobol_indices[i] <- mean((errors_high - meanError) * (errors_low - meanError)) / (2 * varError)
+# Monte Carlo Estimation of Sobol’ Indices
+sobolVariance <- function(lossFct, env, lb, ub, parameterNames) {
+  n <- 1000
+  numPar <- length(lb)
+  X1 <- data.frame(matrix(runif(numPar * n), nrow = n))
+  X2 <- data.frame(matrix(runif(numPar * n), nrow = n))
+  names(X1) <- parameterNames
+  names(X2) <- parameterNames
+  sobolFun <- function(X) {
+    p <- NULL
+    if(is.data.frame(X)) { 
+      return( sapply(1:nrow(X), function(x) {
+        temp <- lb + (ub - lb) * X[x, ]
+        temp <- as.numeric(temp)
+        lossFct(temp, env, FALSE)
+      }) ) 
+    } else {
+      p <- as.numeric(lb + (ub - lb) * X)
+    }
+    lossFct(p, env, FALSE)
   }
-  
-  return(sobol_indices)
-}
+  x <- sobol(model = sobolFun, X1 = X1, X2 = X2, order = 2, nboot = 100)
+  pl <- ggplot(x)
+  xBreaks <- layer_scales(pl)$x$break_positions()
+  xLabels <- layer_scales(pl)$x$limits
+  pl +  theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 1),
+                               axis.text.y = element_text(size = 8)) +
+    scale_x_continuous(breaks = xBreaks,
+      labels = xLabels)
+} 
 
-sensitvityPlot <- function(parameterCol, Errors) {
-  df <- data.frame(parameter = parameterCol, error = Errors)
-  ggplot(df, aes(x = parameter, y = error)) +
-    geom_point()
-}
 
 
 #' Optimize algebraic systems which describe thermodynamic binding systems
@@ -33,10 +36,13 @@ sensitvityPlot <- function(parameterCol, Errors) {
 #' @export
 #' @import rootSolve
 #' @import ggplot2
+#' @import sensitivity
 #' @param case is a character describing which system should be investigated. Either: "hg", "ida" or "gda".
 #' @param parameters is a numeric vector containing already optimized parameter. 
 #'        In case of *hg* the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
 #'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
+#' @param percentage is the percentage $\pm$ from parameters in which the sensitivity should be analysed.
+#' @param OffsetBoundaries in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.
 #' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first colum. Furthermore, should the corresponding signal be stored in the second column. 
 #' @param additionalParameters are required parameters which are specific for each case.
 #'        In case of *hg* a numeric vector of length 1 is expected which contains the concentration of the host.
@@ -46,8 +52,9 @@ sensitvityPlot <- function(parameterCol, Errors) {
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
 #' res <- opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458)) 
-#' sensitivity("ida", res[[2]], path, c(4.3, 6.0, 7079458))
-sensitivity <- function(case, parameters, path, additionalParameters) {
+#' sensitivity("ida", res[[2]], path, c(4.3, 6.0, 7079458), 20)
+sensitivity <- function(case, parameters, path, additionalParameters,
+                        percentage = NULL, OffsetBoundaries = NULL) {
   if(!is.character(case)) return(ErrorClass$new("case has to be of type character"))
   if(!(case %in% c("hg", "ida", "gda"))) return(ErrorClass$new("case is neither hg, ida or gda"))
   if(!is.data.frame(parameters)) return(ErrorClass$new("optimizedParameters have to be of type numeric"))
@@ -56,16 +63,35 @@ sensitivity <- function(case, parameters, path, additionalParameters) {
   if(case == "hg" && length(additionalParameters) != 1) return(ErrorClass$new("additionalParameters have to be of length 1"))
   if(case == "ida" && length(additionalParameters) != 3) return(ErrorClass$new("additionalParameters have to be of length 3"))
   if(case == "gda" && length(additionalParameters) != 3) return(ErrorClass$new("additionalParameters have to be of length 3"))
+  
+  lowerBounds <- NULL
+  upperBounds <- NULL
+  if(!is.null(percentage) && !is.null(OffsetBoundaries)) return(ErrorClass$new("percentage and OffserBoundaries cannot be used together"))
+  if(!is.null(percentage)) {
+    if(!is.numeric(percentage)) return(ErrorClass$new("Percentage has to be numeric"))
+    if(percentage < 0.01) return(ErrorClass$new("Percentage has to be at least 0.1")) 
+    perturbationFactor <- percentage / 100
+    lowerBounds <- parameters - (parameters)*perturbationFactor
+    upperBounds <- parameters + (parameters)*perturbationFactor
+  } else if(!is.null(OffsetBoundaries)) {
+    lowerBounds <- parameters - OffsetBoundaries
+    upperBounds <- parameters + OffsetBoundaries
+  } else {
+    return(ErrorClass$new("Neither percentage nor OffsetBoundaries were defined"))
+  }
+  
   df <- try(importData(path))
   if (class(df) == "try-error") return(ErrorClass$new("Could not read file"))
   parameters <- as.numeric(parameters)
   env <- new.env()
+  parameterNames <- NULL
   if(case == "hg") {
     names(df) <- c("dye", "signal")
     lossFct <- lossFctHG
     env$dye <- df[, 1]
     env$signal <- df[, 2]
     env$h0 <- additionalParameters[1]
+    parameterNames <- c("kHD", "I0", "IHD", "ID")
   } else if(case == "ida") {
     names(df) <- c("guest", "signal")
     lossFct <- lossFctIDA
@@ -74,6 +100,7 @@ sensitivity <- function(case, parameters, path, additionalParameters) {
     env$h0 <- additionalParameters[1]
     env$d0 <- additionalParameters[2]
     env$kd <- additionalParameters[3]
+    parameterNames <- c("kGuest", "I0", "IHD", "ID")
   } else if(case == "gda") {
     names(df) <- c("dye", "signal")
     lossFct <- lossFctGDA
@@ -82,32 +109,7 @@ sensitivity <- function(case, parameters, path, additionalParameters) {
     env$h0 <- additionalParameters[1]
     env$ga0 <- additionalParameters[2]
     env$kd <- additionalParameters[3]
+    parameterNames <- c("kGuest", "I0", "IHD", "ID")
   }
-  perturbationFactor <- 0.1
-  n <- 1000
-  perturbed <- matrix(nrow = n, ncol = length(parameters))
-  errors <- numeric(n)
-  for (i in 1:n) {
-    temp <- parameters * (1 + perturbationFactor*
-         (runif(length(parameters)) - 0.5))
-    perturbed[i, ] <- temp
-    errors[i] <- lossFct(temp, env, FALSE)
-  }
-  
-  meanError <- mean(errors)
-  varError <- var(errors)
-  sobol_indices <- calculateSobolIndices(lossFct, env,
-                                         perturbed, meanError, varError)
-  
-  p <- list()
-  for (i in 1:length(parameters)) {
-    p[[i]] <- sensitvityPlot(perturbed[, i], errors)
-  }
-  sobol_plot <- ggplot(data.frame(parameter = 1:length(parameters), sobol = sobol_indices),
-                       aes(x = factor(parameter), y = sobol)) +
-    geom_bar(stat = "identity", fill = "skyblue", color = "black") +
-    ggtitle("Sobol Indices")
-  p[[length(parameters) + 1]] <- sobol_plot
-  
-  return(p)
+  sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames)
 }
