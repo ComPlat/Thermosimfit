@@ -1,4 +1,17 @@
-
+extractPolynom <- function(s) {
+  start <- NULL
+  for(i in seq_along(s)) {
+    if(any(grepl("Result", s[[i]]))) {
+      start <- i + 1
+      if(start > length(s)) return(ErrorClass$new("Found no result"))
+    }
+  }
+  s <- s[start:length(s)]
+  matches <- regmatches(s, gregexpr("\\[(.*?)\\]", s))
+  s <- unlist(matches)
+  s <- gsub("\\[|\\]", "", s)
+  return(s)
+}
 
 #' Converts an algebraic system to a polynome by eliminating variables
 #'
@@ -19,6 +32,8 @@ createPolynom <- function(f, elimVars) {
   if(!is.character(elimVars)) return(ErrorClass$new("elimVars is not of type character"))
   
   b <- body(f)
+  if(deparse(b[[1]]) != "{") return(ErrorClass$new("Function body has to be enclosed by {}"))
+  b <- b[2:length(b)]
   if(length(b) == 0) return(ErrorClass$new("Body of f is empty"))
   for(i in 1:length(b)) {
     temp <- getAST(b[[i]]) 
@@ -26,8 +41,8 @@ createPolynom <- function(f, elimVars) {
       return(temp)
     }
   }
+  b <- lapply(b, deparse)
   b <- paste(b, collapse = " , ")
-  print(b)
   
   constCode1 <- "
   display2d: false;
@@ -40,6 +55,7 @@ createPolynom <- function(f, elimVars) {
   eqns: [
   "
   constCode2 <- "
+  ],
   return(eqns)
   );
   
@@ -57,7 +73,17 @@ createPolynom <- function(f, elimVars) {
   constCode4 <- "
     ];
   
-  elim_vars(create_eqns(), elim_vars);
+  Result: elim_vars(create_eqns(), elim_vars);
+  
+  Result;
   "
+  
+  code <- paste0(
+    constCode1, b, constCode2, constCode3, paste0(elimVars, collapse = ","), constCode4
+  )
+  s <- paste("maxima --batch-string", "\"",
+             code, "\"")
+  out <- system(s, intern = TRUE)
+  extractPolynom(out)
 }
 

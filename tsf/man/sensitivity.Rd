@@ -27,7 +27,7 @@ In case of \emph{hg} a numeric vector of length 1 is expected which contains the
 In case of \emph{ida} a numeric vector of length 3 is expected which contains the concentration of the host, dye and the \emph{khd} parameter.
 In case of \emph{gda} a numeric vector of length 3 is expected which contains the concentration of the host, guest and the \emph{khd} parameter.}
 
-\item{percentage}{is the percentage $\pm$ from parameters in which the sensitivity should be analysed.}
+\item{percentage}{is the percentage +/- from parameters in which the sensitivity should be analysed.}
 
 \item{OffsetBoundaries}{in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.}
 }

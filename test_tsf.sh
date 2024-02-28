@@ -3,6 +3,19 @@
 Rscript -e 'roxygen2::roxygenize("tsf")' && R CMD INSTALL tsf
 
 Rscript -e '
+library(tsf)
+f <- function() {
+  h + hd + -h0 = 0
+  d + hd -d0 = 0
+  hd / (h*d) -kd = 0
+}
+elimVars <- c("h", "d")
+createPolynom(f, elimVars)
+'
+
+exit
+
+Rscript -e '
 set.seed(123)
 library(tsf)
 library(ggplot2)

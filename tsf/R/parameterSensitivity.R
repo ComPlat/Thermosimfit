@@ -41,7 +41,7 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames) {
 #' @param parameters is a numeric vector containing already optimized parameter. 
 #'        In case of *hg* the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
 #'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
-#' @param percentage is the percentage $\pm$ from parameters in which the sensitivity should be analysed.
+#' @param percentage is the percentage +/- from parameters in which the sensitivity should be analysed.
 #' @param OffsetBoundaries in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.
 #' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first colum. Furthermore, should the corresponding signal be stored in the second column. 
 #' @param additionalParameters are required parameters which are specific for each case.
