@@ -7,9 +7,18 @@ extractPolynom <- function(s) {
     }
   }
   s <- s[start:length(s)]
+  ps <- function(a, b) {
+    paste0(a, " ", b)
+  }
+  s <- Reduce(ps, s)
+  
   matches <- regmatches(s, gregexpr("\\[(.*?)\\]", s))
   s <- unlist(matches)
   s <- gsub("\\[|\\]", "", s)
+  s <- try(str2lang(s))
+  if(class(s) == "try-error") {
+    return(ErrorClass$new("Could not convert polynom to language object"))
+  }
   return(s)
 }
 
@@ -81,9 +90,16 @@ createPolynom <- function(f, elimVars) {
   code <- paste0(
     constCode1, b, constCode2, constCode3, paste0(elimVars, collapse = ","), constCode4
   )
+  
+  MaximaInstalled <- try(system("maxima --version"))
+  if(MaximaInstalled != 0) return(ErrorClass$new("Maxima was not found. Please install it."))
+  
   s <- paste("maxima --batch-string", "\"",
              code, "\"")
-  out <- system(s, intern = TRUE)
+  out <- try(system(s, intern = TRUE))
+  if(length(out) == 1 & out[[1]] != 0) {
+    return(ErrorClass$new("Running elimination was not successfull."))
+  }
   extractPolynom(out)
 }
 
