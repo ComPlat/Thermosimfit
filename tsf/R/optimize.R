@@ -83,7 +83,7 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
     params <- data.frame(khd = res[[2]][1], I0 = res[[2]][2],
                          IHD = res[[2]][3], ID = res[[2]][4])
     return(list(df, params, plotTSF(df, "dye"),
-                metrices(df$signal, df$signal_insilico, length(lowerBounds)) ))
+                metrices(df$signal, df$signal_insilico) ))
   } else if(case == "ida") {
     df$signal_insilico <- res[[1]][, 1]
     df$d <- res[[1]][, 2]
@@ -92,7 +92,7 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
                          IHD = res[[2]][3], ID = res[[2]][4])
     global_minimum <- res[[2]][5]
     return(list(df, params, plotTSF(df, "guest"),
-                metrices(df$signal, df$signal_insilico, length(lowerBounds)) ))
+                metrices(df$signal, df$signal_insilico) ))
   } else if(case == "gda") {
     df$signal_insilico <- res[[1]][, 1]
     df$d <- res[[1]][, 2]
@@ -101,7 +101,7 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
                          IHD = res[[2]][3], ID = res[[2]][4])
     global_minimum <- res[[2]][5]
     return(list(df, params, plotTSF(df, "dye"),
-                metrices(df$signal, df$signal_insilico, length(lowerBounds)) ))
+                metrices(df$signal, df$signal_insilico) ))
   }
 }
 
