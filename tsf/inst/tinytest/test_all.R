@@ -277,22 +277,12 @@ test_ida()
 
 test_gda <- function() {
   env <- new.env()
-  env$h0 <- 5
-  env$kd <- 700000
-  env$ga0 <- 6
+  env$h0 <- 1.65
+  env$kd <- 1.7*10^7
+  env$ga0 <- 1.8
+  parameter <- c(1857463,  0, 3456.443,  0)
   path <- paste0(system.file("examples", package = "tsf"), "/GDA.txt")
-  res <- tsf::opti("gda", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), path, 
-                   additionalParameters = c(env$h0, env$ga0, env$kd),
-                   40, 150)
-  
-  df <- read.csv(path, header = FALSE, sep = "\t")
-  df[,1] <- 1000 * df[, 1]
-  write.csv(df, path, quote = FALSE, row.names = FALSE)
-  parameter <- c(10^8, 0, 1000, 1)
-  env <- new.env()
-  env$h0 <- 5
-  env$kd <- 700000
-  env$ga0 <- 6
+  df <- read.csv(path, header = TRUE, sep = ",")
   env$dye <- df[, 1]
   env$signal <- df[, 2]
   result <- tsf:::lossFctGDA(parameter, env, TRUE)
@@ -300,10 +290,10 @@ test_gda <- function() {
   file <- tempfile(fileext = ".txt")
   write.csv(df, file, quote = FALSE, row.names = FALSE)
   set.seed(1234)
-  res <- tsf::opti("gda", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, 
+  res <- tsf::opti("gda", c(1, 0, 0, 0), c(10^9, 1, rep(10^6, 2)), file, 
                    additionalParameters = c(env$h0, env$ga0, env$kd),
-                   40, 150)
+                   40, 175)
   expect_true(res[[4]]$r2 > 0.99)
-  expect_true( (res[[2]]$IHD - 1000) < 10)
+  expect_true( abs(res[[2]]$IHD - 3456) < 100)
 }
 test_gda()
