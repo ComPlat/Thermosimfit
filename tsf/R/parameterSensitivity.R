@@ -26,7 +26,8 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames) {
   pl +  theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 1),
                                axis.text.y = element_text(size = 8)) +
     scale_x_continuous(breaks = xBreaks,
-      labels = xLabels)
+      labels = xLabels) +
+    ylab("Explained fraction of variance")
 } 
 
 
@@ -57,7 +58,7 @@ sensitivity <- function(case, parameters, path, additionalParameters,
                         percentage = NULL, OffsetBoundaries = NULL) {
   if(!is.character(case)) return(ErrorClass$new("case has to be of type character"))
   if(!(case %in% c("hg", "ida", "gda"))) return(ErrorClass$new("case is neither hg, ida or gda"))
-  if(!is.data.frame(parameters)) return(ErrorClass$new("optimizedParameters have to be of type numeric"))
+  if(!is.data.frame(parameters)) return(ErrorClass$new("optimizedParameters have to be of type data.frame"))
   if(length(parameters) == 0) return(ErrorClass$new("optimizedParameters vector seems to be empty"))
   if(length(parameters) > 4) return(ErrorClass$new("optimizedParameters vector has more than 4 entries"))
   if(case == "hg" && length(additionalParameters) != 1) return(ErrorClass$new("additionalParameters have to be of length 1"))
