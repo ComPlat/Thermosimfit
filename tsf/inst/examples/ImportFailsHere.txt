@@ -1,0 +1,87 @@
+TITLE	GDA1-3_1777ull-MilliQ-3µl-CB7-b-Estr-0.89mM_add-BC-1.5mM
+DATA TYPE	FLUORESCENCE SPECTRUM
+ORIGIN	JASCO
+OWNER	
+DATE	19/09/10
+TIME	15:45:48
+SPECTROMETER/DATA SYSTEM	
+LOCALE	1031
+XUNITS	Concentration [mmol/L]
+YUNITS	INTENSITY
+FIRSTX	    0.0000
+LASTX	    0.0079
+NPOINTS	      17
+XYDATA
+0		228.443
+0.0004995	1627.786921
+0.000998004	2927.513933
+0.001495513	3995.442539
+0.001992032	4670.517169
+0.002487562	5031.619607
+0.002982107	5234.693753
+0.00347567	5341.393112
+0.003968254	5415.192247
+0.004459861	5482.162607
+0.004950495	5517.788764
+0.005440158	5544.915978
+0.005928854	5566.789281
+0.006416584	5571.692629
+0.006903353	5586.171506
+0.007389163	5593.866011
+
+
+
+##### Extended Information
+[Comments]
+Sample name	GDA1-3_1777ull-MilliQ-3µl-CB7-b-Estr-0.89mM_add-BC-1.5mM
+Comment	1with stirrer, 089mM CB7-b-Estradiollösung, 1.Titration, Gesamtvolumen 1780µl
+User
+Division
+Company	Institute of Nanotechnology
+
+[Detailed Information]
+Creation date	10.09.2019 15:45
+
+Data array type	Non-linear data array
+Horizontal axis	Concentration [mmol/L]
+Vertical axis	Int.
+Start	0 mmol/L
+End	0.008830022 mmol/L
+Data points	17      
+
+[Measurement Information]
+Instrument name	FP8300
+Model name	FP-8300
+Serial No.	C048861450
+
+Accessory	STR-812
+Accessory S/N	A004761514
+  Cell type	10 mm Rectangular Cell
+  Temperature	25.00 C
+  Remark	PMMA Makro Cuvette
+
+Accessory	ATS-827
+Accessory S/N	A001061572
+
+Photometric mode	Em intensity
+Ex bandwidth	2.5 nm
+Em bandwidth	5 nm
+Response	2 sec
+Sensitivity	High
+Ex wavelength	421.0 nm
+Em wavelength	542.0 nm
+Shutter control	Open only for measurement
+Light source	Xe lamp
+Filter	Use
+
+Titration mode	Titration times
+Stage(1)	Target times 30 times, S1 0.002 mL, S2 0 mL
+
+Sample conc.	Cell: 1.5 umol/L, S1: 0 umol/L, S2: 0 umol/L
+Titrant conc.	Cell: 0 mmol/L, S1: 0.5 mmol/L, S2: 0 mmol/L
+
+Initial sample cell	1.780 mL
+Sample cell range	1.5 - 3.9 mL
+Syringe#1 range	0 - 1 mL
+Syringe#2 range	0 - 1 mL
+Syringe valve dir.	S1: Valve B, S2: Valve B

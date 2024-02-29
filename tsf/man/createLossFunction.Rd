@@ -2,7 +2,7 @@
 % Please edit documentation in R/CreateLossFunction.R
 \name{createLossFunction}
 \alias{createLossFunction}
-\title{Create a costume loss function}
+\title{Create a loss function in an analogues way as the supplied ones}
 \usage{
 createLossFunction(
   f,
@@ -11,7 +11,9 @@ createLossFunction(
   parameterVec,
   additionalParameterVec,
   variedParameterVec,
-  linearSystem
+  fixRoots,
+  linearSystem,
+  maxValRoot
 )
 }
 \arguments{
@@ -25,15 +27,21 @@ createLossFunction(
 
 \item{additionalParameterVec}{a character vector defining additional parameters which are constant.}
 
-\item{variedParameterVec}{a character vector with two entries defining the name of the variable which is altered, for instance d0 when dye is added to the system. The second entry has to be the independent variable e.g. signal}
+\item{variedParameterVec}{a character vector with two entries defining the name of the variable which is altered,
+for instance d0 when dye is added to the system. The second entry has to be the independent variable e.g. signal}
+
+\item{fixRoots}{a list of functions which is called to correct the calculated roots.
+each function expects as argument one root. The respective functions have to be in the same order as unknownRoots}
 
 \item{linearSystem}{a function defining the linear system which is used to calculate the insilico dependent variable}
+
+\item{maxValRoot}{a character value which defines the max of the interval used for solving the roots.}
 }
 \value{
 the resulting loss function
 }
 \description{
-Create a costume loss function
+Create a loss function in an analogues way as the supplied ones
 }
 \examples{
 f <- function() {
@@ -44,9 +52,20 @@ f <- function() {
 listElimVars <- list(c("h", "d"), c("hd", "h"))
 unknownRoots <- c("d", "hd")
 parameterVec <- c("kd", "I0", "IHD", "ID")
-additionalParameterVec <- c("h0")
+additionalParameterVec <- c("h0", "kd")
 variedParameterVec <- c("d0", "signal")
+fixRoots <- list(
+  function(dRoot) { 
+      if(dRoot > d0) return(d0)
+      return(d0)
+  },
+  function(hdRoot) {
+      if(hdRoot > d0 | hdRoot > h0) return(min(c(h0, d0)))
+      return(hdRoot)
+  }
+)
 linearSystem <- function() {I0 + IHD * hd + ID * d}
+maxValRoot <- d0
 createLossFunction(f, listElimVars, unknownRoots, parameterVec, additionalParameterVec,
-              variedParameterVec, linearSystem)
+              variedParameterVec, fixRoots, linearSystem)
 }
