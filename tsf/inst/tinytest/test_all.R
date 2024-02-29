@@ -129,3 +129,181 @@ res <- tsf:::pso(new.env(), rep(-512, 2), rep(512, 2), egg_holder, 2800, 120,
                  -959, TRUE, FALSE) 
 expect_equal( sum(res[[1]] + 1) < 1e-12 , TRUE) 
 expect_equal( sum(abs(res[[2]]) - c(512.404, 404.2319)) < 1e-6 , TRUE) 
+
+
+test_sensitivity_valid_input <- function() {
+  path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
+  optimP <- data.frame(80699337.884, 0.000, 1251.928, 0.000)
+  result <- sensitivity("ida", optimP, path, c(4.3, 6.0, 7079458), 20)
+  expect_true("gg" %in% class(result))
+}
+test_sensitivity_valid_input()
+
+test_sensitivity_invalid_case <- function() {
+  parameters <- c(1, 2, 3, 4)
+  additionalParameters <- c(5, 6, 7)
+  path <- "invalid_path.txt"
+  result <- sensitivity("invalid_case", parameters, path, additionalParameters, percentage = 10)
+  expect_true("ErrorClass" %in% class(result))
+}
+test_sensitivity_invalid_case()
+
+test_createPolynom_valid_input <- function() {
+  f <- function() {
+    h + hd + -h0 = 0
+    d + hd -d0 = 0   
+    hd / (h*d) -kd = 0
+  }
+  elimVars <- c("h", "d")
+  result <- createPolynom(f, elimVars)
+  trueRes <- "(hd^2 + (-h0 - d0) * hd + d0 * h0) * kd - hd"
+  trueRes <- gsub(" ", "", trueRes)
+  result <- gsub(" ", "", deparse(result))
+  expect_equal(trueRes, result)
+}
+test_createPolynom_valid_input()
+
+test_createPolynom_invalid_function <- function() {
+  f <- "not_a_function"
+  elimVars <- c("h", "d")
+  result <- createPolynom(f, elimVars)
+  expect_true(inherits(result, "ErrorClass"))
+}
+test_createPolynom_invalid_function()
+
+test_createPolynom_invalid_elimVars <- function() {
+  f <- function() {
+    h + hd + -h0 = 0
+    d + hd - d0 = 0   
+    hd / (h*d) - kd = 0
+  }
+  elimVars <- "not_a_character_vector"
+  result <- createPolynom(f, elimVars)
+  expect_true(inherits(result, "ErrorClass"))
+}
+test_createPolynom_invalid_elimVars()
+
+test_createPolynom_another_valid_input <- function() {
+  f <- function() { # x = 0 and y = 2
+    3*y + 2*x - 6 = 0
+    5 * y - 2*x - 10 = 0
+  }
+  elimVars <- c("y", "x")
+  resultX <- createPolynom(f, elimVars)
+  elimVars <- c("x", "y")
+  resultY <- createPolynom(f, elimVars)
+  expect_equal(c(resultX, resultY), c(0, 2))
+}
+test_createPolynom_another_valid_input()
+
+test_lossFctHG_valid_input <- function() {
+  parameter <- c(0.5, 1, 2, 3)
+  env <- new.env()
+  env$h0 <- 5
+  env$dye <- c(0, 0.2, 0.3)
+  env$signal <- c(1, 2, 3)
+  result <- tsf:::lossFctHG(parameter, env)
+  expect_true(is.numeric(result))
+}
+test_lossFctHG_valid_input()
+
+test_lossFctIDA_valid_input <- function() {
+  parameter <- c(0.5, 1, 2, 3)
+  env <- new.env()
+  env$h0 <- 5
+  env$d0 <- 2
+  env$ga <- c(0.1, 0.2, 0.3)
+  env$signal <- c(1, 2, 3)
+  env$kd <- 0.01
+  result <- tsf:::lossFctIDA(parameter, env)
+  expect_true(is.numeric(result))
+}
+test_lossFctIDA_valid_input()
+
+test_lossFctGDA_valid_input <- function() {
+  parameter <- c(0.5, 1, 2, 3)
+  env <- new.env()
+  env$h0 <- 5
+  env$ga0 <- 2
+  env$dye <- c(0.1, 0.2, 0.3)
+  env$signal <- c(1, 2, 3)
+  env$kd <- 0.01
+  result <- tsf:::lossFctGDA(parameter, env)
+  expect_true(is.numeric(result))
+}
+test_lossFctGDA_valid_input()
+
+test_hg <- function() {
+  path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
+  df <- read.csv(path, header = FALSE, sep = "\t")
+  parameter <- c(10^8, 0, 1000, 1)
+  env <- new.env()
+  env$h0 <- 5
+  env$dye <- df[, 1]
+  env$signal <- df[, 2]
+  result <- tsf:::lossFctHG(parameter, env, TRUE)
+  df[, 2] <- result$insilico
+  file <- tempfile(fileext = ".txt")
+  write.csv(df, file, quote = FALSE, row.names = FALSE)
+  set.seed(1234)
+  res <- tsf::opti("hg", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, env$h0,
+                   40, 100)
+  expect_true(res[[4]]$r2 > 0.99)
+  expect_true( (res[[2]]$IHD - 1000) < 1)
+}
+test_hg()
+
+test_ida <- function() {
+  path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
+  df <- read.csv(path, header = FALSE, sep = "\t")
+  parameter <- c(10^8, 0, 1000, 1)
+  env <- new.env()
+  env$h0 <- 5
+  env$kd <- 700000
+  env$d0 <- 6
+  env$ga <- df[, 1]
+  env$signal <- df[, 2]
+  result <- tsf:::lossFctIDA(parameter, env, TRUE)
+  df[, 2] <- result$insilico
+  file <- tempfile(fileext = ".txt")
+  write.csv(df, file, quote = FALSE, row.names = FALSE)
+  set.seed(1234)
+  res <- tsf::opti("ida", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, c(env$h0, env$d0, env$kd),
+                   40, 150)
+  expect_true(res[[4]]$r2 > 0.99)
+  expect_true( (res[[2]]$IHD - 1000) < 10)
+}
+test_ida()
+
+test_gda <- function() {
+  env <- new.env()
+  env$h0 <- 5
+  env$kd <- 700000
+  env$ga0 <- 6
+  path <- paste0(system.file("examples", package = "tsf"), "/GDA.txt")
+  res <- tsf::opti("gda", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), path, 
+                   additionalParameters = c(env$h0, env$ga0, env$kd),
+                   40, 150)
+  
+  df <- read.csv(path, header = FALSE, sep = "\t")
+  df[,1] <- 1000 * df[, 1]
+  write.csv(df, path, quote = FALSE, row.names = FALSE)
+  parameter <- c(10^8, 0, 1000, 1)
+  env <- new.env()
+  env$h0 <- 5
+  env$kd <- 700000
+  env$ga0 <- 6
+  env$dye <- df[, 1]
+  env$signal <- df[, 2]
+  result <- tsf:::lossFctGDA(parameter, env, TRUE)
+  df[, 2] <- result$insilico
+  file <- tempfile(fileext = ".txt")
+  write.csv(df, file, quote = FALSE, row.names = FALSE)
+  set.seed(1234)
+  res <- tsf::opti("gda", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, 
+                   additionalParameters = c(env$h0, env$ga0, env$kd),
+                   40, 150)
+  expect_true(res[[4]]$r2 > 0.99)
+  expect_true( (res[[2]]$IHD - 1000) < 10)
+}
+test_gda()
