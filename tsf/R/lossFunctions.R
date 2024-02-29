@@ -21,6 +21,7 @@ lossFctHG <- function(parameter, env, eval = FALSE) {
   
   for (i in seq_along(dye)) {
     d0 <- dye[i]
+    max <- d0
     hdRoot <- uniroot.all(hdFct, c(0, d0), tol = .Machine$double.eps^15, maxiter = 10000, n = 1000)
     if (length(hdRoot) == 0) {
       return(.Machine$double.xmax)
@@ -31,7 +32,7 @@ lossFctHG <- function(parameter, env, eval = FALSE) {
     } else if (hdRoot > d0) {
       hdRoot <- d0
     }
-    dRoot <- uniroot.all(dFct, c(min, max),
+    dRoot <- uniroot.all(dFct, c(0, max),
                          tol = .Machine$double.eps^15,
                          maxiter = 10000, n = 1000
     )
@@ -156,7 +157,7 @@ lossFctGDA <- function(parameter, env, eval = FALSE) {
     } else if (hdRoot > d0) {
       hdRoot <- d0
     }
-    dRoot <- uniroot.all(dFct, c(min, max), tol = .Machine$double.eps^15,
+    dRoot <- uniroot.all(dFct, c(0, max), tol = .Machine$double.eps^15,
                          maxiter = 10000, n = 1000)
     if (length(dRoot) == 0) return(.Machine$double.xmax)
     if (length(dRoot) > 1) dRoot <- dRoot[length(dRoot)]
