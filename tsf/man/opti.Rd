@@ -26,7 +26,7 @@ In case of \emph{ida} and \emph{ga} the order of the parameters is: \emph{kg}, \
 \item{upperBounds}{is a numeric vector defining the upper boundaries of the parameter.
 The order is the same as for the lower boundaries.}
 
-\item{path}{is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first colum. Furthermore, should the corresponding signal be stored in the second column.}
+\item{path}{is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column.}
 
 \item{additionalParameters}{are required parameters which are specific for each case.
 In case of \emph{hg} a numeric vector of length 1 is expected which contains the concentration of the host.

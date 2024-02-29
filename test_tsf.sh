@@ -2,11 +2,11 @@
 
 Rscript -e 'roxygen2::roxygenize("tsf")' && R CMD INSTALL tsf
 
+exit
+
 Rscript -e '
   tinytest::test_package("tsf")
 '
-
-exit
 
 Rscript -e '
 library(tsf)
