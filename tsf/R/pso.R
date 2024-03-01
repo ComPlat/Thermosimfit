@@ -116,7 +116,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
       print(iter)
       print(global_best_vec)
       print(global_best_error)
-    }
+    } 
     
     if(global_best_error < error_threshold) {
       break

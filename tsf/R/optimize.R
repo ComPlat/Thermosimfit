@@ -10,7 +10,7 @@
 #'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
 #' @param upperBounds is a numeric vector defining the upper boundaries of the parameter.
 #'        The order is the same as for the lower boundaries.
-#' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. 
+#' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.
 #' @param additionalParameters are required parameters which are specific for each case.
 #'        In case of *hg* a numeric vector of length 1 is expected which contains the concentration of the host.
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
@@ -33,7 +33,9 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
   if(!is.numeric(upperBounds)) return(ErrorClass$new("upperBounds have to be of type numeric"))
   if(length(upperBounds) == 0) return(ErrorClass$new("upperBounds vector seems to be empty"))
   if(length(upperBounds) > 4) return(ErrorClass$new("upperBounds vector has more than 4 entries"))
-  if(!is.character(path)) return(ErrorClass$new("path has to be of type character"))
+  
+  if(!is.character(path) && !is.data.frame(path)) return(ErrorClass$new("path has to be of type character or a data.frame"))
+    
   if(!is.numeric(additionalParameters)) return(ErrorClass$new("additionalParameters have to be of type numeric"))
   if(case == "hg" && length(additionalParameters) != 1) return(ErrorClass$new("additionalParameters have to be of length 1"))
   if(case == "ida" && length(additionalParameters) != 3) return(ErrorClass$new("additionalParameters have to be of length 3"))
@@ -47,8 +49,16 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
   Topo <- FALSE
   if(Topology == "star") Topo <- TRUE
   if(!is.numeric(errorThreshold)) return(ErrorClass$new("errorThreshold has to be of type numeric"))
-  df <- try(importData(path))
-  if (class(df) == "try-error") return(ErrorClass$new("Could not read file"))
+  df <- NULL
+  if(!is.data.frame(path)) {
+    df <- try(importData(path))
+    if (class(df) == "try-error") return(ErrorClass$new("Could not read file"))
+  } else {
+    df <- path
+  }
+  check <- upperBounds < lowerBounds
+  if(any(check == TRUE)) return(ErrorClass$new("lowerBounds < upperBounds not fulfilled"))
+
   lossFct <- NULL
   env <- new.env()
   if(case == "hg") {
@@ -75,7 +85,8 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
     env$kd <- additionalParameters[3]
   }
   res <- pso(env, lowerBounds, upperBounds, lossFct, ngen, npop, 
-             errorThreshold, Topo)
+             errorThreshold, Topo)  
+  
   if(case == "hg") {
     df$signal_insilico <- res[[1]][, 1]
     df$d <- res[[1]][, 2]
@@ -104,15 +115,4 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
                 metrices(df$signal, df$signal_insilico) ))
   }
 }
-
-# issue: add additional parameters into input file
-
-# tabular-data: guest/dye, signal_insilico, signal, d_insilico, hd_insilico
-# plots with equations, r2 etc.
-# R^2, adjusted R2; etc. like summary from lm
-# metadaten: code + X; can code be constructed automatically? BangBang operator?   
-
-# Frank remove outlier functions
-# Ozutlier detector --> in Biostats or Chemstats
-
 
