@@ -5,6 +5,7 @@
 #' @import shinydashboard
 #' @import shinyWidgets
 #' @import shinyjs
+#' @import DT
 runApp <- function() {
   ui <- dashboardPage(
     
@@ -25,15 +26,18 @@ runApp <- function() {
         tabItem(
           tabName = "HG",
           box(
-            h5(strong("Modify a variable")),
+            fileInput("HG_upload", "Upload a file"),
             numericInput("HG_H0", "Host conc.", value = 0),
             numericInput("HG_npop", "Number of particles", value = 40),
             numericInput("HG_ngen", "Number of generations", value = 200),
             textInput("HG_topology", "Topology of particle swarm", value = "star"),
             numericInput("HG_thershold", "Thershold of the error", value = 0.00001),
-            actionButton("HG_Start","Start Optimization"),
-            #verbatimTextOutput("mod_error"),
-            fileInput("upload", "Upload a file"),
+            actionButton("HG_Start_Opti","Start Optimization"),
+            width = 12
+          ),
+          
+          box(
+            actionButton("HG_Start_Sensi","Start Sensitivity analysis"),
             width = 12
           )
         ),
@@ -41,7 +45,7 @@ runApp <- function() {
         tabItem(
           tabName = "GDA",
           box(
-            h5(strong("Modify a variable")),
+            fileInput("GDA_upload", "Upload a file"),
             numericInput("GDA_H0", "Host conc.", value = 0),
             numericInput("GDA_Dye", "Dye conc.", value = 0),
             numericInput("GDA_kHD", "kHD", value = 0),
@@ -49,9 +53,12 @@ runApp <- function() {
             numericInput("GDA_ngen", "Number of generations", value = 200),
             textInput("GDA_topology", "Topology of particle swarm", value = "star"),
             numericInput("GDA_thershold", "Thershold of the error", value = 0.00001),
-            actionButton("GDA_Start","Start Optimization"),
-            #verbatimTextOutput("mod_error"),
-            fileInput("upload", "Upload a file"),
+            actionButton("GDA_Start_Opti","Start Optimization"),
+            width = 12
+          ),
+          
+          box(
+            actionButton("GDA_Start_Sensi","Start Sensitivity analysis"),
             width = 12
           )
         ),
@@ -59,7 +66,7 @@ runApp <- function() {
         tabItem(
           tabName = "IDA",
           box(
-            h5(strong("Modify a variable")),
+            fileInput("IDA_upload", "Upload a file"),
             numericInput("IDA_H0", "Host conc.", value = 0),
             numericInput("IDA_Guest", "Guest conc.", value = 0),
             numericInput("IDA_kHD", "kHD", value = 0),
@@ -67,9 +74,12 @@ runApp <- function() {
             numericInput("IDA_ngen", "Number of generations", value = 200),
             textInput("IDA_topology", "Topology of particle swarm", value = "star"),
             numericInput("IDA_thershold", "Thershold of the error", value = 0.00001),
-            actionButton("IDA_Start","Start Optimization"),
-            #verbatimTextOutput("mod_error"),
-            fileInput("upload", "Upload a file"),
+            actionButton("IDA_Start_Opti","Start Optimization"),
+            width = 12
+          ),
+          
+          box(
+            actionButton("IDA_Start_Sensi","Start Sensitivity analysis"),
             width = 12
           )
         )

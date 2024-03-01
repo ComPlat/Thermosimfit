@@ -8,7 +8,7 @@ Maintainer: Krämer Konrad <Konrad_kraemer@yahoo.de>
 Description: Optimizing of unknown paramaters in algebraic systems which describe thermodynamic bindings of dyes and guest to a host. 
              A script interface as well as a shiny app are included in the package. 
 License: GPL-3 
-Imports: shiny, shinydashboard, shinyWidgets, shinyjs, rootSolve, ggplot2, patchwork, R6, sensitivity
+Imports: shiny, DT, shinydashboard, shinyWidgets, shinyjs, rootSolve, ggplot2, patchwork, R6, sensitivity
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr
 RoxygenNote: 7.2.3
