@@ -1,7 +1,7 @@
 library(tsf)
 library(ggplot2)
 library(patchwork)
-setwd("/home/konrad/Documents/GitHub/Thermosimfit/Reproducability")
+setwd("/home/konrad/Documents/GitHub/Thermosimfit/Reproducability/Test1")
 files <- list.files(pattern = "*.txt")
 kHD <- 2398.833 * 10^6 # log Ka = 3.38 
 H0 <- 100 # µM

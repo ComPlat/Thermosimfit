@@ -44,7 +44,7 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames) {
 #'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
 #' @param percentage is the percentage +/- from parameters in which the sensitivity should be analysed.
 #' @param OffsetBoundaries in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.
-#' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first colum. Furthermore, should the corresponding signal be stored in the second column. 
+#' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.
 #' @param additionalParameters are required parameters which are specific for each case.
 #'        In case of *hg* a numeric vector of length 1 is expected which contains the concentration of the host.
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
@@ -81,8 +81,15 @@ sensitivity <- function(case, parameters, path, additionalParameters,
     return(ErrorClass$new("Neither percentage nor OffsetBoundaries were defined"))
   }
   
-  df <- try(importData(path))
-  if (class(df) == "try-error") return(ErrorClass$new("Could not read file"))
+  if(!is.character(path) && !is.data.frame(path)) return(ErrorClass$new("path has to be of type character or a data.frame"))
+  df <- NULL
+  if(!is.data.frame(path)) {
+    df <- try(importData(path))
+    if (class(df) == "try-error") return(ErrorClass$new("Could not read file"))
+  } else {
+    df <- path
+  }
+  
   parameters <- as.numeric(parameters)
   env <- new.env()
   parameterNames <- NULL

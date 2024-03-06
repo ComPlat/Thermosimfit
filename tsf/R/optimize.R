@@ -19,12 +19,13 @@
 #' @param ngen is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.
 #' @param Topology is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.
 #' @param errorThreshold is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf. 
+#' @param runAsShiny is internally used when running the algorithm from shiny. 
 #' @return either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the *insilico* signal values are returned. 
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
 #' opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458)) 
 opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
-                 npop = 40, ngen = 200, Topology = "random", errorThreshold = -Inf) {
+                 npop = 40, ngen = 200, Topology = "random", errorThreshold = -Inf, runAsShiny = FALSE) {
   if(!is.character(case)) return(ErrorClass$new("case has to be of type character"))
   if(!(case %in% c("hg", "ida", "gda"))) return(ErrorClass$new("case is neither hg, ida or gda"))
   if(!is.numeric(lowerBounds)) return(ErrorClass$new("lowerBounds have to be of type numeric"))
@@ -84,8 +85,9 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
     env$ga0 <- additionalParameters[2]
     env$kd <- additionalParameters[3]
   }
+
   res <- pso(env, lowerBounds, upperBounds, lossFct, ngen, npop, 
-             errorThreshold, Topo)  
+             errorThreshold, Topo, FALSE, runAsShiny)  
   
   if(case == "hg") {
     df$signal_insilico <- res[[1]][, 1]

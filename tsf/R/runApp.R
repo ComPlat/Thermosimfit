@@ -5,6 +5,7 @@
 #' @import shinydashboard
 #' @import shinyWidgets
 #' @import shinyjs
+#' @import openxlsx
 #' @import DT
 runApp <- function() {
   ui <- dashboardPage(
@@ -12,6 +13,17 @@ runApp <- function() {
     dashboardHeader(title = "Thermosimfit"),
     dashboardSidebar(
       useShinyjs(),
+      tags$script(
+        "Shiny.addCustomMessageHandler('updateField', function(message) {
+          var result = message.message;
+          $('#output').append(result + '\\n');
+        });"
+      ),
+      tags$script(
+        "Shiny.addCustomMessageHandler('clearField', function(message) {
+          $('#output').empty();
+        });"
+      ),
       sidebarMenu(
         menuItem("HG model", tabName = "HG", icon = icon("table")),
         menuItem("GDA model", tabName = "GDA", icon = icon("table")),
@@ -53,11 +65,21 @@ runApp <- function() {
                 numericInput("HG_ID_ub", "ID value upper boundary", value = 1e06)
              ),
              actionButton("HG_Start_Opti","Start Optimization"),
-             verbatimTextOutput("consoleOutput"),
+             downloadButton("HG_download","Save result of optimization"),
+             verbatimTextOutput("output"),
+             DT::DTOutput("HG_df"),
+             DT::DTOutput("HG_params"),
+             DT::DTOutput("HG_metrices"),
+             plotOutput("HG_plot"),
              width = 12
            ),
            box(
-             actionButton("HG_Start_Sensi","Start Sensitivity analysis"),
+             numericInput("HG_sens_bounds", "+/- boundary in [%]", value = 15),
+             box(
+               actionButton("HG_Start_Sensi","Start Sensitivity analysis"),
+               downloadButton("HG_sensi_download", "Save result of sensitivity analysis")
+             ),
+             plotOutput("HG_sensi"),
              width = 12
            )
         ),
@@ -74,6 +96,7 @@ runApp <- function() {
             textInput("GDA_topology", "Topology of particle swarm", value = "star"),
             numericInput("GDA_threshold", "Thershold of the error", value = 0.00001),
             actionButton("GDA_Start_Opti","Start Optimization"),
+            actionButton("stopButton", "Stop Optimization"),
             width = 12
           ),
           

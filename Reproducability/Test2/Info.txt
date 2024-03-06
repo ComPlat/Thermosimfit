@@ -1,0 +1,9 @@
+Für die vorherigen beiden Emails brauchst du noch diese Info:
+
+Der Ka Wert für CB7-BC, was Ka(HD) entspricht, ist
+
+ 
+
+log Ka = 7.51
+
+Ka = 3.20E+07

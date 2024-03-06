@@ -4,7 +4,21 @@ library(shinyjs)
 ui <- fluidPage(
   useShinyjs(), 
   actionButton("press", "Click me"),
+  actionButton("stop", "Stop calc"),
   verbatimTextOutput("output"),
+  tags$script(
+    "var appendCount = 0;
+    Shiny.addCustomMessageHandler('updateField', function(message) {
+      if (appendCount < 10) {
+        var result = message.message;
+        $('#output').append(result + '\\n');
+        appendCount++;
+      } else {
+        appendCount = 0; // Reset append count after 10 appends
+        $('#output').empty(); // Clear the output
+      }
+    });"
+  ),
   tags$script(
     "Shiny.addCustomMessageHandler('updateField', function(message) {
       var result = message.message;
@@ -17,11 +31,11 @@ ui <- fluidPage(
       $('#output').empty();
     });"
   )
+  
 )
 
-calculate <- function(session) {
-  for (i in 1:5) {
-    print(i)
+calculate <- function(session) { 
+  for (i in 1:15) {
     session$sendCustomMessage(type = "updateField", list(message = as.character(i)))
     Sys.sleep(0.5)
   }
@@ -33,6 +47,11 @@ server <- function(input, output, session) {
     calculate(session)
     session$sendCustomMessage(type = "updateField", list(message = "test"))
   })
+  
+  observeEvent(input$stop, {
+    print("Stop pressed")
+  })
+  
 }
 
 shinyApp(ui, server)

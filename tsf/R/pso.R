@@ -1,6 +1,6 @@
 # particle swarm optimization
 pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE, 
-                saveSwarm = FALSE) {
+                saveSwarm = FALSE, runAsShiny = NULL) {
   stopifnot(length(lb) == length(ub))
   npar = length(lb)
   swarm <- matrix(0, nrow = npop, ncol = npar)
@@ -93,7 +93,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
 
       error <- loss(swarm[i, ], env)
       
-      if(saveSwarm) memory_errors[((iter * npop) + i)] <- error
+      if(saveSwarm) error_memory[((iter * npop) + i)] <- error
       
       if (!is.infinite(error) & !is.na(error) &
          error < swarm_bests[i]) {
@@ -112,11 +112,21 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
     
     iter <- iter + 1
     
-    if (iter %% 1 == 0) {
-      print(iter)
-      print(global_best_vec)
-      print(global_best_error)
-    } 
+    if (iter %% 1 == 0 & is.logical(runAsShiny)) {
+       print(iter)
+       print(global_best_vec)
+       print(global_best_error)
+     } else {
+       if(iter %% 5 == 0) {
+         runAsShiny$sendCustomMessage(type = "updateField", 
+                                      list(message = paste0("Iter = ", iter) ))
+         gbv <- paste0(global_best_vec, collapse = ",")
+         runAsShiny$sendCustomMessage(type = "updateField", 
+                                      list(message = paste0("global_best_vec = ", gbv) ))
+         runAsShiny$sendCustomMessage(type = "updateField", 
+                                      list(message = paste0("error = ", global_best_error) ))   
+       }
+    }
     
     if(global_best_error < error_threshold) {
       break

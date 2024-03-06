@@ -13,7 +13,8 @@ opti(
   npop = 40,
   ngen = 200,
   Topology = "random",
-  errorThreshold = -Inf
+  errorThreshold = -Inf,
+  runAsShiny = FALSE
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ In case of \emph{gda} a numeric vector of length 3 is expected which contains th
 \item{Topology}{is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.}
 
 \item{errorThreshold}{is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.}
+
+\item{runAsShiny}{is internally used when running the algorithm from shiny.}
 }
 \value{
 either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the \emph{insilico} signal values are returned.
