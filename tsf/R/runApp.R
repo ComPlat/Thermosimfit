@@ -6,6 +6,8 @@
 #' @import shinyWidgets
 #' @import shinyjs
 #' @import openxlsx
+#' @import future
+#' @import promises
 #' @import DT
 runApp <- function() {
   ui <- dashboardPage(
@@ -13,31 +15,7 @@ runApp <- function() {
     dashboardHeader(title = "Thermosimfit"),
     dashboardSidebar(
       useShinyjs(),
-      tags$script(
-        "Shiny.addCustomMessageHandler('updateField', function(message) {
-          var result = message.message;
-          var c = message.arg;
-          if(c == 1) {
-            $('#HG_output').append(result + '\\n');
-          } else if(c == 2) {
-            $('#GDA_output').append(result + '\\n');
-          } else if(c == 3) {
-            $('#IDA_output').append(result + '\\n');
-          }
-        });"
-      ),
-      tags$script(
-        "Shiny.addCustomMessageHandler('clearField', function(message) {
-            var c = message.arg;
-            if(c == 1) {
-              $('#HG_output').empty();
-            } else if(c == 2) {
-              $('#GDA_output').empty();
-            } else if(c == 3) {
-              $('#IDA_output').empty();
-          }
-        });"
-      ),
+
       sidebarMenu(
         menuItem("Data import", tabName = "data", icon = icon("table")),
         menuItem("HG model", tabName = "HG", icon = icon("table")),
@@ -60,73 +38,17 @@ runApp <- function() {
             textInput("new_col", "Name of new variable", value = "var"),
             actionButton("mod", "Modify"),
             verbatimTextOutput("mod_error"),
-            box(
+          box(
               DT::DTOutput("df"),  
               width = 10
-            ),
-            width = 12
+          ),
+          width = 12
           )
         ),
         
         # HG
         # ========================================================================
-        tabItem(
-           tabName = "HG",
-           box(
-             textInput("HG_H0", "Host conc.", value = 0),
-             numericInput("HG_npop", "Number of particles", value = 40),
-             numericInput("HG_ngen", "Number of generations", value = 200),
-             selectInput("HG_topology", "Topology of particle swarm",
-                         c("star" = "star",
-                           "random" = "random"), selectize = FALSE),
-             numericInput("HG_threshold", "Threshold of the error", value = 0.00001),
-             width = 12
-           ),
-           box(
-             box(
-               textInput("HG_kHD_lb", "kHD value lower boundary", value = 0),
-               textInput("HG_kHD_ub", "kHD value upper boundary", value = 1e09)
-             ),
-             box(
-               textInput("HG_I0_lb", "I0 value lower boundary", value = 0),
-               textInput("HG_I0_ub", "I0 value upper boundary", value = 1)
-             ),
-             box(
-               textInput("HG_IHD_lb", "IHD value lower boundary", value = 0),
-               textInput("HG_IHD_ub", "IHD value upper boundary", value = 1e06)
-             ),
-             box(
-               textInput("HG_ID_lb", "ID value lower boundary", value = 0),
-               textInput("HG_ID_ub", "ID value upper boundary", value = 1e06)
-             ),
-             actionButton("HG_Start_Opti","Start Optimization"),
-             downloadButton("HG_download","Save result of optimization"),
-             verbatimTextOutput("HG_output"),
-             DT::DTOutput("HG_params"),
-             DT::DTOutput("HG_metrices"),
-             box(
-               plotOutput("HG_plot"),
-               width = 9
-             ),
-             width = 12
-           ),
-           box(
-             numericInput("HG_sens_bounds", "+/- boundary in [%]", value = 15),
-             box(
-               actionButton("HG_Start_Sensi","Start Sensitivity analysis"),
-               downloadButton("HG_sensi_download", "Save result of sensitivity analysis")
-             ),
-             div(id = "HG_sens_runs",
-                 style = "display: none;
-                          font-weight: bold;
-                          font-size: 16px;
-                          margin-top: 10px;",
-                 "Sensitivity analysis runs"),
-             plotOutput("HG_sensi"),
-             width = 12
-           )
-        ),
-        
+        hgUI("HG"),
         
         tabItem(
           tabName = "GDA",
@@ -253,5 +175,6 @@ runApp <- function() {
       
     )
   )
+  plan(multisession)
   shinyApp(ui, server)
 }

@@ -19,7 +19,9 @@ Imports:
   patchwork,
   R6,
   sensitivity,
-  openxlsx
+  openxlsx,
+  future,
+  promises
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr
 RoxygenNote: 7.2.3

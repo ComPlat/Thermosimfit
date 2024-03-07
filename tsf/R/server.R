@@ -1,209 +1,98 @@
+
 server <- function(input, output, session) {
+
+  get_status <- function(){
+    scan(status_file, what = "character",sep = "\n")
+  }
+  set_status <- function(msg){
+    write(msg, status_file)
+  }
+  fire_interrupt <- function(){
+    set_status("interrupt")
+  }
+  fire_ready <- function(){
+    set_status("Ready")
+  }
+  fire_running <- function(perc_complete){
+    if (missing(perc_complete))
+      msg <- "Running..."
+    else
+      msg <- paste0("Running... ", perc_complete, "% Complete")
+    set_status(msg)
+  }
+  interrupted <- function(){
+    get_status() == "interrupt"
+  }
+
+  status_file <- tempfile()
+  fire_ready()
+  nclicks <- reactiveVal(0)
+  result_val <- reactiveVal()
+
+  # Delete file at end of session
+  onStop(function(){
+    print(status_file)
+    if (file.exists(status_file))
+      unlink(status_file)
+  })
   
   # data import
   # ============================================================================
   data <- reactiveValues(df = NULL)
-  
   output$df <- renderDT({
-    req(input$upload)
-    df <- importData(input$upload$datapath) 
-    if (is.data.frame(df)) {
-      if(ncol(df) != 2) {
-        showNotification("Data has wrong dimensions two columns were expected")
-      } else if(nrow(df) == 0) {
-        showNotification("Data has 0 rows.")
+      req(input$upload)
+      df <- importData(input$upload$datapath) 
+      if (is.data.frame(df)) {
+        if(ncol(df) != 2) {
+          showNotification("Data has wrong dimensions two columns were expected")
+        } else if(nrow(df) == 0) {
+          showNotification("Data has 0 rows.")
+        } else {
+          names(df) <- c("var", "signal")
+          data$df <- df
+        }
       } else {
-        names(df) <- c("var", "signal")
-        data$df <- df 
+        showNotification("File can not be used. Upload into R failed!", duration = 0)
       }
-    } else {
-      showNotification("File can not be used. Upload into R failed!", duration = 0)
-    }
   })
   
   observeEvent(input$mod, {
-    req(!is.null(data$df))
-    req(is.data.frame(data$df))
-    req(input$op)
-    req(input$new_col)
-    dt <- data$df
-    op <- input$op
-    new_col <- input$new_col
-    new <- NULL
-    err <- NULL
-    e <- try({
-      ast <- getAST(str2lang(op))
-      ast <- ast[[length(ast)]]
-    })
-    if (is(e, "ErrorClass")) {
-      showNotification(e$message)
-      return()
-    } else if(inherits(e, "try-error")) {
-      showNotification(e)
-      return()
-    }
-    e <- try(
-      new <- with(dt, eval(parse(text = op)))
-    )
-    if (inherits(e, "try-error")) {
-      err <- conditionMessage(attr(e, "condition"))
-    } else {
-      data$df[, new_col] <- new
-    }
-    output$df <- renderDT(data$df)
-    output$mod_error <- renderText(err)  
-  })
-  
-  # Utils
-  # ============================================================================
-  convertToNum <- function(l) {
-    res <- sapply(l, function(x) {
-      ast <- try(getAST(str2lang(x)))
+      req(!is.null(data$df))
+      req(is.data.frame(data$df))
+      req(input$op)
+      req(input$new_col)
+      dt <- data$df
+      op <- input$op
+      new_col <- input$new_col
+      new <- NULL
+      err <- NULL
+      e <- try({
+        ast <- getAST(str2lang(op))
+        ast <- ast[[length(ast)]]
+      })
       if (is(e, "ErrorClass")) {
         showNotification(e$message)
-        return("Error")
+        return()
       } else if(inherits(e, "try-error")) {
         showNotification(e)
-        return("Error")
+        return()
+      }
+      e <- try(
+        new <- with(dt, eval(parse(text = op)))
+      )
+      if (inherits(e, "try-error")) {
+        err <- conditionMessage(attr(e, "condition"))
       } else {
-        return(eval(parse(text = x)))
+        data$df[, new_col] <- new
       }
+      output$df <- renderDT(data$df)
+      output$mod_error <- renderText(err)  
+      return(df)
     })
-    return(res)
-  }
   
-  # HG
-  # ============================================================================
-  HG <- reactiveValues(
-    opti_res = NULL,
-    sensi_res = NULL,
-    optimization_run = FALSE,
-    sensi_run = FALSE
-  )
-  observeEvent(input$HG_Start_Opti, {
-    session$sendCustomMessage(type = "clearField", list(message = NULL, arg = 1))
-    req(!is.null(data$df))
-    req(input$HG_H0)
-    req(input$HG_npop)
-    req(input$HG_ngen)
-    req(input$HG_threshold)
-    req(input$HG_kHD_lb)
-    req(input$HG_kHD_ub)
-    req(input$HG_IHD_lb)
-    req(input$HG_IHD_ub)
-    req(input$HG_ID_lb)
-    req(input$HG_ID_ub)
-    req(input$HG_I0_lb)
-    req(input$HG_I0_ub)
-    lb <- c(input$HG_kHD_lb, input$HG_I0_lb, input$HG_IHD_lb, input$HG_ID_lb) # isolate them?
-    lb <- convertToNum(lb)
-    req(!("Error" %in% lb))
-    ub <- c(input$HG_kHD_ub, input$HG_I0_ub, input$HG_IHD_ub, input$HG_ID_ub)
-    ub <- convertToNum(ub)
-    req(!("Error" %in% ub))
-    additionalParameters <- c(input$HG_H0)
-    additionalParameters <- convertToNum(additionalParameters)
-    req(!("Error" %in% additionalParameters))
-    npop <- input$HG_npop
-    ngen <- input$HG_ngen
-    topo <- input$HG_topology
-    et <- input$HG_threshold
-    temp <- try(opti("hg", lb, ub, data$df, additionalParameters,
-                 npop, ngen, topo, et, list(session, 1)))
-    if (inherits(temp, "try-error")) {
-      showNotification(temp, duration = 0)
-    } else if(is(temp, "ErrorClass")) {
-      showNotification(temp$message, duration = 0)
-    } else {
-     HG$opti_res <- temp 
-     HG$optimization_run <- TRUE
-    }
-  })
-  output$HG_download <- downloadHandler(
-    filename = function() {
-      "result.xlsx"
-    },
-    content = function(file) {
-        wb <- openxlsx::createWorkbook()
-        addWorksheet(wb, "Results")
-        if(HG$optimization_run) {
-          curr_row <- 1
-          curr_val <- HG$opti_res[[1]]
-          writeData(wb, "Results", curr_val, startRow = curr_row)
-          curr_row <- curr_row + dim(curr_val)[1] + 5
-          
-          curr_val <- HG$opti_res[[2]]
-          writeData(wb, "Results", curr_val, startRow = curr_row)
-          curr_row <- curr_row + dim(curr_val)[1] + 5
-          
-          curr_val <- as.data.frame(HG$opti_res[[4]])
-          writeData(wb, "Results", curr_val, startRow = curr_row)
-          curr_row <- curr_row + dim(curr_val)[1] + 5
-          
-          curr_val <- HG$opti_res[[3]]
-          tempfile_plot <- tempfile(fileext = ".png")
-          ggsave(tempfile_plot,
-                 plot = curr_val, width = 10, height = 6) 
-          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
-        }
-        openxlsx::saveWorkbook(wb, file)
-    }
-  )
-  output$HG_params <- renderDT({
-    HG$opti_res[[2]]
-  })
-  output$HG_plot <- renderPlot({
-    HG$opti_res[[3]]
-  })
-  output$HG_metrices <- renderDT({
-    as.data.frame(HG$opti_res[[4]])
-  })
-  observeEvent(input$HG_Start_Sensi, {
-    req(!is.null(data$df))
-    req(input$HG_H0)
-    req(input$HG_sens_bounds)
-    additionalParameters <- c(input$HG_H0)
-    additionalParameters <- convertToNum(additionalParameters)
-    req(!("Error" %in% additionalParameters))
-    shinyjs::show(id = "HG_sens_runs", anim = TRUE)
-    temp <- try(sensitivity("hg", HG$opti_res[[2]], data$df, additionalParameters,
-                        input$HG_sens_bounds))
-    if (inherits(temp, "try-error")) {
-      showNotification(temp, duration = 0)
-    } else if(is(temp, "ErrorClass")) {
-      showNotification(temp$message, duration = 0)
-      shinyjs::hide(id = "HG_sens_runs", anim = TRUE)
-    } else {
-      HG$sensi_res <- temp
-      HG$sensi_run <- TRUE
-      shinyjs::hide(id = "HG_sens_runs", anim = TRUE)
-    }
-  })
-  output$HG_sensi <- renderPlot({
-    HG$sensi_res
-  })
-  output$HG_sensi_download <- downloadHandler(
-    filename = function() {
-      "result.xlsx"
-    },
-    content = function(file) {
-      wb <- openxlsx::createWorkbook()
-      addWorksheet(wb, "Results")
-      if(HG$optimization_run) {
-        curr_val <- HG$sensi_res
-        tempfile_plot <- tempfile(fileext = ".png")
-        ggsave(tempfile_plot,
-               plot = curr_val, width = 10, height = 6) 
-        insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
-      }
-      openxlsx::saveWorkbook(wb, file)
-    }
-  )
-  
-  
-  
-  
-  
+
+  hgServer("HG", data$df, result_val, nclicks, fire_running, fire_ready, fire_interrupt,
+           interrupted, get_status, set_status)
   
   # GDA
   # ============================================================================
