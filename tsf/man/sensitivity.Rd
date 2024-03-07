@@ -20,7 +20,7 @@ sensitivity(
 In case of \emph{hg} the order of the parameters is: \emph{khd}, \emph{I0}, \emph{IHD} and \emph{ID}
 In case of \emph{ida} and \emph{ga} the order of the parameters is: \emph{kg}, \emph{I0}, \emph{IHD} and \emph{ID}.}
 
-\item{path}{is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first colum. Furthermore, should the corresponding signal be stored in the second column.}
+\item{path}{is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.}
 
 \item{additionalParameters}{are required parameters which are specific for each case.
 In case of \emph{hg} a numeric vector of length 1 is expected which contains the concentration of the host.

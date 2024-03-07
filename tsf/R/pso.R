@@ -118,13 +118,16 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
        print(global_best_error)
      } else {
        if(iter %% 5 == 0) {
-         runAsShiny$sendCustomMessage(type = "updateField", 
-                                      list(message = paste0("Iter = ", iter) ))
+         runAsShiny[[1]]$sendCustomMessage(type = "updateField", 
+                                      list(message = paste0("Iter = ", iter),
+                                           arg = paste0(runAsShiny[[2]]) ) )
          gbv <- paste0(global_best_vec, collapse = ",")
-         runAsShiny$sendCustomMessage(type = "updateField", 
-                                      list(message = paste0("global_best_vec = ", gbv) ))
-         runAsShiny$sendCustomMessage(type = "updateField", 
-                                      list(message = paste0("error = ", global_best_error) ))   
+         runAsShiny[[1]]$sendCustomMessage(type = "updateField", 
+                                      list(message = paste0("global_best_vec = ", gbv),
+                                           arg = paste0(runAsShiny[[2]]) ) )
+         runAsShiny[[1]]$sendCustomMessage(type = "updateField", 
+                                      list(message = paste0("error = ", global_best_error),
+                                           arg = paste0(runAsShiny[[2]]) ) )   
        }
     }
     

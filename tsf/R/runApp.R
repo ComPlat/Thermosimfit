@@ -16,15 +16,30 @@ runApp <- function() {
       tags$script(
         "Shiny.addCustomMessageHandler('updateField', function(message) {
           var result = message.message;
-          $('#output').append(result + '\\n');
+          var c = message.arg;
+          if(c == 1) {
+            $('#HG_output').append(result + '\\n');
+          } else if(c == 2) {
+            $('#GDA_output').append(result + '\\n');
+          } else if(c == 3) {
+            $('#IDA_output').append(result + '\\n');
+          }
         });"
       ),
       tags$script(
         "Shiny.addCustomMessageHandler('clearField', function(message) {
-          $('#output').empty();
+            var c = message.arg;
+            if(c == 1) {
+              $('#HG_output').empty();
+            } else if(c == 2) {
+              $('#GDA_output').empty();
+            } else if(c == 3) {
+              $('#IDA_output').empty();
+          }
         });"
       ),
       sidebarMenu(
+        menuItem("Data import", tabName = "data", icon = icon("table")),
         menuItem("HG model", tabName = "HG", icon = icon("table")),
         menuItem("GDA model", tabName = "GDA", icon = icon("table")),
         menuItem("IDA model", tabName = "IDA", icon = icon("table"))
@@ -35,42 +50,64 @@ runApp <- function() {
       
       tabItems(
         
+        # data tab
+        # ========================================================================
+        tabItem(
+          tabName = "data",
+          box(
+            fileInput("upload", "Upload a file"),
+            textInput("op", "Operations", value = "var / 1000"),
+            textInput("new_col", "Name of new variable", value = "var"),
+            actionButton("mod", "Modify"),
+            verbatimTextOutput("mod_error"),
+            box(
+              DT::DTOutput("df"),  
+              width = 10
+            ),
+            width = 12
+          )
+        ),
+        
+        # HG
+        # ========================================================================
         tabItem(
            tabName = "HG",
            box(
-             fileInput("HG_upload", "Upload a file"),
-             numericInput("HG_H0", "Host conc.", value = 0),
+             textInput("HG_H0", "Host conc.", value = 0),
              numericInput("HG_npop", "Number of particles", value = 40),
              numericInput("HG_ngen", "Number of generations", value = 200),
-             textInput("HG_topology", "Topology of particle swarm", value = "star"),
+             selectInput("HG_topology", "Topology of particle swarm",
+                         c("star" = "star",
+                           "random" = "random"), selectize = FALSE),
              numericInput("HG_threshold", "Threshold of the error", value = 0.00001),
-             DT::DTOutput("HG_dat"),
              width = 12
            ),
            box(
              box(
-                numericInput("HG_kHD_lb", "kHD value lower boundary", value = 0),
-                numericInput("HG_kHD_ub", "kHD value upper boundary", value = 1e09)
+               textInput("HG_kHD_lb", "kHD value lower boundary", value = 0),
+               textInput("HG_kHD_ub", "kHD value upper boundary", value = 1e09)
              ),
              box(
-                numericInput("HG_I0_lb", "I0 value lower boundary", value = 0),
-                numericInput("HG_I0_ub", "I0 value upper boundary", value = 1)
+               textInput("HG_I0_lb", "I0 value lower boundary", value = 0),
+               textInput("HG_I0_ub", "I0 value upper boundary", value = 1)
              ),
              box(
-                numericInput("HG_IHD_lb", "IHD value lower boundary", value = 0),
-                numericInput("HG_IHD_ub", "IHD value upper boundary", value = 1e06)
+               textInput("HG_IHD_lb", "IHD value lower boundary", value = 0),
+               textInput("HG_IHD_ub", "IHD value upper boundary", value = 1e06)
              ),
              box(
-                numericInput("HG_ID_lb", "ID value lower boundary", value = 0),
-                numericInput("HG_ID_ub", "ID value upper boundary", value = 1e06)
+               textInput("HG_ID_lb", "ID value lower boundary", value = 0),
+               textInput("HG_ID_ub", "ID value upper boundary", value = 1e06)
              ),
              actionButton("HG_Start_Opti","Start Optimization"),
              downloadButton("HG_download","Save result of optimization"),
-             verbatimTextOutput("output"),
-             DT::DTOutput("HG_df"),
+             verbatimTextOutput("HG_output"),
              DT::DTOutput("HG_params"),
              DT::DTOutput("HG_metrices"),
-             plotOutput("HG_plot"),
+             box(
+               plotOutput("HG_plot"),
+               width = 9
+             ),
              width = 12
            ),
            box(
@@ -79,53 +116,138 @@ runApp <- function() {
                actionButton("HG_Start_Sensi","Start Sensitivity analysis"),
                downloadButton("HG_sensi_download", "Save result of sensitivity analysis")
              ),
+             div(id = "HG_sens_runs",
+                 style = "display: none;
+                          font-weight: bold;
+                          font-size: 16px;
+                          margin-top: 10px;",
+                 "Sensitivity analysis runs"),
              plotOutput("HG_sensi"),
              width = 12
            )
         ),
-      
+        
+        
         tabItem(
           tabName = "GDA",
           box(
-            fileInput("GDA_upload", "Upload a file"),
-            numericInput("GDA_H0", "Host conc.", value = 0),
-            numericInput("GDA_Dye", "Dye conc.", value = 0),
-            numericInput("GDA_kHD", "kHD", value = 0),
+            textInput("GDA_H0", "Host conc.", value = 0),
+            textInput("GDA_G0", "Guest conc.", value = 0),
+            textInput("GDA_kHD", "kHD", value = 0),
             numericInput("GDA_npop", "Number of particles", value = 40),
             numericInput("GDA_ngen", "Number of generations", value = 200),
-            textInput("GDA_topology", "Topology of particle swarm", value = "star"),
-            numericInput("GDA_threshold", "Thershold of the error", value = 0.00001),
-            actionButton("GDA_Start_Opti","Start Optimization"),
-            actionButton("stopButton", "Stop Optimization"),
+            selectInput("GDA_topology", "Topology of particle swarm",
+                        c("star" = "star",
+                          "random" = "random"), selectize = FALSE),
+            numericInput("GDA_threshold", "Threshold of the error", value = 0.00001),
             width = 12
           ),
-          
           box(
-            actionButton("GDA_Start_Sensi","Start Sensitivity analysis"),
+            box(
+              textInput("GDA_kHD_lb", "kHD value lower boundary", value = 0),
+              textInput("GDA_kHD_ub", "kHD value upper boundary", value = 1e09)
+            ),
+            box(
+              textInput("GDA_I0_lb", "I0 value lower boundary", value = 0),
+              textInput("GDA_I0_ub", "I0 value upper boundary", value = 1)
+            ),
+            box(
+              textInput("GDA_IHD_lb", "IHD value lower boundary", value = 0),
+              textInput("GDA_IHD_ub", "IHD value upper boundary", value = 1e06)
+            ),
+            box(
+              textInput("GDA_ID_lb", "ID value lower boundary", value = 0),
+              textInput("GDA_ID_ub", "ID value upper boundary", value = 1e06)
+            ),
+            actionButton("GDA_Start_Opti","Start Optimization"),
+            downloadButton("GDA_download","Save result of optimization"),
+            verbatimTextOutput("GDA_output"),
+            DT::DTOutput("GDA_params"),
+            DT::DTOutput("GDA_metrices"),
+            box(
+              plotOutput("GDA_plot"),
+              width = 9
+            ),
+            width = 12
+          ),
+          box(
+            numericInput("GDA_sens_bounds", "+/- boundary in [%]", value = 15),
+            box(
+              actionButton("GDA_Start_Sensi","Start Sensitivity analysis"),
+              downloadButton("GDA_sensi_download", "Save result of sensitivity analysis")
+            ),
+            div(id = "GDA_sens_runs",
+                style = "display: none;
+                          font-weight: bold;
+                          font-size: 16px;
+                          margin-top: 10px;",
+                "Sensitivity analysis runs"),
+            plotOutput("GDA_sensi"),
             width = 12
           )
         ),
+        
       
         tabItem(
           tabName = "IDA",
           box(
-            fileInput("IDA_upload", "Upload a file"),
-            numericInput("IDA_H0", "Host conc.", value = 0),
-            numericInput("IDA_Guest", "Guest conc.", value = 0),
-            numericInput("IDA_kHD", "kHD", value = 0),
+            textInput("IDA_H0", "Host conc.", value = "0"),
+            textInput("IDA_D0", "Dye conc.", value = "0"),
+            textInput("IDA_kHD", "kHD", value = "0"),
             numericInput("IDA_npop", "Number of particles", value = 40),
             numericInput("IDA_ngen", "Number of generations", value = 200),
-            textInput("IDA_topology", "Topology of particle swarm", value = "star"),
-            numericInput("IDA_threshold", "Thershold of the error", value = 0.00001),
-            actionButton("IDA_Start_Opti","Start Optimization"),
+            selectInput("IDA_topology", "Topology of particle swarm",
+                        c("star" = "star",
+                          "random" = "random"), selectize = FALSE),
+            numericInput("IDA_threshold", "Threshold of the error", value = 0.00001),
             width = 12
           ),
-          
           box(
-            actionButton("IDA_Start_Sensi","Start Sensitivity analysis"),
+            box(
+              textInput("IDA_kHD_lb", "kHD value lower boundary", value = 0),
+              textInput("IDA_kHD_ub", "kHD value upper boundary", value = 1e09)
+            ),
+            box(
+              textInput("IDA_I0_lb", "I0 value lower boundary", value = 0),
+              textInput("IDA_I0_ub", "I0 value upper boundary", value = 1)
+            ),
+            box(
+              textInput("IDA_IHD_lb", "IHD value lower boundary", value = 0),
+              textInput("IDA_IHD_ub", "IHD value upper boundary", value = 1e06)
+            ),
+            box(
+              textInput("IDA_ID_lb", "ID value lower boundary", value = 0),
+              textInput("IDA_ID_ub", "ID value upper boundary", value = 1e06)
+            ),
+            actionButton("IDA_Start_Opti","Start Optimization"),
+            downloadButton("IDA_download","Save result of optimization"),
+            verbatimTextOutput("IDA_output"),
+            DT::DTOutput("IDA_params"),
+            DT::DTOutput("IDA_metrices"),
+            box(
+              plotOutput("IDA_plot"),
+              width = 9
+            ),
+            width = 12
+          ),
+          box(
+            numericInput("IDA_sens_bounds", "+/- boundary in [%]", value = 15),
+            box(
+              actionButton("IDA_Start_Sensi","Start Sensitivity analysis"),
+              downloadButton("IDA_sensi_download", "Save result of sensitivity analysis")
+            ),
+            div(id = "IDA_sens_runs",
+                style = "display: none;
+                          font-weight: bold;
+                          font-size: 16px;
+                          margin-top: 10px;",
+                "Sensitivity analysis runs"),
+            plotOutput("IDA_sensi"),
             width = 12
           )
         )
+        
+        
         
       )
       

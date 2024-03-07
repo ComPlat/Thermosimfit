@@ -2,6 +2,10 @@ importData <- function(path) {
   if (!is.character(path)) {
     return(ErrorClass$new("path is not of type character"))
   }
+  df <- try( as.data.frame(read_excel(path, col_names = TRUE)), silent = TRUE)
+  if (class(df) != "try-error") {
+    return(df)
+  }
   line <- readLines(path, n = 1)
   semicolon <- grepl(";", line)
   comma <- grepl(",", line)
