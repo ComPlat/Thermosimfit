@@ -1,9 +1,9 @@
 #' Optimize algebraic systems which describe thermodynamic binding systems
 #'
 #' @export
-#' @import shiny
+#' @rawNamespace import(shiny, except=c(dataTableOutput, renderDataTable, runExample))
+#' @rawNamespace import(shinyWidgets, except=c(alert))
 #' @import shinydashboard
-#' @import shinyWidgets
 #' @import shinyjs
 #' @import openxlsx
 #' @import future

@@ -1,41 +1,6 @@
 
 server <- function(input, output, session) {
 
-  get_status <- function(){
-    scan(status_file, what = "character",sep = "\n")
-  }
-  set_status <- function(msg){
-    write(msg, status_file)
-  }
-  fire_interrupt <- function(){
-    set_status("interrupt")
-  }
-  fire_ready <- function(){
-    set_status("Ready")
-  }
-  fire_running <- function(perc_complete){
-    if (missing(perc_complete))
-      msg <- "Running..."
-    else
-      msg <- paste0("Running... ", perc_complete, "% Complete")
-    set_status(msg)
-  }
-  interrupted <- function(){
-    get_status() == "interrupt"
-  }
-
-  status_file <- tempfile()
-  fire_ready()
-  nclicks <- reactiveVal(0)
-  result_val <- reactiveVal()
-
-  # Delete file at end of session
-  onStop(function(){
-    print(status_file)
-    if (file.exists(status_file))
-      unlink(status_file)
-  })
-  
   # data import
   # ============================================================================
   data <- reactiveValues(df = NULL)
@@ -91,8 +56,13 @@ server <- function(input, output, session) {
     })
   
 
-  hgServer("HG", data$df, result_val, nclicks, fire_running, fire_ready, fire_interrupt,
-           interrupted, get_status, set_status)
+  HG_com <- Communicator$new()
+  HG_com_sense <- Communicator$new()
+  onStop(function(){
+    HG_com$destroy()
+    HG_com_sense$destroy()
+  })
+  hgServer("HG", data$df, HG_com, HG_com_sense)
   
   # GDA
   # ============================================================================

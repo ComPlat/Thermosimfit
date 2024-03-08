@@ -41,7 +41,7 @@ server <- function(input, output) {
   }
   
   fire_running <- function(perc_complete){
-    if(missing(perc_complete))
+    if (missing(perc_complete))
       msg <- "Running..."
     else
       msg <- paste0("Running... ", perc_complete, "% Complete")
@@ -55,7 +55,7 @@ server <- function(input, output) {
   # Delete file at end of session
   onStop(function(){
     print(status_file)
-    if(file.exists(status_file))
+    if (file.exists(status_file))
       unlink(status_file)
   })
   
@@ -65,42 +65,33 @@ server <- function(input, output) {
   
   nclicks <- reactiveVal(0)
   result_val <- reactiveVal()
+  
   observeEvent(input$run,{
-    
     # Don't do anything if analysis is already being run
-    if(nclicks() != 0){
+    if (nclicks() != 0) {
       showNotification("Already running analysis")
       return(NULL)
     }
-    
     # Increment clicks and prevent concurrent analyses
     nclicks(nclicks() + 1)
-    
-    result_val(data.frame(Status="Running..."))
-    
+    result_val(data.frame(Status = "Running..."))
     fire_running()
-    
     result <- future({
       print("Running...")
-      for(i in 1:N){
-        
+      for (i in 1:N) {
         # Long Running Task
         Sys.sleep(1)
-        
         # Check for user interrupts
-        if(interrupted()){ 
+        if (interrupted()) { 
           print("Stopping...")
           stop("User Interrupt")
         }
-        
         # Notify status file of progress
         fire_running(100*i/N)
       }
-      
       #Some results
       quantile(rnorm(1000))
     }) %...>% result_val()
-    
     # Catch inturrupt (or any other error) and notify user
     result <- catch(result,
                     function(e){
@@ -108,14 +99,12 @@ server <- function(input, output) {
                       print(e$message)
                       showNotification(e$message)
                     })
-    
     # After the promise has been evaluated set nclicks to 0 to allow for anlother Run
     result <- finally(result,
                       function(){
                         fire_ready() 
                         nclicks(0)
                       })
-    
     # Return something other than the promise so shiny remains responsive
     NULL
   })

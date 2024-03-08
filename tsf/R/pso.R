@@ -116,26 +116,27 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
        print(iter)
        print(global_best_vec)
        print(global_best_error)
-     } else {
+     } else if(is(runAsShiny, "Communicator")) {
        if(iter %% 5 == 0) {
-         
-         if(runAsShiny[[1]]()) { # interrupted
-           print("Stopping")
-           stop("User interrupt")
-         }
-         
-         runAsShiny[[2]]((100/ngen) * iter) # fire_running
-         
-         # runAsShiny[[1]]$sendCustomMessage(type = "updateField", 
-         #                              list(message = paste0("Iter = ", iter),
-         #                                   arg = paste0(runAsShiny[[2]]) ) )
-         # gbv <- paste0(global_best_vec, collapse = ",")
-         # runAsShiny[[1]]$sendCustomMessage(type = "updateField", 
-         #                              list(message = paste0("global_best_vec = ", gbv),
-         #                                   arg = paste0(runAsShiny[[2]]) ) )
-         # runAsShiny[[1]]$sendCustomMessage(type = "updateField", 
-         #                              list(message = paste0("error = ", global_best_error),
-         #                                   arg = paste0(runAsShiny[[2]]) ) )   
+          status <- runAsShiny$getStatus()
+          if (status == "interrupt") {
+            insilico <- loss(global_best_vec, env, TRUE)
+            return(list(insilico, c(global_best_vec)))  
+          }
+          gbv <- c(kX = global_best_vec[1], I0 = global_best_vec[2],
+                   IHD = global_best_vec[3], ID = global_best_vec[4])
+          gbv <- Map(function(a, b) {
+            paste(a, " = ", b)
+          }, names(gbv), gbv) |> unlist() |> paste(collapse = ", ")
+          runAsShiny$running((100/ngen) * iter)
+          runAsShiny$setData(
+            paste(
+              paste0((100/ngen) * iter, "% completed;"),
+              gbv,
+              "; Error: ", global_best_error,
+              collapse = "\n"
+            )
+          )
        }
     }
     

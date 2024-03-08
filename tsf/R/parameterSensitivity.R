@@ -1,5 +1,5 @@
 # Monte Carlo Estimation of Sobol’ Indices
-sobolVariance <- function(lossFct, env, lb, ub, parameterNames) {
+sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
   n <- 1000
   numPar <- length(lb)
   X1 <- data.frame(matrix(runif(numPar * n), nrow = n))
@@ -10,6 +10,15 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames) {
     p <- NULL
     if(is.data.frame(X)) { 
       return( sapply(1:nrow(X), function(x) {
+            
+        if(is(runAsShiny, "Communicator")) {
+         status <- runAsShiny$getStatus()
+          if (status == "interrupt") return()
+          if(x %% 10 == 0) {
+            runAsShiny$running((100/nrow(X)) * x)
+          }
+        }
+
         temp <- lb + (ub - lb) * X[x, ]
         temp <- as.numeric(temp)
         lossFct(temp, env, FALSE)
@@ -49,13 +58,14 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames) {
 #'        In case of *hg* a numeric vector of length 1 is expected which contains the concentration of the host.
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
 #'        In case of *gda* a numeric vector of length 3 is expected which contains the concentration of the host, guest and the *khd* parameter.
+#' @param runAsShiny is internally used when running the algorithm from shiny. 
 #' @return either an instance of ErrorClass if something went wrong. Otherwise plots showing the sensitivity are returned.
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
 #' res <- opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458)) 
 #' sensitivity("ida", res[[2]], path, c(4.3, 6.0, 7079458), 20)
 sensitivity <- function(case, parameters, path, additionalParameters,
-                        percentage = NULL, OffsetBoundaries = NULL) {
+                        percentage = NULL, OffsetBoundaries = NULL, runAsShiny = FALSE) {
   if(!is.character(case)) return(ErrorClass$new("case has to be of type character"))
   if(!(case %in% c("hg", "ida", "gda"))) return(ErrorClass$new("case is neither hg, ida or gda"))
   if(!is.data.frame(parameters)) return(ErrorClass$new("optimizedParameters have to be of type data.frame"))
@@ -119,5 +129,5 @@ sensitivity <- function(case, parameters, path, additionalParameters,
     env$kd <- additionalParameters[3]
     parameterNames <- c("kGuest", "I0", "IHD", "ID")
   }
-  sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames)
+  sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames, runAsShiny)
 }

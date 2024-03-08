@@ -10,7 +10,8 @@ sensitivity(
   path,
   additionalParameters,
   percentage = NULL,
-  OffsetBoundaries = NULL
+  OffsetBoundaries = NULL,
+  runAsShiny = FALSE
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ In case of \emph{gda} a numeric vector of length 3 is expected which contains th
 \item{percentage}{is the percentage +/- from parameters in which the sensitivity should be analysed.}
 
 \item{OffsetBoundaries}{in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.}
+
+\item{runAsShiny}{is internally used when running the algorithm from shiny.}
 }
 \value{
 either an instance of ErrorClass if something went wrong. Otherwise plots showing the sensitivity are returned.

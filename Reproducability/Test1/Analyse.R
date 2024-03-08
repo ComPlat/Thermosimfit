@@ -15,9 +15,12 @@ ID <- 2.48e06 # 2.48 when using µM
 
 # grenzen enger setzten
 res <- opti("ida", c(1, 0, 0, 0), c(10^10, 10*10^-4, 100, 100), files[[1]], c(H0, d0, kHD),
-            npop = 40, ngen = 400, Topology = "random")
+            npop = 40, ngen = 100, Topology = "random") # 400
 res
 res[[2]]
+c <- tsf:::Communicator$new()
+tsf::sensitivity("ida", res[[2]], files[[1]], c(H0, d0, kHD),
+                 15, runAsShiny = c)
 
 res <- lapply(files, function(x) {
   l <- lapply(1:5, function(y) {

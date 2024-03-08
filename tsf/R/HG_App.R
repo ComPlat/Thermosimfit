@@ -1,6 +1,30 @@
 hgUI <- function(id) {
 	tabItem(
            tabName = "HG",
+           tags$script(
+            "Shiny.addCustomMessageHandler('HGupdateField', function(message) {
+              var result = message.message;
+              $('#HG-HG_output').append(result + '\\n');
+            });"
+            ),
+           tags$script(
+            "Shiny.addCustomMessageHandler('HGclearField', function(message) {
+              $('#HG-HG_output').empty();
+            });"
+            ),
+           tags$script(
+            "Shiny.addCustomMessageHandler('HGupdateFieldSense', function(message) {
+              var result = message.message;
+              console.log(result);
+              $('#HG-HG_output_sense').html(result);
+            });"
+            ),
+           tags$script(
+            "Shiny.addCustomMessageHandler('HGclearFieldSense', function(message) {
+              $('#HG-HG_output_sense').empty();
+            });"
+            ),
+
            box(
              textInput(NS(id, "HG_H0"), "Host conc.", value = 0),
              numericInput(NS(id, "HG_npop"), "Number of particles", value = 40),
@@ -29,9 +53,9 @@ hgUI <- function(id) {
                textInput(NS(id, "HG_ID_ub"), "ID value upper boundary", value = 1e06)
              ),
              actionButton(NS(id, "HG_Start_Opti"),"Start Optimization"),
-             downloadButton(NS(id, "HG_download"),"Save result of optimization"),
              actionButton(NS(id, 'HG_cancel'), 'Cancel'),
-             actionButton(NS(id, 'HG_status'), 'Check Status'),
+             actionButton(NS(id, 'HG_status'), 'Status'),
+             downloadButton(NS(id, "HG_download"),"Save result of optimization"),
              verbatimTextOutput(NS(id, "HG_output")),
              DT::DTOutput(NS(id, "HG_params")),
              DT::DTOutput(NS(id, "HG_metrices")),
@@ -45,14 +69,11 @@ hgUI <- function(id) {
              numericInput(NS(id, "HG_sens_bounds"), "+/- boundary in [%]", value = 15),
              box(
                actionButton(NS(id, "HG_Start_Sensi"),"Start Sensitivity analysis"),
-               downloadButton(NS(id, "HG_sensi_download"), "Save result of sensitivity analysis")
+               actionButton(NS(id, 'HG_cancel_sense'), 'Cancel'),
+               actionButton(NS(id, 'HG_status_sense'), 'Status'),
+               downloadButton(NS(id, "HG_sensi_download"), "Save result of sensitivity analysis"),
+               verbatimTextOutput(NS(id, "HG_output_sense")),
              ),
-             div(id = NS(id, "HG_sens_runs"),
-                 style = "display: none;
-                          font-weight: bold;
-                          font-size: 16px;
-                          margin-top: 10px;",
-                 "Sensitivity analysis runs"),
              plotOutput(NS(id, "HG_sensi")),
              width = 12
            )
@@ -61,37 +82,31 @@ hgUI <- function(id) {
 
 
 
-hgServer <- function(id, df, result_val, nclicks, fire_running, fire_ready, fire_interrupt,
-					 interrupted, get_status, set_status) {
+hgServer <- function(id, df, com, com_sense) {
 
-  moduleServer(id, function(input, output, session) {
+  moduleServer(id, function(input, output, session) {  
   
+  nclicks <- reactiveVal(0)
+  nclicks_sense <- reactiveVal(0)
+  result_val <- reactiveVal()
+  result_val_sense <- reactiveVal()
+
   observeEvent(input$HG_Start_Opti, {
-    
-    # Don't do anything if analysis is already being run
-    if(nclicks() != 0){
+    if(nclicks() != 0 | nclicks_sense() != 0){
       showNotification("Already running analysis")
       return(NULL)
     }
-    # Increment clicks and prevent concurrent analyses
+    session$sendCustomMessage(type = "HGclearField", list(message = NULL))
+
     nclicks(nclicks() + 1)
     result_val(data.frame(Status="Running..."))
-    fire_running()
-    
-    session$sendCustomMessage(type = "clearField", list(message = NULL, arg = 1))
-    req(input$HG_H0)
-    req(input$HG_npop)
-    req(input$HG_ngen)
-    req(input$HG_threshold)
-    req(input$HG_kHD_lb)
-    req(input$HG_kHD_ub)
-    req(input$HG_IHD_lb)
-    req(input$HG_IHD_ub)
-    req(input$HG_ID_lb)
-    req(input$HG_ID_ub)
-    req(input$HG_I0_lb)
-    req(input$HG_I0_ub)
-    lb <- c(input$HG_kHD_lb, input$HG_I0_lb, input$HG_IHD_lb, input$HG_ID_lb) # isolate them?
+    com$running()
+    session$sendCustomMessage(type = "HGclearField", list(message = NULL, arg = 1))
+    req(input$HG_H0); req(input$HG_npop); req(input$HG_ngen)
+    req(input$HG_threshold); req(input$HG_kHD_lb); req(input$HG_kHD_ub)
+    req(input$HG_IHD_lb); req(input$HG_IHD_ub); req(input$HG_ID_lb)
+    req(input$HG_ID_ub); req(input$HG_I0_lb); req(input$HG_I0_ub)
+    lb <- c(input$HG_kHD_lb, input$HG_I0_lb, input$HG_IHD_lb, input$HG_ID_lb) 
     lb <- convertToNum(lb)
     req(!("Error" %in% lb))
     ub <- c(input$HG_kHD_ub, input$HG_I0_ub, input$HG_IHD_ub, input$HG_ID_ub)
@@ -106,36 +121,31 @@ hgServer <- function(id, df, result_val, nclicks, fire_running, fire_ready, fire
     et <- input$HG_threshold
     result <- future({
       opti("hg", lb, ub, df, additionalParameters,
-            npop, ngen, topo, et, list(interrupted, fire_running))
-    }) 
+            npop, ngen, topo, et, com)
+    }, seed = TRUE) 
     promises::`%...>%`(result, result_val())
-    # Catch inturrupt (or any other error) and notify user
     result <- catch(result,
                     function(e){
                       result_val(NULL)
                       print(e$message)
                       showNotification(e$message, duration = 0)
                     })
-    # After the promise has been evaluated set nclicks to 0 to allow for anlother Run
     result <- finally(result,
                       function(){
-                        fire_ready() 
+                        com$ready()
                         nclicks(0)
                       })
     
     NULL
   })
-  
-  # Register user interrupt
   observeEvent(input$HG_cancel,{
-    fire_interrupt()
+    com$interrupt()
   })
-  
-  # Let user get analysis progress
-  observeEvent(input$HG_status,{
-    showNotification(get_status())
+  observeEvent(input$HG_status, {
+    req(nclicks() != 0)
+    session$sendCustomMessage(type = "HGupdateField",
+     list(message = com$getData()))
   })
-
   output$HG_params <- renderDT({
     req(length(result_val()) == 4)
     req(!is.null(result_val()[[2]]))
@@ -151,7 +161,6 @@ hgServer <- function(id, df, result_val, nclicks, fire_running, fire_ready, fire
     req(!is.null(result_val()[[4]]))
     as.data.frame(result_val()[[4]])
   })
-  
   output$HG_download <- downloadHandler(
     filename = function() {
       "result.xlsx"
@@ -180,37 +189,57 @@ hgServer <- function(id, df, result_val, nclicks, fire_running, fire_ready, fire
                plot = curr_val, width = 10, height = 6) 
         insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
         openxlsx::saveWorkbook(wb, file)
+        unlink(tempfile_plot)
     }
   )
 
-  HG <- reactiveValues(sensi_res = NULL, sensi_run = FALSE)
-  
+
+
   observeEvent(input$HG_Start_Sensi, {
-    req(input$HG_H0)
-    req(input$HG_sens_bounds)
-    req(length(result_val()) == 4)
+    if(nclicks_sense() != 0 | nclicks() != 0){
+      showNotification("Already running analysis")
+      return(NULL)
+    }
+    nclicks_sense(nclicks_sense() + 1)
+    result_val_sense(data.frame(Status="Running..."))
+    session$sendCustomMessage(type = "HGclearFieldSense", list(message = NULL, arg = 1))
+    com_sense$running()
+    req(input$HG_H0); req(input$HG_sens_bounds); req(length(result_val()) == 4)
     additionalParameters <- c(input$HG_H0)
     additionalParameters <- convertToNum(additionalParameters)
     req(!("Error" %in% additionalParameters))
-    shinyjs::show(id = "HG_sens_runs", anim = TRUE)
-    temp <- try(sensitivity("hg", result_val()[[2]], df, additionalParameters,
-                        input$HG_sens_bounds))
-    if (inherits(temp, "try-error")) {
-      showNotification(temp, duration = 0)
-    } else if(is(temp, "ErrorClass")) {
-      showNotification(temp$message, duration = 0)
-      shinyjs::hide(id = "HG_sens_runs", anim = TRUE)
-    } else {
-      HG$sensi_res <- temp
-      HG$sensi_run <- TRUE
-      shinyjs::hide(id = "HG_sens_runs", anim = TRUE)
-    }
+    optim_params <- result_val()[[2]]
+    sense_bounds <- input$HG_sens_bounds
+    result_sense <- future({
+      sensitivity("hg", optim_params, df, additionalParameters,
+                        sense_bounds, runAsShiny = com_sense)
+    }, seed = TRUE) 
+    promises::`%...>%`(result_sense, result_val_sense())
+    result_sense <- catch(result_sense,
+                    function(e){
+                      result_val_sense(NULL)
+                      print(e$message)
+                      showNotification(e$message, duration = 0)
+                    })
+    result_sense <- finally(result_sense,
+                      function(){
+                        com_sense$ready() 
+                        nclicks_sense(0)
+                      })
+    NULL
   })
-
+  observeEvent(input$HG_cancel_sense,{
+    com_sense$interrupt()
+  })
+  observeEvent(input$HG_status_sense, {
+    req(nclicks_sense() != 0)
+    session$sendCustomMessage(type = "HGupdateFieldSense",
+                   list(message = com_sense$getStatus() ))
+  })
   output$HG_sensi <- renderPlot({
-    HG$sensi_res
+    req(inherits(result_val_sense(), "ggplot")) 
+    result_val_sense()
   })
-
   output$HG_sensi_download <- downloadHandler(
     filename = function() {
       "result.xlsx"
@@ -218,15 +247,18 @@ hgServer <- function(id, df, result_val, nclicks, fire_running, fire_ready, fire
     content = function(file) {
       wb <- openxlsx::createWorkbook()
       addWorksheet(wb, "Results")
-      if(HG$optimization_run) {
-        curr_val <- HG$sensi_res
-        tempfile_plot <- tempfile(fileext = ".png")
+      tempfile_plot <- tempfile(fileext = ".png")
+      if(inherits(result_val_sense(), "ggplot")) {
+        curr_val <- result_val_sense()
         ggsave(tempfile_plot,
                plot = curr_val, width = 10, height = 6) 
-        insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
+        insertImage(wb, "Results", tempfile_plot, startRow = 1)
       }
       openxlsx::saveWorkbook(wb, file)
+      unlink(tempfile_plot)
     }
   )
+
+
 	})
 }
