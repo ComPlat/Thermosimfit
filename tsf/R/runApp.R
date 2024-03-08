@@ -11,6 +11,8 @@
 #' @import DT
 runApp <- function() {
   ui <- dashboardPage(
+
+    skin = "blue",
     
     dashboardHeader(title = "Thermosimfit"),
     dashboardSidebar(

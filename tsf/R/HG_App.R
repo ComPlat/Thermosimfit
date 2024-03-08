@@ -25,58 +25,91 @@ hgUI <- function(id) {
             });"
             ),
 
-           box(
-             textInput(NS(id, "HG_H0"), "Host conc.", value = 0),
-             numericInput(NS(id, "HG_npop"), "Number of particles", value = 40),
-             numericInput(NS(id, "HG_ngen"), "Number of generations", value = 200),
-             selectInput(NS(id, "HG_topology"), "Topology of particle swarm",
-                         c("star" = "star",
-                           "random" = "random"), selectize = FALSE),
-             numericInput(NS(id, "HG_threshold"), "Threshold of the error", value = 0.00001),
-             width = 12
-           ),
-           box(
+
+
+           fluidRow(
+
+             tabBox(
+              title = "First tabBox",
+              id = "tabset1", height = "250px",
+              tabPanel("Tab1", "First tab content"),
+              tabPanel("Tab2", "Tab content 2")
+              ),
              box(
-               textInput(NS(id, "HG_kHD_lb"), "kHD value lower boundary", value = 0),
-               textInput(NS(id, "HG_kHD_ub"), "kHD value upper boundary", value = 1e09)
-             ),
+               textInput(NS(id, "HG_H0"), "Host conc.", value = 0),
+               numericInput(NS(id, "HG_npop"), "Number of particles", value = 40),
+               numericInput(NS(id, "HG_ngen"), "Number of generations", value = 200),
+               selectInput(NS(id, "HG_topology"), "Topology of particle swarm",
+                 c("star" = "star",
+                   "random" = "random"), selectize = FALSE),
+               numericInput(NS(id, "HG_threshold"), "Threshold of the error", value = 0.00001),
+               width = 6,
+               title = "Parameter", solidHeader = TRUE,
+               status = "warning", height = 450
+               ),
+
              box(
-               textInput(NS(id, "HG_I0_lb"), "I0 value lower boundary", value = 0),
-               textInput(NS(id, "HG_I0_ub"), "I0 value upper boundary", value = 1)
-             ),
+               box(
+                 textInput(NS(id, "HG_kHD_lb"), "kHD value lower boundary", value = 0),
+                 textInput(NS(id, "HG_kHD_ub"), "kHD value upper boundary", value = 1e09)
+                 ),
+               box(
+                 textInput(NS(id, "HG_I0_lb"), "I0 value lower boundary", value = 0),
+                 textInput(NS(id, "HG_I0_ub"), "I0 value upper boundary", value = 1)
+                 ),
+               box(
+                 textInput(NS(id, "HG_IHD_lb"), "IHD value lower boundary", value = 0),
+                 textInput(NS(id, "HG_IHD_ub"), "IHD value upper boundary", value = 1e06)
+                 ),
+               box(
+                 textInput(NS(id, "HG_ID_lb"), "ID value lower boundary", value = 0),
+                 textInput(NS(id, "HG_ID_ub"), "ID value upper boundary", value = 1e06)
+                 ),
+               width = 6, title = "Boundaries", solidHeader = TRUE,
+               status = "warning", height = 450
+               )
+            ),
+
+           fluidRow(
              box(
-               textInput(NS(id, "HG_IHD_lb"), "IHD value lower boundary", value = 0),
-               textInput(NS(id, "HG_IHD_ub"), "IHD value upper boundary", value = 1e06)
-             ),
-             box(
-               textInput(NS(id, "HG_ID_lb"), "ID value lower boundary", value = 0),
-               textInput(NS(id, "HG_ID_ub"), "ID value upper boundary", value = 1e06)
-             ),
-             actionButton(NS(id, "HG_Start_Opti"),"Start Optimization"),
-             actionButton(NS(id, 'HG_cancel'), 'Cancel'),
-             actionButton(NS(id, 'HG_status'), 'Status'),
-             downloadButton(NS(id, "HG_download"),"Save result of optimization"),
-             verbatimTextOutput(NS(id, "HG_output")),
-             DT::DTOutput(NS(id, "HG_params")),
-             DT::DTOutput(NS(id, "HG_metrices")),
-             box(
+              box(
+               actionButton(NS(id, "HG_Start_Opti"),"Start Optimization"),
+               actionButton(NS(id, 'HG_cancel'), 'Cancel'),
+               actionButton(NS(id, 'HG_status'), 'Status'),
+               downloadButton(NS(id, "HG_download"),"Save result of optimization"),
+               verbatimTextOutput(NS(id, "HG_output"))
+               ),
+              box(
+               br(),
+               DT::DTOutput(NS(id, "HG_params")),
+               DT::DTOutput(NS(id, "HG_metrices")),
                plotOutput(NS(id, "HG_plot")),
-               width = 9
-             ),
-             width = 12
+               width = 7, solidHeader = TRUE, status = "warning"
+               ),
+              width = 12, title = "Optimization", solidHeader = TRUE,
+              collapsible = TRUE, status = "warning"
+            )
            ),
-           box(
-             numericInput(NS(id, "HG_sens_bounds"), "+/- boundary in [%]", value = 15),
+
+           fluidRow(
              box(
-               actionButton(NS(id, "HG_Start_Sensi"),"Start Sensitivity analysis"),
-               actionButton(NS(id, 'HG_cancel_sense'), 'Cancel'),
-               actionButton(NS(id, 'HG_status_sense'), 'Status'),
-               downloadButton(NS(id, "HG_sensi_download"), "Save result of sensitivity analysis"),
-               verbatimTextOutput(NS(id, "HG_output_sense")),
-             ),
-             plotOutput(NS(id, "HG_sensi")),
-             width = 12
-           )
+               box(
+                 numericInput(NS(id, "HG_sens_bounds"), "+/- boundary in [%]", value = 15),
+                 actionButton(NS(id, "HG_Start_Sensi"),"Start Sensitivity analysis"),
+                 actionButton(NS(id, 'HG_cancel_sense'), 'Cancel'),
+                 actionButton(NS(id, 'HG_status_sense'), 'Status'),
+                 downloadButton(NS(id, "HG_sensi_download"), "Save result of sensitivity analysis"),
+                 verbatimTextOutput(NS(id, "HG_output_sense")),
+               ),
+               box(
+                 br(),
+                 plotOutput(NS(id, "HG_sensi")),
+                 width = 7, solidHeader = TRUE, status = "warning"
+               ),
+               width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
+               collapsible = TRUE, status = "warning"
+             )
+          )
     )
 }
 
