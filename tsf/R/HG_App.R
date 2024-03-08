@@ -29,12 +29,6 @@ hgUI <- function(id) {
 
            fluidRow(
 
-             tabBox(
-              title = "First tabBox",
-              id = "tabset1", height = "250px",
-              tabPanel("Tab1", "First tab content"),
-              tabPanel("Tab2", "Tab content 2")
-              ),
              box(
                textInput(NS(id, "HG_H0"), "Host conc.", value = 0),
                numericInput(NS(id, "HG_npop"), "Number of particles", value = 40),
@@ -46,7 +40,7 @@ hgUI <- function(id) {
                width = 6,
                title = "Parameter", solidHeader = TRUE,
                status = "warning", height = 450
-               ),
+              ),
 
              box(
                box(
@@ -71,45 +65,60 @@ hgUI <- function(id) {
             ),
 
            fluidRow(
-             box(
-              box(
-               actionButton(NS(id, "HG_Start_Opti"),"Start Optimization"),
-               actionButton(NS(id, 'HG_cancel'), 'Cancel'),
-               actionButton(NS(id, 'HG_status'), 'Status'),
-               downloadButton(NS(id, "HG_download"),"Save result of optimization"),
-               verbatimTextOutput(NS(id, "HG_output"))
-               ),
-              box(
-               br(),
-               DT::DTOutput(NS(id, "HG_params")),
-               DT::DTOutput(NS(id, "HG_metrices")),
-               plotOutput(NS(id, "HG_plot")),
-               width = 7, solidHeader = TRUE, status = "warning"
-               ),
-              width = 12, title = "Optimization", solidHeader = TRUE,
-              collapsible = TRUE, status = "warning"
-            )
-           ),
+            tabBox(
 
-           fluidRow(
-             box(
-               box(
-                 numericInput(NS(id, "HG_sens_bounds"), "+/- boundary in [%]", value = 15),
-                 actionButton(NS(id, "HG_Start_Sensi"),"Start Sensitivity analysis"),
-                 actionButton(NS(id, 'HG_cancel_sense'), 'Cancel'),
-                 actionButton(NS(id, 'HG_status_sense'), 'Status'),
-                 downloadButton(NS(id, "HG_sensi_download"), "Save result of sensitivity analysis"),
-                 verbatimTextOutput(NS(id, "HG_output_sense")),
-               ),
-               box(
-                 br(),
-                 plotOutput(NS(id, "HG_sensi")),
-                 width = 7, solidHeader = TRUE, status = "warning"
-               ),
-               width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
-               collapsible = TRUE, status = "warning"
-             )
-          )
+              tabPanel("Optimization",
+                fluidRow(
+                 box(
+                  box(
+                   actionButton(NS(id, "HG_Start_Opti"),"Start Optimization"),
+                   actionButton(NS(id, 'HG_cancel'), 'Cancel'),
+                   actionButton(NS(id, 'HG_status'), 'Status'),
+                   downloadButton(NS(id, "HG_download"),"Save result of optimization"),
+                   verbatimTextOutput(NS(id, "HG_output")),
+                   width = 12
+                   ),
+                  box(
+                   br(),
+                   DT::DTOutput(NS(id, "HG_params")),
+                   DT::DTOutput(NS(id, "HG_metrices")),
+                   plotOutput(NS(id, "HG_plot")),
+                   width = 7, solidHeader = TRUE, status = "warning"
+                   ),
+                  width = 12, title = "Optimization", solidHeader = TRUE,
+                  collapsible = TRUE, status = "warning"
+                  )
+                 )
+              ),
+
+              tabPanel("Sensitivity analysis",
+                fluidRow(
+                 box(
+                   box(
+                     numericInput(NS(id, "HG_sens_bounds"), "+/- boundary in [%]", value = 15),
+                     actionButton(NS(id, "HG_Start_Sensi"),"Start Sensitivity analysis"),
+                     actionButton(NS(id, 'HG_cancel_sense'), 'Cancel'),
+                     actionButton(NS(id, 'HG_status_sense'), 'Status'),
+                     downloadButton(NS(id, "HG_sensi_download"), "Save result of sensitivity analysis"),
+                     verbatimTextOutput(NS(id, "HG_output_sense")),
+                     width = 12
+                     ),
+                   box(
+                     br(),
+                     plotOutput(NS(id, "HG_sensi")),
+                     width = 7, solidHeader = TRUE, status = "warning"
+                     ),
+                   width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
+                   collapsible = TRUE, status = "warning"
+                   )
+                 )
+              ),
+
+              width = 12
+              )
+            )
+
+           
     )
 }
 
