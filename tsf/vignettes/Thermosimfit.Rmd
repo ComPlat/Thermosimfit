@@ -1,0 +1,47 @@
+---
+title: "Thermosimfit"
+author: "Konrad Krämer"
+output: rmarkdown::html_document
+vignette: >
+  %\VignetteIndexEntry{paropt}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage{UTF-8}
+---
+
+
+# Implementation of the package *tsf*
+
+Using the R package *tsf* specific parameters (kHD or kGuest, I0, IHD and ID) of different algebraic systems can be identified. \
+
+As a preliminary work the systems were defined in maxima ([more Information](https://maxima.sourceforge.io/)). Subsequently, two times specific variables were eliminated yielding two polynoms. Each polynome contains known variables e.g. the concentration of the host, variables which should be optimized e.g. kGuest and an unknown variable which is either *d* or *hd*. \
+
+Afterwards, for each algebraic system a loss function was defined in R. The loss function receives as arguments the four parameter which should be optimized and returns an error for the received parameter set. Each parameterset consists of the four parameters kHD or kGuest, I0, IHD and ID. Furthermore, some constant parameters are passed to the loss function e.g. the concentration of the host and a data.frame which contains the independent variable (either *dye* or *guest*) and the corresponding signal. By using all this informations roots were calculated for each polynome at each concentration of the independent variable. The roots define the corresponding concentration of either *d* or *hd* to the independent variable.  
+Using the roots an *in silico* signal is calculated based on the following formula:
+
+- $Signal_{InSilico} = I_0 + I_{HD} [hd] + I_D [d]$
+
+The *in silico* signal is than compared to the measured signal. The better they match the smaller the error which is returned by the loss function. 
+
+## The three different systems
+
+- The hg system:
+
+\[
+\begin{align*}
+h + hd + -h0 = 0 \\
+d + hd -d0 = 0 \\
+hd / (h*d) -kd = 0 \\
+\end{align*}
+\]
+
+- The ida and gda system: 
+
+\[
+\begin{align*}
+h + hd + hga -h0 = 0 \\
+d + hd -d0 = 0 \\
+ga + hga -ga0 = 0 \\
+hga / (h*ga) -kg = 0 \\
+hd / (h*d) -kd = 0 \\
+\end{align*}
+\]           
