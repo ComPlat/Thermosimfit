@@ -58,17 +58,24 @@ server <- function(input, output, session) {
 
   HG_com <- Communicator$new()
   HG_com_sense <- Communicator$new()
-  hgServer("HG", data$df, HG_com, HG_com_sense)
-
+  GDA_com <- Communicator$new()
+  GDA_com_sense <- Communicator$new()
   IDA_com <- Communicator$new()
   IDA_com_sense <- Communicator$new()
-  idaServer("IDA", data$df, IDA_com, IDA_com_sense)
-  
+  nclicks <- reactiveVal(0)
+  nclicks_sense <- reactiveVal(0)
+
+  hgServer("HG", data$df, HG_com, HG_com_sense, nclicks, nclicks_sense)
+  idaServer("IDA", data$df, IDA_com, IDA_com_sense, nclicks, nclicks_sense)
+  gdaServer("GDA", data$df, GDA_com, GDA_com_sense, nclicks, nclicks_sense)
+
   onStop(function(){
     HG_com$destroy()
     HG_com_sense$destroy()
     IDA_com$destroy()
     IDA_com_sense$destroy()
+    GDA_com$destroy()
+    GDA_com_sense$destroy()
   })
   
 

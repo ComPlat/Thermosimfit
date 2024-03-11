@@ -1,4 +1,5 @@
-#' Optimize algebraic systems which describe thermodynamic binding systems
+#' Offers a GUI for the optimization of
+#' algebraic systems describing thermodynamic binding systems
 #'
 #' @export
 #' @rawNamespace import(shiny, except=c(dataTableOutput, renderDataTable, runExample))
@@ -9,6 +10,10 @@
 #' @import future
 #' @import promises
 #' @import DT
+#' @examples
+#' \donttest{
+#' tsf::runApp()
+#' } 
 runApp <- function() {
   ui <- dashboardPage(
 
@@ -49,7 +54,8 @@ runApp <- function() {
         ),
         
         hgUI("HG"),
-        idaUI("IDA")
+        idaUI("IDA"),
+        gdaUI("GDA")
         
         
       )
