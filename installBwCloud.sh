@@ -9,5 +9,5 @@ sudo apt install r-base-core
 #sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
 
 # install 
-# 	- devtools
-#   - remotes::install_github("ComPlat/Thermosimfit")
+# 	- remotes
+#   - remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf")

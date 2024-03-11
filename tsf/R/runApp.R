@@ -2,6 +2,7 @@
 #' algebraic systems describing thermodynamic binding systems
 #'
 #' @export
+#' @param port is a number defining the port to use.
 #' @rawNamespace import(shiny, except=c(dataTableOutput, renderDataTable, runExample))
 #' @rawNamespace import(shinyWidgets, except=c(alert))
 #' @import shinydashboard
@@ -14,7 +15,7 @@
 #' \donttest{
 #' tsf::runApp()
 #' } 
-runApp <- function() {
+runApp <- function(port) {
   ui <- dashboardPage(
 
     skin = "blue",
@@ -64,5 +65,5 @@ runApp <- function() {
   )
 
   plan(multisession)
-  shinyApp(ui, server)
+  shinyApp(ui, server,options = list(port = port))
 }
