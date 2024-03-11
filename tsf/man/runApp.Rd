@@ -2,10 +2,17 @@
 % Please edit documentation in R/runApp.R
 \name{runApp}
 \alias{runApp}
-\title{Optimize algebraic systems which describe thermodynamic binding systems}
+\title{Offers a GUI for the optimization of
+algebraic systems describing thermodynamic binding systems}
 \usage{
 runApp()
 }
 \description{
-Optimize algebraic systems which describe thermodynamic binding systems
+Offers a GUI for the optimization of
+algebraic systems describing thermodynamic binding systems
+}
+\examples{
+\donttest{
+tsf::runApp()
+} 
 }

@@ -1,6 +1,7 @@
-#roxygen2::roxygenise("tsf")
-install.packages("tsf", repos = NULL, type = "source")
+roxygen2::roxygenise("tsf")
+devtools::install("tsf", build_vignettes = TRUE, upgrade = "never")
+#install.packages("tsf", repos = NULL, type = "source")
 detach("package:tsf", unload = TRUE)
 library(tsf)
 tsf::runApp()
-	
+#tinytest::test_package("tsf")	
