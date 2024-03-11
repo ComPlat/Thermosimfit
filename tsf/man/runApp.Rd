@@ -5,7 +5,10 @@
 \title{Offers a GUI for the optimization of
 algebraic systems describing thermodynamic binding systems}
 \usage{
-runApp()
+runApp(port)
+}
+\arguments{
+\item{port}{is a number defining the port to use.}
 }
 \description{
 Offers a GUI for the optimization of

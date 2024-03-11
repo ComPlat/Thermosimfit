@@ -1,9 +1,20 @@
+#' ErrorClass class for handling errors
+#' @description a class for handling error messages
+#'
+#' @export
+#' @import R6
 ErrorClass <- R6::R6Class(
   "ErrorClass",
   public = list(
+    #' @field message the error message 
     message = NULL, 
+    #' @field object an R object which can be stored in the class instance if an error and a result should be returned together.
     object = NULL,
 
+    #' @description 
+    #' create a new ErrorClass Object
+    #' @param message the string describing the error
+    #' @param object is optional if something besides the message should be stored
     initialize = function(message, object = NULL) {
       if(is.null(message)) {
         stop("No message object is passed. Undefined case")

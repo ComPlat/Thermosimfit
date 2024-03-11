@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     git-core \
     libssl-dev \
     curl \
+    vim \
     libcurl4-gnutls-dev \
     libsodium-dev \
     libxml2-dev \
@@ -31,8 +32,16 @@ RUN install2.r --error --skipinstalled \
     promises
 
 COPY ./tsf/ /home/tsf
+COPY ./app/ /srv/shiny-server/
+COPY ./run.sh .
+# docker cp ./app/ 74c5edc0ad6c:/srv/shiny-server/ 
+
 RUN bash -c "cd /home/tsf; R CMD INSTALL ."
 
+USER shiny
 EXPOSE 3838
-CMD ["/bin/bash", "-c", "Rscript -e 'tsf::runApp(3838)'"]
+
+ENV SHINY_LOG_STDERR=1
+
+CMD ["/bin/bash", "-c", "./run.sh"]
 
