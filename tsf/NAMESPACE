@@ -2,6 +2,7 @@
 
 export(createPolynom)
 export(opti)
+export(pso)
 export(runApp)
 export(sensitivity)
 import(DT)

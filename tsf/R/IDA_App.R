@@ -34,7 +34,7 @@ idaUI <- function(id) {
                numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 200),
                selectInput(NS(id, "IDA_topology"), "Topology of particle swarm",
                  c("star" = "star",
-                   "random" = "random"), selectize = FALSE),
+                   "random" = "random arbitrary neighberhood"), selectize = FALSE),
                numericInput(NS(id, "IDA_threshold"), "Threshold of the error", value = 0.00001),
                width = 6,
                title = "Parameter", solidHeader = TRUE,
@@ -72,7 +72,7 @@ idaUI <- function(id) {
                   box(
                    actionButton(NS(id, "IDA_Start_Opti"),"Start Optimization"),
                    actionButton(NS(id, 'IDA_cancel'), 'Cancel'),
-                   actionButton(NS(id, 'IDA_status'), 'Status'),
+                   actionButton(NS(id, 'IDA_status'), 'Get Status'),
                    downloadButton(NS(id, "IDA_download"),"Save result of optimization"),
                    verbatimTextOutput(NS(id, "IDA_output")),
                    width = 12
@@ -97,7 +97,7 @@ idaUI <- function(id) {
                      numericInput(NS(id, "IDA_sens_bounds"), "+/- boundary in [%]", value = 15),
                      actionButton(NS(id, "IDA_Start_Sensi"),"Start Sensitivity analysis"),
                      actionButton(NS(id, 'IDA_cancel_sense'), 'Cancel'),
-                     actionButton(NS(id, 'IDA_status_sense'), 'Status'),
+                     actionButton(NS(id, 'IDA_status_sense'), 'Get Status'),
                      downloadButton(NS(id, "IDA_sensi_download"), "Save result of sensitivity analysis"),
                      verbatimTextOutput(NS(id, "IDA_output_sense")),
                      width = 12
@@ -123,12 +123,10 @@ idaUI <- function(id) {
 
 
 
-idaServer <- function(id, df, com, com_sense) {
+idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
 
   moduleServer(id, function(input, output, session) {  
   
-  nclicks <- reactiveVal(0)
-  nclicks_sense <- reactiveVal(0)
   result_val <- reactiveVal()
   result_val_sense <- reactiveVal()
 

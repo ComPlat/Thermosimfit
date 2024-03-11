@@ -1,65 +1,65 @@
-hgUI <- function(id) {
-	tabItem(
-           tabName = "HG",
+gdaUI <- function(id) {
+  tabItem(
+           tabName = "GDA",
            tags$script(
-            "Shiny.addCustomMessageHandler('HGupdateField', function(message) {
+            "Shiny.addCustomMessageHandler('GDAupdateField', function(message) {
               var result = message.message;
-              $('#HG-HG_output').append(result + '\\n');
+              $('#GDA-GDA_output').append(result + '\\n');
             });"
             ),
            tags$script(
-            "Shiny.addCustomMessageHandler('HGclearField', function(message) {
-              $('#HG-HG_output').empty();
+            "Shiny.addCustomMessageHandler('GDAclearField', function(message) {
+              $('#GDA-GDA_output').empty();
             });"
             ),
            tags$script(
-            "Shiny.addCustomMessageHandler('HGupdateFieldSense', function(message) {
+            "Shiny.addCustomMessageHandler('GDAupdateFieldSense', function(message) {
               var result = message.message;
-              $('#HG-HG_output_sense').html(result);
+              $('#GDA-GDA_output_sense').html(result);
             });"
             ),
            tags$script(
-            "Shiny.addCustomMessageHandler('HGclearFieldSense', function(message) {
-              $('#HG-HG_output_sense').empty();
+            "Shiny.addCustomMessageHandler('GDAclearFieldSense', function(message) {
+              $('#GDA-GDA_output_sense').empty();
             });"
             ),
-
-
 
            fluidRow(
 
              box(
-               textInput(NS(id, "HG_H0"), "Host conc.", value = 0),
-               numericInput(NS(id, "HG_npop"), "Number of particles", value = 40),
-               numericInput(NS(id, "HG_ngen"), "Number of generations", value = 200),
-               selectInput(NS(id, "HG_topology"), "Topology of particle swarm",
+               textInput(NS(id, "GDA_H0"), "Host conc.", value = 0),
+               textInput(NS(id, "GDA_G0"), "Guest conc.", value = "0"),
+               textInput(NS(id, "GDA_kHD"), "kHD", value = "0"),
+               numericInput(NS(id, "GDA_npop"), "Number of particles", value = 40),
+               numericInput(NS(id, "GDA_ngen"), "Number of generations", value = 200),
+               selectInput(NS(id, "GDA_topology"), "Topology of particle swarm",
                  c("star" = "star",
                    "random" = "random arbitrary neighberhood"), selectize = FALSE),
-               numericInput(NS(id, "HG_threshold"), "Threshold of the error", value = 0.00001),
+               numericInput(NS(id, "GDA_threshold"), "Threshold of the error", value = 0.00001),
                width = 6,
                title = "Parameter", solidHeader = TRUE,
-               status = "warning", height = 450
+               status = "warning", height = 600
               ),
 
              box(
                box(
-                 textInput(NS(id, "HG_kHD_lb"), "kHD value lower boundary", value = 0),
-                 textInput(NS(id, "HG_kHD_ub"), "kHD value upper boundary", value = 1e09)
+                 textInput(NS(id, "GDA_kHD_lb"), "kHD value lower boundary", value = 0),
+                 textInput(NS(id, "GDA_kHD_ub"), "kHD value upper boundary", value = 1e09)
                  ),
                box(
-                 textInput(NS(id, "HG_I0_lb"), "I0 value lower boundary", value = 0),
-                 textInput(NS(id, "HG_I0_ub"), "I0 value upper boundary", value = 1)
+                 textInput(NS(id, "GDA_I0_lb"), "I0 value lower boundary", value = 0),
+                 textInput(NS(id, "GDA_I0_ub"), "I0 value upper boundary", value = 1)
                  ),
                box(
-                 textInput(NS(id, "HG_IHD_lb"), "IHD value lower boundary", value = 0),
-                 textInput(NS(id, "HG_IHD_ub"), "IHD value upper boundary", value = 1e06)
+                 textInput(NS(id, "GDA_IHD_lb"), "IHD value lower boundary", value = 0),
+                 textInput(NS(id, "GDA_IHD_ub"), "IHD value upper boundary", value = 1e06)
                  ),
                box(
-                 textInput(NS(id, "HG_ID_lb"), "ID value lower boundary", value = 0),
-                 textInput(NS(id, "HG_ID_ub"), "ID value upper boundary", value = 1e06)
+                 textInput(NS(id, "GDA_ID_lb"), "ID value lower boundary", value = 0),
+                 textInput(NS(id, "GDA_ID_ub"), "ID value upper boundary", value = 1e06)
                  ),
                width = 6, title = "Boundaries", solidHeader = TRUE,
-               status = "warning", height = 450
+               status = "warning", height = 600
                )
             ),
 
@@ -70,18 +70,18 @@ hgUI <- function(id) {
                 fluidRow(
                  box(
                   box(
-                   actionButton(NS(id, "HG_Start_Opti"),"Start Optimization"),
-                   actionButton(NS(id, 'HG_cancel'), 'Cancel'),
-                   actionButton(NS(id, 'HG_status'), 'Get Status'),
-                   downloadButton(NS(id, "HG_download"),"Save result of optimization"),
-                   verbatimTextOutput(NS(id, "HG_output")),
+                   actionButton(NS(id, "GDA_Start_Opti"),"Start Optimization"),
+                   actionButton(NS(id, 'GDA_cancel'), 'Cancel'),
+                   actionButton(NS(id, 'GDA_status'), 'Get Status'),
+                   downloadButton(NS(id, "GDA_download"),"Save result of optimization"),
+                   verbatimTextOutput(NS(id, "GDA_output")),
                    width = 12
                    ),
                   box(
                    br(),
-                   DT::DTOutput(NS(id, "HG_params")),
-                   DT::DTOutput(NS(id, "HG_metrices")),
-                   plotOutput(NS(id, "HG_plot")),
+                   DT::DTOutput(NS(id, "GDA_params")),
+                   DT::DTOutput(NS(id, "GDA_metrices")),
+                   plotOutput(NS(id, "GDA_plot")),
                    width = 7, solidHeader = TRUE, status = "warning"
                    ),
                   width = 12, title = "Optimization", solidHeader = TRUE,
@@ -94,17 +94,17 @@ hgUI <- function(id) {
                 fluidRow(
                  box(
                    box(
-                     numericInput(NS(id, "HG_sens_bounds"), "+/- boundary in [%]", value = 15),
-                     actionButton(NS(id, "HG_Start_Sensi"),"Start Sensitivity analysis"),
-                     actionButton(NS(id, 'HG_cancel_sense'), 'Cancel'),
-                     actionButton(NS(id, 'HG_status_sense'), 'Get Status'),
-                     downloadButton(NS(id, "HG_sensi_download"), "Save result of sensitivity analysis"),
-                     verbatimTextOutput(NS(id, "HG_output_sense")),
+                     numericInput(NS(id, "GDA_sens_bounds"), "+/- boundary in [%]", value = 15),
+                     actionButton(NS(id, "GDA_Start_Sensi"),"Start Sensitivity analysis"),
+                     actionButton(NS(id, 'GDA_cancel_sense'), 'Cancel'),
+                     actionButton(NS(id, 'GDA_status_sense'), 'Get Status'),
+                     downloadButton(NS(id, "GDA_sensi_download"), "Save result of sensitivity analysis"),
+                     verbatimTextOutput(NS(id, "GDA_output_sense")),
                      width = 12
                      ),
                    box(
                      br(),
-                     plotOutput(NS(id, "HG_sensi")),
+                     plotOutput(NS(id, "GDA_sensi")),
                      width = 7, solidHeader = TRUE, status = "warning"
                      ),
                    width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
@@ -123,43 +123,44 @@ hgUI <- function(id) {
 
 
 
-hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
+gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
 
   moduleServer(id, function(input, output, session) {  
-  
+
   result_val <- reactiveVal()
   result_val_sense <- reactiveVal()
 
-  observeEvent(input$HG_Start_Opti, {
+  observeEvent(input$GDA_Start_Opti, {
     if(nclicks() != 0 | nclicks_sense() != 0){
       showNotification("Already running analysis")
       return(NULL)
     }
-    session$sendCustomMessage(type = "HGclearField", list(message = NULL))
-
+    session$sendCustomMessage(type = "GDAclearField", list(message = NULL))
     nclicks(nclicks() + 1)
     result_val(data.frame(Status="Running..."))
     com$running()
-    session$sendCustomMessage(type = "HGclearField", list(message = NULL, arg = 1))
-    req(input$HG_H0); req(input$HG_npop); req(input$HG_ngen)
-    req(input$HG_threshold); req(input$HG_kHD_lb); req(input$HG_kHD_ub)
-    req(input$HG_IHD_lb); req(input$HG_IHD_ub); req(input$HG_ID_lb)
-    req(input$HG_ID_ub); req(input$HG_I0_lb); req(input$HG_I0_ub)
-    lb <- c(input$HG_kHD_lb, input$HG_I0_lb, input$HG_IHD_lb, input$HG_ID_lb) 
+    session$sendCustomMessage(type = "GDAclearField", list(message = NULL, arg = 1))
+    req(input$GDA_H0); req(input$GDA_G0)
+    req(input$GDA_kHD); req(input$GDA_npop); req(input$GDA_ngen)
+    req(input$GDA_threshold); req(input$GDA_kHD_lb); req(input$GDA_kHD_ub)
+    req(input$GDA_IHD_lb); req(input$GDA_IHD_ub); req(input$GDA_ID_lb)
+    req(input$GDA_ID_ub); req(input$GDA_I0_lb); req(input$GDA_I0_ub)
+    lb <- c(input$GDA_kHD_lb, input$GDA_I0_lb, input$GDA_IHD_lb, input$GDA_ID_lb) 
     lb <- convertToNum(lb)
     req(!("Error" %in% lb))
-    ub <- c(input$HG_kHD_ub, input$HG_I0_ub, input$HG_IHD_ub, input$HG_ID_ub)
+    ub <- c(input$GDA_kHD_ub, input$GDA_I0_ub, input$GDA_IHD_ub, input$GDA_ID_ub)
     ub <- convertToNum(ub)
     req(!("Error" %in% ub))
-    additionalParameters <- c(input$HG_H0)
+    additionalParameters <- c(input$GDA_H0, input$GDA_G0, input$GDA_kHD) 
     additionalParameters <- convertToNum(additionalParameters)
     req(!("Error" %in% additionalParameters))
-    npop <- input$HG_npop
-    ngen <- input$HG_ngen
-    topo <- input$HG_topology
-    et <- input$HG_threshold
+    npop <- input$GDA_npop
+    ngen <- input$GDA_ngen
+    topo <- input$GDA_topology
+    et <- input$GDA_threshold
+
     result <- future({
-      opti("hg", lb, ub, df, additionalParameters,
+      opti("gda", lb, ub, df, additionalParameters,
             npop, ngen, topo, et, com)
     }, seed = TRUE) 
     promises::`%...>%`(result, result_val())
@@ -177,35 +178,35 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     
     NULL
   })
-  observeEvent(input$HG_cancel,{
+  observeEvent(input$GDA_cancel,{
     com$interrupt()
   })
-  observeEvent(input$HG_status, {
+  observeEvent(input$GDA_status, {
     req(nclicks() != 0)
-    session$sendCustomMessage(type = "HGupdateField",
+    session$sendCustomMessage(type = "GDAupdateField",
      list(message = com$getData()))
   })
-  output$HG_params <- renderDT({
+  output$GDA_params <- renderDT({
     req(length(result_val()) == 4)
     req(!is.null(result_val()[[2]]))
     result_val()[[2]]
   })
-  output$HG_plot <- renderPlot({
-  	req(length(result_val()) == 4)
+  output$GDA_plot <- renderPlot({
+    req(length(result_val()) == 4)
     req(!is.null(result_val()[[3]]))
     result_val()[[3]]
   })
-  output$HG_metrices <- renderDT({
-  	req(length(result_val()) == 4)
+  output$GDA_metrices <- renderDT({
+    req(length(result_val()) == 4)
     req(!is.null(result_val()[[4]]))
     as.data.frame(result_val()[[4]])
   })
-  output$HG_download <- downloadHandler(
+  output$GDA_download <- downloadHandler(
     filename = function() {
       "result.xlsx"
     },
     content = function(file) {
-    	req(length(result_val()) == 4)
+      req(length(result_val()) == 4)
 
         wb <- openxlsx::createWorkbook()
         addWorksheet(wb, "Results")
@@ -234,23 +235,24 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
 
 
 
-  observeEvent(input$HG_Start_Sensi, {
+  observeEvent(input$GDA_Start_Sensi, {
     if(nclicks_sense() != 0 | nclicks() != 0){
       showNotification("Already running analysis")
       return(NULL)
     }
     nclicks_sense(nclicks_sense() + 1)
     result_val_sense(data.frame(Status="Running..."))
-    session$sendCustomMessage(type = "HGclearFieldSense", list(message = NULL, arg = 1))
+    session$sendCustomMessage(type = "GDAclearFieldSense", list(message = NULL, arg = 1))
     com_sense$running()
-    req(input$HG_H0); req(input$HG_sens_bounds); req(length(result_val()) == 4)
-    additionalParameters <- c(input$HG_H0)
+    req(input$GDA_H0); req(input$GDA_G0)
+    req(input$GDA_kHD); req(input$GDA_sens_bounds); req(length(result_val()) == 4)
+    additionalParameters <- c(input$GDA_H0, input$GDA_G0, input$GDA_kHD) 
     additionalParameters <- convertToNum(additionalParameters)
     req(!("Error" %in% additionalParameters))
     optim_params <- result_val()[[2]]
-    sense_bounds <- input$HG_sens_bounds
+    sense_bounds <- input$GDA_sens_bounds
     result_sense <- future({
-      sensitivity("hg", optim_params, df, additionalParameters,
+      sensitivity("gda", optim_params, df, additionalParameters,
                         sense_bounds, runAsShiny = com_sense)
     }, seed = TRUE) 
     promises::`%...>%`(result_sense, result_val_sense())
@@ -267,19 +269,19 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
                       })
     NULL
   })
-  observeEvent(input$HG_cancel_sense,{
+  observeEvent(input$GDA_cancel_sense,{
     com_sense$interrupt()
   })
-  observeEvent(input$HG_status_sense, {
+  observeEvent(input$GDA_status_sense, {
     req(nclicks_sense() != 0)
-    session$sendCustomMessage(type = "HGupdateFieldSense",
+    session$sendCustomMessage(type = "GDAupdateFieldSense",
                    list(message = com_sense$getStatus() ))
   })
-  output$HG_sensi <- renderPlot({
+  output$GDA_sensi <- renderPlot({
     req(inherits(result_val_sense(), "ggplot")) 
     result_val_sense()
   })
-  output$HG_sensi_download <- downloadHandler(
+  output$GDA_sensi_download <- downloadHandler(
     filename = function() {
       "result.xlsx"
     },
@@ -299,5 +301,5 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
   )
 
 
-	})
+  })
 }
