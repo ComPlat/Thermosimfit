@@ -13,6 +13,4 @@ library(future)
 library(promises)
 library(tsf)
 
-source("./app/ui.R")
-source("./app/server.R")
-shinyApp(ui, server)
+shinyApp(tsf:::uiInterface(), tsf:::server)
