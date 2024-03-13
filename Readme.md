@@ -3,6 +3,10 @@
 This repository contains tools for optimizing unknown parameters in algebraic systems that describe thermodynamic bindings of dyes and guests to a host.
 The package includes a script interface and a Shiny app for convenient usage.
 
+## Documentation
+
+[Documentation](tsf/docs/index.html)
+
 ## Features
 
 - Identification of specific parameters (kHD or kGuest, I0, IHD, and ID) of different algebraic systems using the R package tsf.
@@ -16,8 +20,6 @@ The package includes a script interface and a Shiny app for convenient usage.
 - In silico signal calculation based on the formula: SignalInSilico = I0 + IHD[hd] + ID[d].
 - Comparison of the in silico signal to the measured signal, with the error returned by the loss function indicating the match quality.
 
-## Usage
+## Installation
 
-- Clone the repository.
-- Install required dependencies.
-- Utilize the script interface or launch the Shiny app for parameter optimization in thermodynamic systems.
+- remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf")

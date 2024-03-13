@@ -1,0 +1,7 @@
+pandoc: 3.0.1
+pkgdown: 2.0.7
+pkgdown_sha: ~
+articles:
+  Thermosimfit: Thermosimfit.html
+last_built: 2024-03-13T07:32Z
+
