@@ -1,45 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>/404.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/404.html</loc>
   </url>
   <url>
-    <loc>/articles/Thermosimfit.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/articles/Thermosimfit.html</loc>
   </url>
   <url>
-    <loc>/articles/index.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/articles/index.html</loc>
   </url>
   <url>
-    <loc>/authors.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/authors.html</loc>
   </url>
   <url>
-    <loc>/index.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/index.html</loc>
   </url>
   <url>
-    <loc>/reference/Communicator.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/Communicator.html</loc>
   </url>
   <url>
-    <loc>/reference/ErrorClass.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/ErrorClass.html</loc>
   </url>
   <url>
-    <loc>/reference/convertToNum.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/convertToNum.html</loc>
   </url>
   <url>
-    <loc>/reference/createPolynom.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/createPolynom.html</loc>
   </url>
   <url>
-    <loc>/reference/index.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/index.html</loc>
   </url>
   <url>
-    <loc>/reference/opti.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/opti.html</loc>
   </url>
   <url>
-    <loc>/reference/pso.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/pso.html</loc>
   </url>
   <url>
-    <loc>/reference/runApp.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/runApp.html</loc>
   </url>
   <url>
-    <loc>/reference/sensitivity.html</loc>
+    <loc>https://complat.github.io/Thermosimfit/reference/sensitivity.html</loc>
   </url>
 </urlset>

@@ -3,5 +3,8 @@ pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
   Thermosimfit: Thermosimfit.html
-last_built: 2024-03-13T07:32Z
+last_built: 2024-03-13T07:44Z
+urls:
+  reference: https://complat.github.io/Thermosimfit/reference
+  article: https://complat.github.io/Thermosimfit/articles
 

@@ -22,4 +22,6 @@ The package includes a script interface and a Shiny app for convenient usage.
 
 ## Installation
 
-- remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf")
+```
+remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf")
+```
