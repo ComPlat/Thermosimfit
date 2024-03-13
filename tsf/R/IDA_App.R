@@ -158,7 +158,6 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     ngen <- input$IDA_ngen
     topo <- input$IDA_topology
     et <- input$IDA_threshold
-
     result <- future({
       opti("ida", lb, ub, df, additionalParameters,
             npop, ngen, topo, et, com)

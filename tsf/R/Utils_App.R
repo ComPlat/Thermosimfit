@@ -5,7 +5,7 @@
 #'        be evaluated to a number the number is returned. Otherwise an error is returned.
 convertToNum <- function(l) {
   res <- sapply(l, function(x) {
-    ast <- try(getAST(str2lang(x)))
+    e <- try(tsf:::getAST(str2lang(x)))
     if (is(e, "ErrorClass")) {
       showNotification(e$message)
       return("Error")
@@ -13,8 +13,17 @@ convertToNum <- function(l) {
       showNotification(e)
       return("Error")
     } else {
-      return(eval(parse(text = x)))
+      return(x)  
     }
+  })
+
+  res <- sapply(l, function(x) {
+    res <- try(eval(parse(text = x)))
+    if(inherits(res, "try-error")) {
+      showNotification(res)
+      return("Error")
+    } 
+    return(res) 
   })
   return(res)
 }

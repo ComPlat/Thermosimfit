@@ -1,7 +1,9 @@
-#!/bin/bash
-sudo systemctl stop shiny-server
-var=`docker container ls  | grep 'tsf' | awk '{print $1}'`
-docker stop $var
+#!/bin/bash	
 docker build -t tsf .
-docker run --net=host --rm -p 3838:3838 tsf 
+docker tag tsf konradkraemer/tsf:latest
+docker push konradkraemer/tsf:latest
 
+# pull in 193.196.36.224
+# docker run -p 3838:3838 konradkraemer/tsf:latest  
+
+# 193.196.36.224:3838

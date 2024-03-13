@@ -13,4 +13,11 @@ library(future)
 library(promises)
 library(tsf)
 
-shinyApp(tsf:::uiInterface(), tsf:::server)
+options(shiny.host = "0.0.0.0")
+#options(shiny.port = 3838)
+
+#source("/home/ui.R")
+#source("/home/server.R")
+#shinyApp(ui, server)
+
+tsf::runApp(3838)
