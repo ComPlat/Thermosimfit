@@ -5,7 +5,7 @@ The package includes a script interface and a Shiny app for convenient usage.
 
 ## Documentation
 
-[Documentation](tsf/docs/index.html)
+[Documentation](https://complat.github.io/Thermosimfit/)
 
 ## Features
 
