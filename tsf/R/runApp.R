@@ -23,7 +23,8 @@ runApp <- function(port) {
       useShinyjs(),
       sidebarMenu(
         menuItem("Data import", tabName = "data", icon = icon("table")),
-        menuItem("HG model", tabName = "HG", icon = icon("table")),
+        menuItem("DBA (const. host) model", tabName = "HG", icon = icon("table")),
+        menuItem("DBA (const. dye) model", tabName = "DBA", icon = icon("table")),
         menuItem("GDA model", tabName = "GDA", icon = icon("table")),
         menuItem("IDA model", tabName = "IDA", icon = icon("table"))
       )
@@ -68,6 +69,7 @@ runApp <- function(port) {
           )
         ),
         hgUI("HG"),
+        dbaUI("DBA"),
         idaUI("IDA"),
         gdaUI("GDA")
       )

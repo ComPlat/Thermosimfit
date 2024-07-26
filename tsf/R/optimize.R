@@ -4,15 +4,18 @@
 #' @import rootSolve
 #' @import ggplot2
 #' @import patchwork
-#' @param case is a character describing which system should be investigated. Either: "hg", "ida" or "gda".
+#' @param case is a character describing which system should be investigated. Either:
+#' "dba_host_const",
+#' "dba_dye_const", "ida" or "gda".
 #' @param lowerBounds is a numeric vector defining the lower boundaries of the parameter.
-#'        In case of *hg* the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
+#'        In case of *dba_dye_const* or *dba_host_const the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
 #'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
 #' @param upperBounds is a numeric vector defining the upper boundaries of the parameter.
 #'        The order is the same as for the lower boundaries.
 #' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.
 #' @param additionalParameters are required parameters which are specific for each case.
-#'        In case of *hg* a numeric vector of length 1 is expected which contains the concentration of the host.
+#'        In case of *dba_host_const* a numeric vector of length 1 is expected which contains the concentration of the host.
+#'        In case of *dba_dye_const* a numeric vector of length 1 is expected which contains the concentration of the dye.
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
 #'        In case of *gda* a numeric vector of length 3 is expected which contains the concentration of the host, guest and the *khd* parameter.
 #' @param npop is an optional integer argument defining the number of particles during optimization. The default value is set to 40.
@@ -29,8 +32,8 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
   if (!is.character(case)) {
     return(ErrorClass$new("case has to be of type character"))
   }
-  if (!(case %in% c("hg", "ida", "gda"))) {
-    return(ErrorClass$new("case is neither hg, ida or gda"))
+  if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
+    return(ErrorClass$new("case is neither dba_dye_const, dba_host_const, ida or gda"))
   }
   if (!is.numeric(lowerBounds)) {
     return(ErrorClass$new("lowerBounds have to be of type numeric"))
@@ -106,12 +109,18 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
 
   lossFct <- NULL
   env <- new.env()
-  if (case == "hg") {
+  if (case == "dba_host_const") {
     names(df) <- c("dye", "signal")
     lossFct <- lossFctHG
     env$dye <- df[, 1]
     env$signal <- df[, 2]
     env$h0 <- additionalParameters[1]
+  } else if (case == "dba_dye_const") {
+    names(df) <- c("host", "signal")
+    lossFct <- lossFctDBA
+    env$host <- df[, 1]
+    env$signal <- df[, 2]
+    env$d0 <- additionalParameters[1]
   } else if (case == "ida") {
     names(df) <- c("guest", "signal")
     lossFct <- lossFctIDA
@@ -135,7 +144,7 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
     errorThreshold, Topo, FALSE, runAsShiny
   )
 
-  if (case == "hg") {
+  if (case == "dba_dye_const" || case == "dba_host_const") {
     df$signal_insilico <- res[[1]][, 1]
     df$d <- res[[1]][, 2]
     df$hd <- res[[1]][, 3]

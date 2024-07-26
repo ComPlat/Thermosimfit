@@ -32,3 +32,4 @@ res: elim_vars(create_eqns(), elim_vars);
 test: res[1];
 print(test[1]);
 print(test[2]);
+
