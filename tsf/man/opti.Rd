@@ -18,10 +18,12 @@ opti(
 )
 }
 \arguments{
-\item{case}{is a character describing which system should be investigated. Either: "hg", "ida" or "gda".}
+\item{case}{is a character describing which system should be investigated. Either:
+"dba_host_const",
+"dba_dye_const", "ida" or "gda".}
 
 \item{lowerBounds}{is a numeric vector defining the lower boundaries of the parameter.
-In case of \emph{hg} the order of the parameters is: \emph{khd}, \emph{I0}, \emph{IHD} and \emph{ID}
+In case of \emph{dba_dye_const} or *dba_host_const the order of the parameters is: \emph{khd}, \emph{I0}, \emph{IHD} and \emph{ID}
 In case of \emph{ida} and \emph{ga} the order of the parameters is: \emph{kg}, \emph{I0}, \emph{IHD} and \emph{ID}.}
 
 \item{upperBounds}{is a numeric vector defining the upper boundaries of the parameter.
@@ -30,7 +32,8 @@ The order is the same as for the lower boundaries.}
 \item{path}{is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.}
 
 \item{additionalParameters}{are required parameters which are specific for each case.
-In case of \emph{hg} a numeric vector of length 1 is expected which contains the concentration of the host.
+In case of \emph{dba_host_const} a numeric vector of length 1 is expected which contains the concentration of the host.
+In case of \emph{dba_dye_const} a numeric vector of length 1 is expected which contains the concentration of the dye.
 In case of \emph{ida} a numeric vector of length 3 is expected which contains the concentration of the host, dye and the \emph{khd} parameter.
 In case of \emph{gda} a numeric vector of length 3 is expected which contains the concentration of the host, guest and the \emph{khd} parameter.}
 
@@ -52,5 +55,5 @@ Optimize algebraic systems which describe thermodynamic binding systems
 }
 \examples{
 path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
-opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458)) 
+opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458))
 }

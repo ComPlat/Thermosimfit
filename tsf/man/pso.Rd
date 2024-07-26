@@ -48,16 +48,18 @@ Interface to the particle swarm optimization (pso) algorithm.
 }
 \examples{
 rosenbrock <- function(parameter, env, Ignore) {
- value <- 0
- for (i in 1:(length(parameter) - 1)) {
-   value <- value + 
-     100*(parameter[i + 1] - parameter[i]^2)^2 +
-     (1 - parameter[i])^2
- }
-return(value)
+  value <- 0
+  for (i in 1:(length(parameter) - 1)) {
+    value <- value +
+      100 * (parameter[i + 1] - parameter[i]^2)^2 +
+      (1 - parameter[i])^2
+  }
+  return(value)
 }
 
 set.seed(1234)
-res <- tsf::pso(new.env(), rep(-10, 3), rep(10, 3), rosenbrock, 1000, 40,
-                 0.00001, TRUE, FALSE)
+res <- tsf::pso(
+  new.env(), rep(-10, 3), rep(10, 3), rosenbrock, 1000, 40,
+  0.00001, TRUE, FALSE
+)
 }

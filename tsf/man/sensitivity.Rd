@@ -15,7 +15,8 @@ sensitivity(
 )
 }
 \arguments{
-\item{case}{is a character describing which system should be investigated. Either: "hg", "ida" or "gda".}
+\item{case}{is a character describing which system should be investigated. Either:
+"dba_host_const", "dba_dye_const", "ida" or "gda".}
 
 \item{parameters}{is a numeric vector containing already optimized parameter.
 In case of \emph{hg} the order of the parameters is: \emph{khd}, \emph{I0}, \emph{IHD} and \emph{ID}
@@ -42,6 +43,6 @@ Optimize algebraic systems which describe thermodynamic binding systems
 }
 \examples{
 path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
-res <- opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458)) 
+res <- opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458))
 sensitivity("ida", res[[2]], path, c(4.3, 6.0, 7079458), 20)
 }

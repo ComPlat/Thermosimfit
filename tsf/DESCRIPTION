@@ -24,7 +24,7 @@ Imports:
   promises
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 URL: https://complat.github.io/Thermosimfit/

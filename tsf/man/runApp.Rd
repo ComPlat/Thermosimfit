@@ -17,5 +17,5 @@ algebraic systems describing thermodynamic binding systems
 \examples{
 \donttest{
 tsf::runApp()
-} 
+}
 }
