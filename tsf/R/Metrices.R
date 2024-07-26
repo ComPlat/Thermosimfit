@@ -19,3 +19,4 @@ metrices <- function(y_true, y_pred) {
     mae = mae, r2 = r2, r2adjusted = r2adjusted
   ))
 }
+

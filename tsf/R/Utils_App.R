@@ -9,23 +9,42 @@ convertToNum <- function(l) {
     if (is(e, "ErrorClass")) {
       showNotification(e$message)
       return("Error")
-    } else if(inherits(e, "try-error")) {
+    } else if (inherits(e, "try-error")) {
       showNotification(e)
       return("Error")
     } else {
-      return(x)  
+      return(x)
     }
   })
 
   res <- sapply(l, function(x) {
     res <- try(eval(parse(text = x)))
-    if(inherits(res, "try-error")) {
+    if (inherits(res, "try-error")) {
       showNotification(res)
       return("Error")
-    } 
-    return(res) 
+    }
+    return(res)
   })
   return(res)
 }
 
+format_scientific <- function(x) {
+  formatC(x, format = "e", digits = 3)
+}
 
+flush <- function(f) {
+  file_con <- file(f, open = "w")
+  close(file_con)
+}
+
+extract_iter <- function(s) {
+  if (!is.character(s)) {
+    return()
+  }
+  if (length(s) == 0) {
+    return()
+  }
+  a <- strsplit(s, ";")[[1]]
+  a <- strsplit(a, "/")[[1]]
+  as.numeric(a[[1]])
+}
