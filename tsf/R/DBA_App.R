@@ -25,7 +25,7 @@ dbaUI <- function(id) {
     ),
     fluidRow(
       box(
-        textInput(NS(id, "DBA_H0"), "Host conc. [M]", value = 0),
+        textInput(NS(id, "DBA_D0"), "Dye conc. [M]", value = 0),
         box(
           title = "Particle swarm options",
           collapsible = TRUE, collapsed = TRUE,
@@ -144,7 +144,7 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       result_val(data.frame(Status = "Running..."))
       com$running()
       session$sendCustomMessage(type = "DBAclearField", list(message = NULL, arg = 1))
-      req(input$DBA_H0)
+      req(input$DBA_D0)
       req(input$DBA_npop)
       req(input$DBA_ngen)
       req(input$DBA_threshold)
@@ -162,7 +162,7 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       ub <- c(input$DBA_kHD_ub, input$DBA_I0_ub, input$DBA_IHD_ub, input$DBA_ID_ub)
       ub <- convertToNum(ub)
       req(!("Error" %in% ub))
-      additionalParameters <- c(input$DBA_H0)
+      additionalParameters <- c(input$DBA_D0)
       additionalParameters <- convertToNum(additionalParameters)
       req(!("Error" %in% additionalParameters))
       npop <- input$DBA_npop
@@ -173,7 +173,7 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       result <- future(
         {
           opti(
-            "dba_const_dye", lb, ub, df, additionalParameters,
+            "dba_dye_const", lb, ub, df, additionalParameters,
             npop, ngen, topo, et, com
           )
         },
@@ -205,7 +205,6 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       req(nclicks() != 0)
       m <- com$getData()
       i <- iter()
-
       if (!is.null(i)) {
         if (i != extract_iter(m)) {
           session$sendCustomMessage(

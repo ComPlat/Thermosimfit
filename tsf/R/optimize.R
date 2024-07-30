@@ -144,7 +144,7 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
     errorThreshold, Topo, FALSE, runAsShiny
   )
 
-  if (case == "dba_dye_const" || case == "dba_host_const") {
+  if (case == "dba_host_const") {
     df$signal_insilico <- res[[1]][, 1]
     df$d <- res[[1]][, 2]
     df$hd <- res[[1]][, 3]
@@ -154,6 +154,18 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
     )
     return(list(
       df, params, plotTSF(df, "dye"),
+      metrices(df$signal, df$signal_insilico)
+    ))
+  } else if (case == "dba_dye_const") {
+    df$signal_insilico <- res[[1]][, 1]
+    df$d <- res[[1]][, 2]
+    df$hd <- res[[1]][, 3]
+    params <- data.frame(
+      khd = res[[2]][1], I0 = res[[2]][2],
+      IHD = res[[2]][3], ID = res[[2]][4]
+    )
+    return(list(
+      df, params, plotTSF(df, "host"),
       metrices(df$signal, df$signal_insilico)
     ))
   } else if (case == "ida") {
