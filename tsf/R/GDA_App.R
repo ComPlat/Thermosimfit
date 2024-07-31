@@ -135,6 +135,10 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     result_val_sense <- reactiveVal()
     iter <- reactiveVal()
 
+    fl <- reactive({
+      flush(com$result)
+      return()
+    })
     observeEvent(input$GDA_Start_Opti, {
       if (nclicks() != 0 | nclicks_sense() != 0) {
         showNotification("Already running analysis")
@@ -173,7 +177,7 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       topo <- input$GDA_topology
       et <- input$GDA_threshold
 
-      flush(com$result)
+      fl()
       result <- future(
         {
           opti(
@@ -319,7 +323,7 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       req(!("Error" %in% additionalParameters))
       optim_params <- result_val()[[2]]
       sense_bounds <- input$GDA_sens_bounds
-      flush(com$result)
+      fl()
       result_sense <- future(
         {
           sensitivity("gda", optim_params, df, additionalParameters,

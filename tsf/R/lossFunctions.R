@@ -22,7 +22,7 @@ lossFctDBA <- function(parameter, env, eval = FALSE) {
 
   for (i in seq_along(host)) {
     h0 <- host[i]
-    hdRoot <- uniroot.all(hdFct, c(0, min(h0, d0)), tol = .Machine$double.eps^15, maxiter = 10000, n = 1000)
+    hdRoot <- uniroot.all(hdFct, c(0, h0), tol = .Machine$double.eps^15, maxiter = 10000, n = 1000)
     if (length(hdRoot) == 0) {
       return(.Machine$double.xmax)
     }
@@ -41,7 +41,6 @@ lossFctDBA <- function(parameter, env, eval = FALSE) {
     }
     if (length(dRoot) > 1) dRoot <- dRoot[length(dRoot)]
     if (dRoot > d0) dRoot <- d0
-    if (dRoot > h0) dRoot <- h0
     d[i] <- dRoot
     hd[i] <- hdRoot
   }

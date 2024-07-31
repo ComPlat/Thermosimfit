@@ -138,6 +138,10 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     result_val_sense <- reactiveVal()
     iter <- reactiveVal()
 
+    fl <- reactive({
+      flush(com$result)
+      return()
+    })
     observeEvent(input$IDA_Start_Opti, {
       if (nclicks() != 0 | nclicks_sense() != 0) {
         showNotification("Already running analysis")
@@ -175,7 +179,7 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       ngen <- input$IDA_ngen
       topo <- input$IDA_topology
       et <- input$IDA_threshold
-      flush(com$result)
+      fl()
       iter <- 1
       result <- future(
         {
@@ -323,7 +327,7 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       req(!("Error" %in% additionalParameters))
       optim_params <- result_val()[[2]]
       sense_bounds <- input$IDA_sens_bounds
-      flush(com$result)
+      fl()
       result_sense <- future(
         {
           sensitivity("ida", optim_params, df, additionalParameters,

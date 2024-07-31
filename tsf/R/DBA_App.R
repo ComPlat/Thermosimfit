@@ -133,6 +133,11 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     result_val_sense <- reactiveVal()
     iter <- reactiveVal()
 
+    fl <- reactive({
+      flush(com$result)
+      return()
+    })
+
     observeEvent(input$DBA_Start_Opti, {
       if (nclicks() != 0 | nclicks_sense() != 0) {
         showNotification("Already running analysis")
@@ -169,7 +174,7 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       ngen <- input$DBA_ngen
       topo <- input$DBA_topology
       et <- input$DBA_threshold
-      flush(com$result)
+      fl()
       result <- future(
         {
           opti(
@@ -313,10 +318,10 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       req(!("Error" %in% additionalParameters))
       optim_params <- result_val()[[2]]
       sense_bounds <- input$DBA_sens_bounds
-      flush(com$result)
+      fl()
       result_sense <- future(
         {
-          sensitivity("dba_const_dye", optim_params, df, additionalParameters,
+          sensitivity("dba_dye_const", optim_params, df, additionalParameters,
             sense_bounds,
             runAsShiny = com_sense
           )

@@ -133,6 +133,10 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     result_val_sense <- reactiveVal()
     iter <- reactiveVal()
 
+    fl <- reactive({
+      flush(com$result)
+      return()
+    })
     observeEvent(input$HG_Start_Opti, {
       if (nclicks() != 0 | nclicks_sense() != 0) {
         showNotification("Already running analysis")
@@ -169,7 +173,7 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       ngen <- input$HG_ngen
       topo <- input$HG_topology
       et <- input$HG_threshold
-      flush(com$result)
+      fl()
       result <- future(
         {
           opti(
@@ -314,7 +318,7 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       req(!("Error" %in% additionalParameters))
       optim_params <- result_val()[[2]]
       sense_bounds <- input$HG_sens_bounds
-      flush(com$result)
+      fl()
       result_sense <- future(
         {
           sensitivity("dba_host_const", optim_params, df, additionalParameters,
