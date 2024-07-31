@@ -14,7 +14,7 @@ res <- opti(
     ID = 0
   ),
   upperBounds = c(
-    kHD = 10^5,
+    kHD = 10^8,
     I0 = 10^8,
     IHD = 10^8,
     ID = 10^8
@@ -29,4 +29,4 @@ res <- opti(
   errorThreshold = 0.7
 )
 
-res[[3]]
+res

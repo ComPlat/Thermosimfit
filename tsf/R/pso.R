@@ -72,6 +72,12 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   if (length(lb) <= 0) {
     return(ErrorClass$new("lb and ub need at least one element"))
   }
+  if (any(lb) < 0) {
+    return(ErrorClass$new("lb should be at least 0"))
+  }
+  if (any(ub) < 0) {
+    return(ErrorClass$new("ub should be at least 0"))
+  }
   if (ngen <= 10) {
     return(ErrorClass$new("ngen has to be at least 10"))
   }
@@ -118,11 +124,21 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   memory <- matrix(0, nrow = ngen * npop, ncol = npar)
   error_memory <- numeric(ngen * npop)
 
+  lb <- ifelse(lb == 0, 10^-15, lb)
+  ub <- ifelse(ub == 0, 10^-15, ub)
+  lb <- log(lb)
+  ub <- log(ub)
+
   for (i in seq(npop)) {
     swarm[i, ] <- runif(npar, min = lb, max = ub)
-    swarm_errors[i] <- loss(swarm[i, ], env)
+    swarm_errors[i] <- loss(exp(swarm[i, ]), env)
     swarm_bests[i] <- swarm_errors[i]
   }
+
+  swarm <- exp(swarm)
+
+  lb <- exp(lb)
+  ub <- exp(ub)
 
   global_best <- which.min(swarm_bests)
   global_best_vec <- swarm[global_best, ]
