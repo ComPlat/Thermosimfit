@@ -26,7 +26,15 @@ runApp <- function(port) {
         menuItem("DBA (const. host) model", tabName = "HG", icon = icon("table")),
         menuItem("DBA (const. dye) model", tabName = "DBA", icon = icon("table")),
         menuItem("GDA model", tabName = "GDA", icon = icon("table")),
-        menuItem("IDA model", tabName = "IDA", icon = icon("table"))
+        menuItem("IDA model", tabName = "IDA", icon = icon("table")),
+        menuItem("Info",
+          tabName = "info", icon = icon("info-circle"),
+          p(
+            "For more info, visit:",
+            br(),
+            tags$a(href = "https://suprabank.org/glossary", "Suprabank Glossary")
+          )
+        )
       )
     ),
     dashboardBody(
