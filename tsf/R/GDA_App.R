@@ -29,7 +29,7 @@ gdaUI <- function(id) {
         textInput(NS(id, "GDA_G0"), "Guest conc. [M]", value = "0"),
         textInput(NS(id, "GDA_kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "0"),
         box(
-          title = "Particle swarm options",
+          title = "Advanced options",
           collapsible = TRUE, collapsed = TRUE,
           box(
             numericInput(NS(id, "GDA_npop"), "Number of particles", value = 40),
@@ -62,14 +62,28 @@ gdaUI <- function(id) {
           textInput(NS(id, "GDA_I0_ub"), "I(0) value upper boundary", value = 1e08)
         ),
         box(
-          textInput(NS(id, "GDA_IHD_lb"), "I(HD) value lower boundary [1/M]", value = 0),
+          textInput(NS(id, "GDA_IHD_lb"), label = tagList(
+            "I(HD) value lower boundary [1/M]",
+            actionButton(NS(id, "AdviceUBIHD"), "Help",
+              icon = icon("question-circle"),
+              style = "background-color:transparent; border:none;"
+            )
+          ), value = 0),
           textInput(NS(id, "GDA_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
         ),
         box(
           textInput(NS(id, "GDA_ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
           textInput(NS(id, "GDA_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
         ),
-        width = 6, title = "Boundaries", solidHeader = TRUE,
+        width = 6,
+        title = tagList(
+          "Boundaries",
+          actionButton(NS(id, "helpButton"), "Help",
+            icon = icon("question-circle"),
+            style = "background-color:transparent; border:none;"
+          )
+        ),
+        solidHeader = TRUE,
         status = "warning", height = 550
       )
     ),
@@ -81,7 +95,7 @@ gdaUI <- function(id) {
             box(
               box(
                 actionButton(NS(id, "GDA_Start_Opti"), "Start Optimization"),
-                actionButton(NS(id, "GDA_cancel"), "Cancel"),
+                actionButton(NS(id, "GDA_cancel"), "Stop Optimization"),
                 actionButton(NS(id, "GDA_status"), "Get Status"),
                 downloadButton(NS(id, "GDA_download"), "Save result of optimization"),
                 verbatimTextOutput(NS(id, "GDA_output")),
@@ -132,6 +146,24 @@ gdaUI <- function(id) {
 
 gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
   moduleServer(id, function(input, output, session) {
+    observeEvent(input$helpButton, {
+      showModal(modalDialog(
+        title = "Help",
+        HTML("Conduct two optimizations. First with wide boundaries. \n
+            Afterwards chose narrow boundaries based on the result of the first optimization."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    })
+    observeEvent(input$AdviceUBIHD, {
+      showModal(modalDialog(
+        title = "Help",
+        HTML("Set upper boundary to IHD * conc ≈ Signal"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    })
+
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
     iter <- reactiveVal()
@@ -258,7 +290,10 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       names(res)[3] <- c("MeanAbsoluteError")
       names(res)[4] <- c("R<sup>2</sup>")
       names(res)[5] <- c("R<sup>2</sup> adjusted")
-      datatable(res, escape = FALSE) |>
+      datatable(res,
+        escape = FALSE,
+        caption = "Error Metrics: Comparison of in silico signal and seasured signal"
+      ) |>
         formatSignif(columns = 1:ncol(res), digits = 6)
     })
     output$GDA_download <- downloadHandler(
