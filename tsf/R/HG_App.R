@@ -31,7 +31,7 @@ hgUI <- function(id) {
           collapsible = TRUE, collapsed = TRUE,
           box(
             numericInput(NS(id, "HG_npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "HG_ngen"), "Number of generations", value = 200)
+            numericInput(NS(id, "HG_ngen"), "Number of generations", value = 1000)
           ),
           box(
             selectInput(NS(id, "HG_topology"), "Topology of particle swarm",
@@ -39,6 +39,7 @@ hgUI <- function(id) {
                 "star" = "star",
                 "random arbitrary neighberhood" = "random"
               ),
+              selected = "random",
               selectize = FALSE
             ),
             numericInput(NS(id, "HG_threshold"), "Threshold of the error", value = 0.00001)
@@ -51,20 +52,20 @@ hgUI <- function(id) {
       ),
       box(
         box(
-          textInput(NS(id, "HG_kHD_lb"), HTML("K<sub>a</sub>(HD) value lower boundary [1/M]"), value = 0),
-          textInput(NS(id, "HG_kHD_ub"), HTML("K<sub>a</sub>(HD) value upper boundary [1/M]"), value = 1e09)
+          textInput(NS(id, "HG_kHD_lb"), HTML("K<sub>a</sub>(HD) value lower boundary [1/M]"), value = 10),
+          textInput(NS(id, "HG_kHD_ub"), HTML("K<sub>a</sub>(HD) value upper boundary [1/M]"), value = 1e08)
         ),
         box(
           textInput(NS(id, "HG_I0_lb"), "I(0) value lower boundary", value = 0),
-          textInput(NS(id, "HG_I0_ub"), "I(0) value upper boundary", value = 1)
+          textInput(NS(id, "HG_I0_ub"), "I(0) value upper boundary", value = 1e08)
         ),
         box(
           textInput(NS(id, "HG_IHD_lb"), "I(HD) value lower boundary [1/M]", value = 0),
-          textInput(NS(id, "HG_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e06)
+          textInput(NS(id, "HG_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
         ),
         box(
           textInput(NS(id, "HG_ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
-          textInput(NS(id, "HG_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e06)
+          textInput(NS(id, "HG_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
         ),
         width = 6, title = "Boundaries", solidHeader = TRUE,
         status = "warning", height = 450

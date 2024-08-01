@@ -60,11 +60,14 @@ runApp <- function(port) {
         tabItem(
           tabName = "data",
           box(
-            fileInput("upload", "Upload a file (csv) \n
-              which contains two columns: \n
-               1. the component which is increased [M] \n
-               2. the corresponding signal [unitless]
-              "),
+            fileInput("upload",
+              label = HTML('<div style="font-size:16px; font-weight:bold;">
+                                          Upload a file (csv)<br>
+                                          which contains two columns:<br>
+                                          1. the component which is increased [M]<br>
+                                          2. the corresponding signal [unitless]
+                                          </div>')
+            ),
             textInput("op", "Operations", value = "var / 1000"),
             textInput("new_col", "Name of new variable", value = "var"),
             actionButton("mod", "Modify"),

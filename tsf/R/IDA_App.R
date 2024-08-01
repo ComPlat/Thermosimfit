@@ -33,7 +33,7 @@ idaUI <- function(id) {
           collapsible = TRUE, collapsed = TRUE,
           box(
             numericInput(NS(id, "IDA_npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 200)
+            numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 1000)
           ),
           box(
             selectInput(NS(id, "IDA_topology"), "Topology of particle swarm",
@@ -41,6 +41,7 @@ idaUI <- function(id) {
                 "star" = "star",
                 "random arbitrary neighberhood" = "random"
               ),
+              selected = "random",
               selectize = FALSE
             ),
             numericInput(NS(id, "IDA_threshold"),
@@ -56,20 +57,20 @@ idaUI <- function(id) {
       ),
       box(
         box(
-          textInput(NS(id, "IDA_kHD_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 0),
-          textInput(NS(id, "IDA_kHD_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e09)
+          textInput(NS(id, "IDA_kHD_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
+          textInput(NS(id, "IDA_kHD_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
         ),
         box(
           textInput(NS(id, "IDA_I0_lb"), "I(0) value lower boundary", value = 0),
-          textInput(NS(id, "IDA_I0_ub"), "I(0) value upper boundary", value = 1)
+          textInput(NS(id, "IDA_I0_ub"), "I(0) value upper boundary", value = 1e08)
         ),
         box(
           textInput(NS(id, "IDA_IHD_lb"), "I(HD) value lower boundary [1/M]", value = 0),
-          textInput(NS(id, "IDA_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e06)
+          textInput(NS(id, "IDA_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
         ),
         box(
           textInput(NS(id, "IDA_ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
-          textInput(NS(id, "IDA_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e06)
+          textInput(NS(id, "IDA_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
         ),
         width = 6, title = "Boundaries", solidHeader = TRUE,
         status = "warning", height = 550

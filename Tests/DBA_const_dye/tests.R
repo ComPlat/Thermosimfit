@@ -14,10 +14,10 @@ res <- opti(
     ID = 0
   ),
   upperBounds = c(
-    kHD = 10^8,
-    I0 = 10^8,
-    IHD = 10^8,
-    ID = 10^8
+    kHD = 10^9,
+    I0 = 10^9,
+    IHD = 10^9,
+    ID = 10^9
   ),
   df,
   additionalParameters = c(
