@@ -2,20 +2,22 @@ server <- function(input, output, session) {
   # data import
   # ============================================================================
   data <- reactiveValues(df = NULL)
-  output$df <- renderDT({
+
+  observeEvent(input$upload, {
     req(input$upload)
     df <- importData(input$upload$datapath)
     if (is.data.frame(df)) {
       if (ncol(df) != 2) {
-        showNotification("Data has wrong dimensions two columns were expected")
+        showNotification("Data has wrong dimensions, two columns were expected")
       } else if (nrow(df) == 0) {
         showNotification("Data has 0 rows.")
       } else {
         names(df) <- c("var", "signal")
         data$df <- df
+        output$df <- renderDT(data$df)
       }
     } else {
-      showNotification("File can not be used. Upload into R failed!", duration = 0)
+      showNotification("File cannot be used. Upload into R failed!", duration = 0)
     }
   })
 
@@ -81,4 +83,3 @@ server <- function(input, output, session) {
     GDA_com_sense$destroy()
   })
 }
-
