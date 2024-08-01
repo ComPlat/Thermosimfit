@@ -136,7 +136,6 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   }
 
   swarm <- exp(swarm)
-
   lb <- exp(lb)
   ub <- exp(ub)
 
