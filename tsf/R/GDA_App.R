@@ -44,18 +44,19 @@ gdaUI <- function(id) {
               selected = "random",
               selectize = FALSE
             ),
-            numericInput(NS(id, "GDA_threshold"), "Threshold of the error", value = 0.00001)
+            numericInput(NS(id, "GDA_threshold"), "Threshold of the error", value = 0.00001),
+            numericInput(NS(id, "Seed"), "Seed which should be set", value = NULL)
           ),
           width = 12
         ),
         width = 6,
         title = "Parameter", solidHeader = TRUE,
-        status = "warning", height = 550
+        status = "warning", height = 575
       ),
       box(
         box(
-          textInput(NS(id, "IDA_kHD_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
-          textInput(NS(id, "IDA_kHD_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
+          textInput(NS(id, "GDA_kHD_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
+          textInput(NS(id, "GDA_kHD_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
         ),
         box(
           textInput(NS(id, "GDA_I0_lb"), "I(0) value lower boundary", value = 0),
@@ -84,11 +85,12 @@ gdaUI <- function(id) {
           )
         ),
         solidHeader = TRUE,
-        status = "warning", height = 550
+        status = "warning", height = 575
       )
     ),
     fluidRow(
       tabBox(
+        id = NS(id, "ResultPanel"),
         tabPanel(
           "Optimization",
           fluidRow(
@@ -98,6 +100,9 @@ gdaUI <- function(id) {
                 actionButton(NS(id, "GDA_cancel"), "Stop Optimization"),
                 actionButton(NS(id, "GDA_status"), "Get Status"),
                 downloadButton(NS(id, "GDA_download"), "Save result of optimization"),
+                selectInput(NS(id, "file_type"), "Choose file type:",
+                  choices = c("Excel" = "xlsx", "CSV" = "csv")
+                ),
                 verbatimTextOutput(NS(id, "GDA_output")),
                 width = 12
               ),
@@ -166,6 +171,7 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
 
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
+    add_info <- reactiveVal()
     iter <- reactiveVal()
 
     fl <- reactive({
@@ -209,12 +215,14 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       ngen <- input$GDA_ngen
       topo <- input$GDA_topology
       et <- input$GDA_threshold
-
+      seed <- input$Seed
+      if (is.na(seed)) seed <- as.numeric(Sys.time())
       fl()
       result <- future(
         {
           opti(
             "gda", lb, ub, df, additionalParameters,
+            seed,
             npop, ngen, topo, et, com
           )
         },
@@ -237,14 +245,26 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
         }
       )
 
+      add_info(list(
+        lb, ub,
+        additionalParameters, npop, ngen, topo, et, seed
+      ))
       NULL
     })
     observeEvent(input$GDA_cancel, {
+      exportTestValues(
+        cancel_clicked = TRUE
+      )
       com$interrupt()
     })
     observeEvent(input$GDA_status, {
       req(nclicks() != 0)
       m <- com$getData()
+      exportTestValues(
+        status1 = {
+          com$getData()
+        }
+      )
       i <- iter()
 
       if (!is.null(i)) {
@@ -262,6 +282,9 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
             list(message = "Initialisation")
           )
         }
+        exportTestValues(
+          status2 = "Initialisation"
+        )
         iter(extract_iter(m))
       }
     })
@@ -273,6 +296,9 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       names(res)[2] <- c("I(0)")
       names(res)[3] <- c("I(HD)")
       names(res)[4] <- c("I(D)")
+      exportTestValues(
+        df_params = res
+      )
       datatable(res, escape = FALSE) |>
         formatSignif(columns = 1:ncol(res), digits = 3)
     })
@@ -290,6 +316,9 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       names(res)[3] <- c("MeanAbsoluteError")
       names(res)[4] <- c("R<sup>2</sup>")
       names(res)[5] <- c("R<sup>2</sup> adjusted")
+      exportTestValues(
+        df_metrices = res
+      )
       datatable(res,
         escape = FALSE,
         caption = "Error Metrics: Comparison of in silico signal and seasured signal"
@@ -298,43 +327,161 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     })
     output$GDA_download <- downloadHandler(
       filename = function() {
-        "result.xlsx"
+        paste("result", switch(input$file_type,
+          xlsx = ".xlsx",
+          csv = ".csv"
+        ), sep = "")
       },
       content = function(file) {
         req(length(result_val()) == 4)
 
-        wb <- openxlsx::createWorkbook()
-        addWorksheet(wb, "Results")
-        curr_row <- 1
-        curr_val <- result_val()[[1]]
-        writeData(wb, "Results", curr_val, startRow = curr_row)
-        curr_row <- curr_row + dim(curr_val)[1] + 5
+        if (input$file_type == "xlsx") {
+          wb <- openxlsx::createWorkbook()
+          addWorksheet(wb, "Results")
+          writeData(wb, "Results",
+            "Model: GDA",
+            startCol = 1,
+            startRow = 1
+          )
 
-        curr_val <- result_val()[[2]]
-        names(curr_val)[1] <- c("Ka(HG) [M]")
-        names(curr_val)[2] <- c("I(0)")
-        names(curr_val)[3] <- c("I(HD) [1/M]")
-        names(curr_val)[4] <- c("I(D) [1/M]")
-        writeData(wb, "Results", curr_val, startRow = curr_row)
-        curr_row <- curr_row + dim(curr_val)[1] + 5
+          curr_row <- 3
+          curr_val <- result_val()[[1]]
+          names(curr_val) <- c(
+            "total Dye measured [M]", "Signal measured",
+            "Signal simulated", "free Dye simulated [M]", "Host-Dye simulated [M]"
+          )
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
 
-        curr_val <- as.data.frame(result_val()[[4]])
-        names(curr_val)[1] <- c("MeanSquareError")
-        names(curr_val)[2] <- c("RootMeanSquareError")
-        names(curr_val)[3] <- c("MeanAbsoluteError")
-        names(curr_val)[4] <- c("R2")
-        names(curr_val)[5] <- c("R2 adjusted")
-        writeData(wb, "Results", curr_val, startRow = curr_row)
-        curr_row <- curr_row + dim(curr_val)[1] + 5
+          curr_val <- result_val()[[2]]
+          ai <- add_info()
+          ai[[1]] <- as.data.frame(t(ai[[1]]))
+          ai[[2]] <- as.data.frame(t(ai[[2]]))
+          names(ai[[1]]) <- names(curr_val)
+          names(ai[[2]]) <- names(curr_val)
+          curr_val <- rbind(curr_val, ai[[1]])
+          curr_val <- rbind(curr_val, ai[[2]])
+          names(curr_val)[1] <- c("Ka(HG) [M]")
+          names(curr_val)[2] <- c("I(0)")
+          names(curr_val)[3] <- c("I(HD) [1/M]")
+          names(curr_val)[4] <- c("I(D) [1/M]")
+          curr_val <- cbind(
+            info = c("Opti. results", "lower boundaries", "upper boundaries"),
+            curr_val
+          )
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
 
-        curr_val <- result_val()[[3]]
-        tempfile_plot <- tempfile(fileext = ".png")
-        ggsave(tempfile_plot,
-          plot = curr_val, width = 10, height = 6
-        )
-        insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
-        openxlsx::saveWorkbook(wb, file)
-        unlink(tempfile_plot)
+          curr_val <- as.data.frame(result_val()[[4]])
+          names(curr_val)[1] <- c("MeanSquareError")
+          names(curr_val)[2] <- c("RootMeanSquareError")
+          names(curr_val)[3] <- c("MeanAbsoluteError")
+          names(curr_val)[4] <- c("R2")
+          names(curr_val)[5] <- c("R2 adjusted")
+          writeData(wb, "Results", curr_val, startRow = curr_row)
+          curr_row <- curr_row + dim(curr_val)[1] + 5
+
+          curr_val <- result_val()[[3]]
+          tempfile_plot <- tempfile(fileext = ".png")
+          ggsave(tempfile_plot,
+            plot = curr_val, width = 10, height = 6
+          )
+          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
+          curr_row <- curr_row + 15
+
+          str(ai[[3]])
+          curr_val <- data.frame(
+            Host = ai[[3]][1], Dye = ai[[3]][2], KaHD = ai[[3]][3],
+            npop = ai[[4]], ngen = ai[[5]], topology = ai[[6]],
+            error_threshold = ai[[7]], seed = ai[[8]]
+          )
+          names(curr_val)[1] <- c("Host [M]")
+          names(curr_val)[2] <- c("Guest [M]")
+          names(curr_val)[3] <- c("Ka(HD) [1/M]")
+          writeData(
+            wb, "Results",
+            curr_val,
+            startRow = curr_row
+          )
+          curr_row <- curr_row + 5
+
+          writeData(wb, "Results",
+            as.data.frame(R.Version()),
+            startRow = curr_row
+          )
+          curr_row <- curr_row + 5
+
+          writeData(wb, "Results",
+            paste0("tsf version: ", packageVersion("tsf")),
+            startRow = curr_row
+          )
+
+          openxlsx::saveWorkbook(wb, file)
+          unlink(tempfile_plot)
+        } else {
+          # csv file
+          write.table("Model: GDA", file)
+          curr_val <- result_val()[[1]]
+          names(curr_val) <- c(
+            "total Dye measured [M]", "Signal measured",
+            "Signal simulated", "free Dye simulated [M]", "Host-Dye simulated [M]"
+          )
+          write.table(curr_val, file,
+            append = TRUE,
+            sep = ",", row.names = FALSE
+          )
+
+          curr_val <- result_val()[[2]]
+          ai <- add_info()
+          ai[[1]] <- as.data.frame(t(ai[[1]]))
+          ai[[2]] <- as.data.frame(t(ai[[2]]))
+          names(ai[[1]]) <- names(curr_val)
+          names(ai[[2]]) <- names(curr_val)
+          curr_val <- rbind(curr_val, ai[[1]])
+          curr_val <- rbind(curr_val, ai[[2]])
+          names(curr_val)[1] <- c("Ka(HG) [M]")
+          names(curr_val)[2] <- c("I(0)")
+          names(curr_val)[3] <- c("I(HD) [1/M]")
+          names(curr_val)[4] <- c("I(D) [1/M]")
+          curr_val <- cbind(
+            info = c("Opti. results", "lower boundaries", "upper boundaries"),
+            curr_val
+          )
+          write.table(curr_val, file,
+            append = TRUE,
+            sep = ",", row.names = FALSE
+          )
+
+          curr_val <- as.data.frame(result_val()[[4]])
+          names(curr_val)[1] <- c("MeanSquareError")
+          names(curr_val)[2] <- c("RootMeanSquareError")
+          names(curr_val)[3] <- c("MeanAbsoluteError")
+          names(curr_val)[4] <- c("R2")
+          names(curr_val)[5] <- c("R2 adjusted")
+          write.table(curr_val, file,
+            append = TRUE,
+            sep = ",", row.names = FALSE
+          )
+
+          curr_val <- data.frame(
+            Host = ai[[3]][1], Dye = ai[[3]][2], KaHD = ai[[3]][3],
+            npop = ai[[4]], ngen = ai[[5]], topology = ai[[6]],
+            error_threshold = ai[[7]], seed = ai[[8]]
+          )
+          names(curr_val)[1] <- c("Host [M]")
+          names(curr_val)[2] <- c("Guest [M]")
+          names(curr_val)[3] <- c("Ka(HD) [1/M]")
+          write.table(curr_val, file,
+            append = TRUE,
+            sep = ",", row.names = FALSE
+          )
+
+          curr_val <- as.data.frame(R.Version())
+          write.table(curr_val, file,
+            append = TRUE,
+            sep = ",", row.names = FALSE
+          )
+        }
       }
     )
 
@@ -388,10 +535,18 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       NULL
     })
     observeEvent(input$GDA_cancel_sense, {
+      exportTestValues(
+        cancel_sense_clicked = TRUE
+      )
       com_sense$interrupt()
     })
     observeEvent(input$GDA_status_sense, {
       req(nclicks_sense() != 0)
+      exportTestValues(
+        status_sense = {
+          com_sense$getStatus()
+        }
+      )
       session$sendCustomMessage(
         type = "GDAupdateFieldSense",
         list(message = com_sense$getStatus())
@@ -399,6 +554,11 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     })
     output$GDA_sensi <- renderPlot({
       req(inherits(result_val_sense(), "ggplot"))
+      exportTestValues(
+        sense_plot = {
+          result_val_sense()
+        }
+      )
       result_val_sense()
     })
     output$GDA_sensi_download <- downloadHandler(

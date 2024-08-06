@@ -6,7 +6,7 @@ df <- read.csv("dba_dye_const.txt",
 )
 
 res <- opti(
-  case = "dba_dye_const",
+  case = "dba_host_const",
   lowerBounds = c(
     kHD = 0,
     I0 = 0,
@@ -22,19 +22,19 @@ res <- opti(
   df,
   seed = 1234,
   additionalParameters = c(
-    dye = 0.000151
+    host = 0.000151
   ),
   npop = 40,
   ngen = 1000,
   Topology = "random",
-  errorThreshold = 0.7
+  errorThreshold = 1.6
 )
 
 res
 
 tsf::sensitivity(
-  case = "dba_dye_const", parameter = res[[2]],
+  case = "dba_host_const", parameter = res[[2]],
   path = df,
-  additionalParameters = c(dye = 0.000151),
+  additionalParameters = c(host = 0.000151),
   percentage = 15
 )

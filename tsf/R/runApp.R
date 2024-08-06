@@ -22,6 +22,7 @@ runApp <- function(port) {
     dashboardSidebar(
       useShinyjs(),
       sidebarMenu(
+        id = "Sidebar",
         menuItem("Data import", tabName = "data", icon = icon("table")),
         menuItem("DBA (const. host) model", tabName = "HG", icon = icon("table")),
         menuItem("DBA (const. dye) model", tabName = "DBA", icon = icon("table")),

@@ -14,6 +14,7 @@ Imports:
   shinydashboard,
   shinyWidgets,
   shinyjs,
+  shinytest2,
   rootSolve,
   ggplot2,
   patchwork,

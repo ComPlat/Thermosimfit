@@ -18,6 +18,7 @@
 #'        In case of *dba_dye_const* a numeric vector of length 1 is expected which contains the concentration of the dye.
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
 #'        In case of *gda* a numeric vector of length 3 is expected which contains the concentration of the host, guest and the *khd* parameter.
+#' @param seed is an optional integer argument defining the seed which is set directly for the optimization. In case the argument is not set the current time is used as seed.
 #' @param npop is an optional integer argument defining the number of particles during optimization. The default value is set to 40.
 #' @param ngen is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.
 #' @param Topology is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.
@@ -27,8 +28,13 @@
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
 #' opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458))
-opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
-                 npop = 40, ngen = 200, Topology = "random", errorThreshold = -Inf, runAsShiny = FALSE) {
+opti <- function(case, lowerBounds, upperBounds,
+                 path, additionalParameters,
+                 seed = NULL,
+                 npop = 40, ngen = 200,
+                 Topology = "random",
+                 errorThreshold = -Inf,
+                 runAsShiny = FALSE) {
   if (!is.character(case)) {
     return(ErrorClass$new("case has to be of type character"))
   }
@@ -69,6 +75,12 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
   }
   if (case == "gda" && length(additionalParameters) != 3) {
     return(ErrorClass$new("additionalParameters have to be of length 3"))
+  }
+  if (!is.numeric(seed) && !is.integer(seed) && !is.null(seed)) {
+    return(ErrorClass$new("Invalid seed argument found"))
+  }
+  if (is.null(seed)) {
+    seed <- as.numeric(Sys.time())
   }
   if (!is.numeric(npop) && !is.integer(npop)) {
     return(ErrorClass$new("npop has to be of type numeric or integer"))
@@ -138,7 +150,7 @@ opti <- function(case, lowerBounds, upperBounds, path, additionalParameters,
     env$ga0 <- additionalParameters[2]
     env$kd <- additionalParameters[3]
   }
-
+  set.seed(seed)
   res <- pso(
     env, lowerBounds, upperBounds, lossFct, ngen, npop,
     errorThreshold, Topo, FALSE, runAsShiny
