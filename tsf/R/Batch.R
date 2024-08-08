@@ -1,6 +1,6 @@
-library(tsf)
-library(ggplot2)
-setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/Batch")
+# library(tsf)
+# library(ggplot2)
+# setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/Batch")
 
 importDataBatchRaw <- function(path) {
   if (!is.character(path)) {
