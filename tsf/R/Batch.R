@@ -160,15 +160,13 @@ batch <- function(case,
   list(list, plotStates(list), plotParams(list), plotMetrices(list))
 }
 
-res_batch <- batch(
-  case = "ida",
-  lowerBounds = c(kG = 1000, I0 = 0, IHD = 0, ID = 0),
-  upperBounds = c(kG = 10^8, I0 = 100, IHD = 10^7, ID = 10^7),
-  path = "idaBatch.csv",
-  additionalParameters = c(host = 1.00E-06, dye = 1.00E-06, kHD = 3.00E+06),
-  ngen = 250
-)
-
-
-
-res_batch
+# res_batch <- batch(
+#   case = "ida",
+#   lowerBounds = c(kG = 1000, I0 = 0, IHD = 0, ID = 0),
+#   upperBounds = c(kG = 10^8, I0 = 100, IHD = 10^7, ID = 10^7),
+#   path = "idaBatch.csv",
+#   additionalParameters = c(host = 1.00E-06, dye = 1.00E-06, kHD = 3.00E+06),
+#   ngen = 250
+# )
+#
+# res_batch
