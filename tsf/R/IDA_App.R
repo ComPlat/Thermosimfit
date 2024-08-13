@@ -23,6 +23,17 @@ idaUI <- function(id) {
               $('#IDA-IDA_output_sense').empty();
             });"
     ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAupdateFieldBatch', function(message) {
+              var result = message.message;
+              $('#IDA-IDA_output_Batch').html(result);
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAclearFieldBatch', function(message) {
+              $('#IDA-IDA_output_Batch').empty();
+            });"
+    ),
     fluidRow(
       box(
         textInput(NS(id, "IDA_H0"), "Host conc. [M]", value = 0),
@@ -146,6 +157,28 @@ idaUI <- function(id) {
             )
           )
         ),
+        tabPanel(
+          "Batch processing",
+          fluidRow(
+            box(
+              box(
+                actionButton(NS(id, "IDA_Start_Batch"), "Start batch analysis"),
+                actionButton(NS(id, "IDA_cancel_Batch"), "Cancel"),
+                actionButton(NS(id, "IDA_status_Batch"), "Get Status"),
+                downloadButton(NS(id, "IDA_batch_download"), "Save result of batch analysis"),
+                verbatimTextOutput(NS(id, "IDA_output_Batch")),
+                width = 12
+              ),
+              box(
+                br(),
+                plotOutput(NS(id, "IDA_batch"), width = "1500px", height = "400px"),
+                width = 12, solidHeader = TRUE, status = "warning"
+              ),
+              width = 12, title = "Batch analysis", solidHeader = TRUE,
+              collapsible = TRUE, status = "warning"
+            )
+          )
+        ),
         width = 12
       )
     )
@@ -154,7 +187,8 @@ idaUI <- function(id) {
 
 
 
-idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense, iter) {
+idaServer <- function(id, df, df_list, com, com_sense, com_batch,
+                      nclicks, nclicks_sense, iter) {
   moduleServer(id, function(input, output, session) {
     observeEvent(input$helpButton, {
       showModal(modalDialog(
@@ -174,17 +208,22 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense, iter) {
       ))
     })
 
+    # Optimization
+    # ===============================================================================
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
+    result_val_batch <- reactiveValues(result = NULL)
     add_info <- reactiveVal()
     iter <- reactiveVal()
+    batch_done <- reactiveVal(FALSE)
 
     fl <- reactive({
       flush(com$result)
       return()
     })
+
     observeEvent(input$IDA_Start_Opti, {
-      if (nclicks() != 0 | nclicks_sense() != 0) {
+         if (nclicks() != 0 | nclicks_sense() != 0) {
         showNotification("Already running analysis")
         return(NULL)
       }
@@ -258,6 +297,7 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense, iter) {
 
       NULL
     })
+
     observeEvent(input$IDA_cancel, {
       exportTestValues(
         cancel_clicked = TRUE
@@ -496,7 +536,8 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense, iter) {
       }
     )
 
-
+    # sensitivity
+    # ===============================================================================
 
     observeEvent(input$IDA_Start_Sensi, {
       if (nclicks_sense() != 0 | nclicks() != 0) {
@@ -591,5 +632,145 @@ idaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense, iter) {
         unlink(tempfile_plot)
       }
     )
+
+
+
+    # Batch analysis
+    # ===============================================================================
+    current_df <- reactiveVal()
+
+    observeEvent(input$IDA_Start_Batch, {
+      if (nclicks() != 0 | nclicks_sense() != 0) {
+        showNotification("Already running analysis")
+        return(NULL)
+      }
+      session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL))
+      nclicks(nclicks() + 1)
+      result_val(data.frame(Status = "Running..."))
+      # com_batch$running() # TODO:has to be different handled
+      session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL, arg = 1))
+      req(input$IDA_H0)
+      req(input$IDA_D0)
+      req(input$IDA_kHD)
+      req(input$IDA_npop)
+      req(input$IDA_ngen)
+      req(input$IDA_threshold)
+      req(input$IDA_kHD_lb)
+      req(input$IDA_kHD_ub)
+      req(input$IDA_IHD_lb)
+      req(input$IDA_IHD_ub)
+      req(input$IDA_ID_lb)
+      req(input$IDA_ID_ub)
+      req(input$IDA_I0_lb)
+      req(input$IDA_I0_ub)
+      lb <- c(input$IDA_kHD_lb, input$IDA_I0_lb, input$IDA_IHD_lb, input$IDA_ID_lb)
+      lb <- convertToNum(lb)
+      req(!("Error" %in% lb))
+      ub <- c(input$IDA_kHD_ub, input$IDA_I0_ub, input$IDA_IHD_ub, input$IDA_ID_ub)
+      ub <- convertToNum(ub)
+      req(!("Error" %in% ub))
+      additionalParameters <- c(input$IDA_H0, input$IDA_D0, input$IDA_kHD)
+      additionalParameters <- convertToNum(additionalParameters)
+      req(!("Error" %in% additionalParameters))
+      npop <- input$IDA_npop
+      ngen <- input$IDA_ngen
+      topo <- input$IDA_topology
+      et <- input$IDA_threshold
+      seed <- input$Seed
+      if (is.na(seed)) seed <- as.numeric(Sys.time())
+      fl()
+      output$IDA_batch <- renderPlot({
+        plot.new()
+      })
+      iter <- 1
+
+      promises_list <- vector("list", length(df_list))
+      com_batch$list <- reactive({lapply(seq_along(df_list), function(x) {
+        Communicator$new()
+      })})
+      cl <-com_batch$list()
+      for (i in seq_along(df_list)) {
+        if (!is.null(seed)) seed <- as.numeric(Sys.time())
+        promises_list[[i]] <- future({
+          opti(
+            case = "ida", lowerBounds = lb, upperBounds = ub,
+            df_list[[i]], additionalParameters,
+            seed = seed, npop = npop, ngen = ngen,
+            Topology = topo,
+            errorThreshold = et, runAsShiny = cl[[i]]
+          )
+        }, seed = NULL)
+      }
+
+    result_val_batch$result <- promises_list
+
+      promises::promise_map(promises_list, function(promise) {
+        catch(promise, function(e) {
+          print(e$message)
+          showNotification(e$message, duration = 0)
+        })
+      })
+
+      promises::promise_map(promises_list, function(promise) {
+        finally(promise, function() {
+          # TODO: set all com batch to ready
+          nclicks(0)
+          batch_done(TRUE)
+        })
+      })
+      NULL
+    })
+
+    observeEvent(input$IDA_cancel_Batch, {
+      exportTestValues(
+        cancel_clicked_batch = TRUE
+      )
+      lapply(com_batch$list(), function(com) {
+        com$interrupt()
+      })
+    })
+    observeEvent(input$IDA_status_Batch, {
+      # req(nclicks() != 0) # TODO: uncomment
+      temp_status <- lapply(com_batch$list(), function(com) {
+        paste0("Dataset Nr.: ", parent.frame()$i[], " ", com$getData())
+      })
+      bind <- function(a, b) {
+        if(is.null(a) && is.null(b)) return("")
+        if(is.null(a)) return(b)
+        if(is.null(b)) return(a)
+        paste0(a, "\n", b)
+      }
+      m <- tryCatch(Reduce(bind, temp_status), error = function(e) {
+        print(e)
+        return("Error")
+      })
+      req(is.character(m))
+      session$sendCustomMessage(
+        type = "IDAupdateFieldBatch",
+        list(message = m)
+      )
+    })
+
+    plot_data <- reactive({
+      values <- lapply(result_val_batch$result, function(fut) {
+        value(fut)
+      })
+      seperate_batch_results(values)
+    })
+
+    observeEvent(req(batch_done()), 
+      {
+      req(batch_done())
+      batch_done(FALSE)
+      output$IDA_batch <- renderPlot({
+        list <- plot_data()
+        plotStates(list) + plotParams(list) + plotMetrices(list)
+      })
+    })
+
   })
+
+
+
+
 }

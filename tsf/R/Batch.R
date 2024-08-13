@@ -1,7 +1,3 @@
-# library(tsf)
-# library(ggplot2)
-# setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/Batch")
-
 importDataBatchRaw <- function(path) {
   if (!is.character(path)) {
     return(ErrorClass$new("path is not of type character"))
@@ -137,36 +133,61 @@ batch <- function(case,
                   path,
                   additionalParameters,
                   seed = NULL, npop = 40, ngen = 200, Topology = "random",
-                  errorThreshold = -Inf, runAsAshiny = FALSE) {
-  list_df <- importDataBatch(path)
+                  errorThreshold = -Inf, runAsShiny = FALSE) {
+  if (!is.list(path)) {
+    list_df <- importDataBatch(path)
+  } else {
+    list_df <- path
+  }
   if (!is.list(list_df)) {
     return(ErrorClass$new("Could not import data"))
   }
   for (i in seq_along(list_df)) {
     if (!is.data.frame(list_df[[i]])) {
-      str(list_df[[i]])
       return(list_df[[i]])
     }
   }
-  temp_result <- lapply(seq_along(list_df), function(i) {
-    if (!is.null(seed)) seed <- as.numeric(Sys.time())
-    opti(
-      case = case, lowerBounds = lowerBounds, upperBounds = upperBounds,
-      list_df[[i]], additionalParameters, seed = seed, npop = npop, ngen = ngen,
-      Topology = Topology, errorThreshold = errorThreshold, runAsShiny = runAsAshiny
-    )
+
+  promises_list <- vector("list", length(list_df))
+
+  communicator_list <- lapply(seq_along(list_df), function(x) {
+    Communicator$new()
   })
-  list <- seperate_batch_results(temp_result)
+
+  plan(multisession)
+  for (i in seq_along(list_df)) {
+    if (!is.null(seed)) seed <- as.numeric(Sys.time())
+    promises_list[[i]] <- future({
+      opti(
+        case = case, lowerBounds = lowerBounds, upperBounds = upperBounds,
+        list_df[[i]], additionalParameters,
+        seed = seed, npop = npop, ngen = ngen,
+        Topology = Topology,
+        errorThreshold = errorThreshold, runAsShiny = communicator_list[[i]]
+      )
+    })
+  }
+
+  while (TRUE) {
+    current_state <- lapply(communicator_list, function(x) {
+      x$getData()
+    })
+    current_state <- do.call(rbind, current_state)
+
+    runAsShiny$setData(current_state)
+    all_resolved <- all(sapply(promises_list, resolved))
+    if (all_resolved) break
+    # Sys.sleep(2)
+  }
+  temp_list <- list()
+  for (i in seq_along(promises_list)) {
+    temp_list[[i]] <- value(promises_list[[i]])
+  }
+
+  lapply(communicator_list, function(x) {
+    x$destroy()
+  })
+
+  list <- seperate_batch_results(temp_list)
   list(list, plotStates(list), plotParams(list), plotMetrices(list))
 }
-
-# res_batch <- batch(
-#   case = "ida",
-#   lowerBounds = c(kG = 1000, I0 = 0, IHD = 0, ID = 0),
-#   upperBounds = c(kG = 10^8, I0 = 100, IHD = 10^7, ID = 10^7),
-#   path = "idaBatch.csv",
-#   additionalParameters = c(host = 1.00E-06, dye = 1.00E-06, kHD = 3.00E+06),
-#   ngen = 250
-# )
-#
-# res_batch

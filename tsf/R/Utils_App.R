@@ -48,3 +48,11 @@ extract_iter <- function(s) {
   a <- strsplit(a, "/")[[1]]
   as.numeric(a[[1]])
 }
+
+# require with notificiation
+rwn <- function(expr, message) {
+  if (!expr) {
+    showNotification(message, duration = 0)
+  }
+  req(expr)
+}

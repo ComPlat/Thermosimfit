@@ -56,26 +56,57 @@ runApp <- function(port) {
         "))
       ),
       tabItems(
-
-        # data tab
         tabItem(
           tabName = "data",
-          box(
-            fileInput("upload",
-              label = HTML('<div style="font-size:16px; font-weight:bold;">
-                                          Upload a file (csv)<br>
-                                          which contains two columns:<br>
-                                          1. the component which is increased [M]<br>
-                                          2. the corresponding signal [unitless]
-                                          </div>')
+          tabBox(
+            tabPanel(
+              title = "Data import",
+              fluidRow(
+                box(
+                  fileInput("upload",
+                    label = HTML('<div style="font-size:16px; font-weight:bold;">
+                      Upload a file (csv)<br>
+                      which contains two columns:<br>
+                      1. the component which is increased [M]<br>
+                      2. the corresponding signal [unitless]
+                      </div>')
+                  ),
+                  textInput("op", "Operations", value = "var / 1000"),
+                  textInput("new_col", "Name of new variable", value = "var"),
+                  actionButton("mod", "Modify"),
+                  verbatimTextOutput("mod_error"),
+                  box(
+                    DT::DTOutput("df"),
+                    width = 12
+                  ),
+                  width = 12
+                )
+              )
             ),
-            textInput("op", "Operations", value = "var / 1000"),
-            textInput("new_col", "Name of new variable", value = "var"),
-            actionButton("mod", "Modify"),
-            verbatimTextOutput("mod_error"),
-            box(
-              DT::DTOutput("df"),
-              width = 10
+            tabPanel(
+              title = "Data import Batch",
+              fluidRow(
+                box(
+                  fileInput("upload_batch",
+                    label = HTML('<div style="font-size:16px; font-weight:bold;">
+                      Upload a file (csv)<br>
+                      which contains two columns:<br>
+                      1. the component which is increased [M]<br>
+                      2. the corresponding signal [unitless] <br>
+                      The columns header names have to exist (e.g. "var" and "signal"). <br>
+                      The header has to be present as it is used to seperate the individual datasets. <br>
+                      Each dataset have to be directly underneath the previous one (without blank lines as seperator).
+                      </div>')
+                  ),
+                  numericInput("active_dataset", "Chose the active dataset", value = 1),
+                  verbatimTextOutput("mod_error"),
+                  box(
+                    DT::DTOutput("active_df"),
+                    width = 12
+                  ),
+                  width = 12
+                )
+              )
             ),
             width = 12
           )

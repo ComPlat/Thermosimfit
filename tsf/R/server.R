@@ -24,8 +24,9 @@ server <- function(input, output, session) {
   observeEvent(input$mod, {
     req(!is.null(data$df))
     req(is.data.frame(data$df))
-    req(input$op)
+    rwn(nchar(input$op) > 0, "No operation was defined")
     req(input$new_col)
+    req(nchar(input$new_col) > 0)
     dt <- data$df
     op <- input$op
     new_col <- input$new_col
@@ -56,6 +57,63 @@ server <- function(input, output, session) {
   })
 
 
+  data_batch <- reactiveValues(data_frames = NULL)
+
+  observeEvent(input$upload_batch, {
+    req(input$upload_batch)
+    list_dataframes <- importDataBatch(input$upload_batch$datapath)
+    error <- NULL
+    for (i in seq_along(list_dataframes)) {
+      df <- list_dataframes[[i]]
+      if (is.data.frame(df)) {
+        if (ncol(df) != 2) {
+          error <- "Error: Data has wrong dimensions, two columns were expected"
+          break
+          showNotification(
+            paste0(
+              "Measurement Nr. ", i,
+              "Data has wrong dimensions, two columns were expected"
+            )
+          )
+        } else if (nrow(df) == 0) {
+          error <- "Error: Data has 0 rows."
+          break
+          showNotification(
+            paste0("Measurement Nr. ", i, " Data has 0 rows.")
+          )
+        } else {
+          names(df) <- c("var", "signal")
+        }
+      } else {
+        error <- "Error: File cannot be used. Upload into R failed!"
+        break
+        showNotification(
+          paste0("Measurement Nr. ", i,
+            " cannot be used. Upload into R failed!",
+            duration = 0
+          )
+        )
+      }
+    }
+    if (is.null(error) && is.list(list_dataframes) && length(list_dataframes) > 0) {
+      data_batch$data_frames <- list_dataframes
+    }
+    data$df <- data_batch$data_frames[[1]]
+    output$active_df <- renderDT(data$df)
+    output$df <- renderDT(data$df)
+  })
+
+  observeEvent(input$active_dataset, {
+    req(!is.null(data_batch$data_frames))
+    req(is.list(data_batch$data_frames))
+    req(input$active_dataset)
+    req(input$active_dataset > 0)
+    req(input$active_dataset <= length(data_batch$data_frames))
+    data$df <- data_batch$data_frames[[input$active_dataset]]
+    output$active_df <- renderDT(data$df)
+    output$df <- renderDT(data$df)
+  })
+
   HG_com <- Communicator$new()
   HG_com_sense <- Communicator$new()
   DBA_com <- Communicator$new()
@@ -64,13 +122,21 @@ server <- function(input, output, session) {
   GDA_com_sense <- Communicator$new()
   IDA_com <- Communicator$new()
   IDA_com_sense <- Communicator$new()
+  IDA_com_batch <- reactiveValues(list = NULL)
   nclicks <- reactiveVal(0)
   nclicks_sense <- reactiveVal(0)
 
   hgServer("HG", data$df, HG_com, HG_com_sense, nclicks, nclicks_sense)
   dbaServer("DBA", data$df, DBA_com, DBA_com_sense, nclicks, nclicks_sense)
-  idaServer("IDA", data$df, IDA_com, IDA_com_sense, nclicks, nclicks_sense)
+  idaServer(
+    "IDA", data$df, data_batch$data_frames, IDA_com,
+    IDA_com_sense, IDA_com_batch, nclicks, nclicks_sense
+  )
   gdaServer("GDA", data$df, GDA_com, GDA_com_sense, nclicks, nclicks_sense)
+
+  destroy <- reactive({
+    lapply(IDA_com_batch$list, function(x) x$destroy())
+  })
 
   onStop(function() {
     HG_com$destroy()
@@ -79,6 +145,7 @@ server <- function(input, output, session) {
     DBA_com_sense$destroy()
     IDA_com$destroy()
     IDA_com_sense$destroy()
+    destroy()
     GDA_com$destroy()
     GDA_com_sense$destroy()
   })
