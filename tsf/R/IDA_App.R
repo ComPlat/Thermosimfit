@@ -4,7 +4,7 @@ idaUI <- function(id) {
     tags$script(
       "Shiny.addCustomMessageHandler('IDAupdateField', function(message) {
               var result = message.message;
-              $('#IDA-IDA_output').append(result + '\\n');
+              $('#IDA-IDA_output').html(result);
             });"
     ),
     tags$script(
@@ -65,7 +65,7 @@ idaUI <- function(id) {
         ),
         width = 6,
         title = "Parameter", solidHeader = TRUE,
-        status = "warning", height = 575
+        status = "warning", height = 625
       ),
       box(
         box(
@@ -101,7 +101,7 @@ idaUI <- function(id) {
           )
         ),
         solidHeader = TRUE,
-        status = "warning", height = 575
+        status = "warning", height = 625
       )
     ),
     fluidRow(
@@ -188,7 +188,7 @@ idaUI <- function(id) {
 
 
 idaServer <- function(id, df, df_list, com, com_sense, com_batch,
-                      nclicks, nclicks_sense, iter) {
+                      nclicks, nclicks_sense) {
   moduleServer(id, function(input, output, session) {
     observeEvent(input$helpButton, {
       showModal(modalDialog(
@@ -212,9 +212,8 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     # ===============================================================================
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
-    result_val_batch <- reactiveValues(result = NULL)
+    result_val_batch <- reactiveValues(result = NULL, seeds = NULL)
     add_info <- reactiveVal()
-    iter <- reactiveVal()
     batch_done <- reactiveVal(FALSE)
 
     fl <- reactive({
@@ -262,7 +261,6 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       seed <- input$Seed
       if (is.na(seed)) seed <- as.numeric(Sys.time())
       fl()
-      iter <- 1
       result <- future(
         {
           opti(
@@ -307,34 +305,16 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     observeEvent(input$IDA_status, {
       req(nclicks() != 0)
       m <- com$getData()
+      if(length(nchar(m)) == 0) m <- "Initialisation"
       exportTestValues(
         status1 = {
-          com$getData()
+          m
         }
       )
-      i <- iter()
-
-      if (!is.null(i)) {
-        if (i != extract_iter(m)) {
-          session$sendCustomMessage(
-            type = "IDAupdateField",
-            list(message = m)
-          )
-          iter(extract_iter(m))
-        }
-      } else {
-        if (is.null(extract_iter(m))) {
-          session$sendCustomMessage(
-            type = "IDAupdateField",
-            list(message = "Initialisation")
-          )
-        }
-        exportTestValues(
-          status2 = "Initialisation"
-        )
-
-        iter(extract_iter(m))
-      }
+      session$sendCustomMessage(
+        type = "IDAupdateField",
+        list(message = m)
+      )
     })
     output$IDA_params <- renderDT({
       req(length(result_val()) == 4)
@@ -372,7 +352,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
 
       datatable(res,
         escape = FALSE,
-        caption = "Error Metrics: Comparison of in silico signal and seasured signal"
+        caption = "Error Metrics: Comparison of in silico signal and measured signal"
       ) |>
         formatSignif(columns = 1:ncol(res), digits = 6)
     })
@@ -647,7 +627,6 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL))
       nclicks(nclicks() + 1)
       result_val(data.frame(Status = "Running..."))
-      # com_batch$running() # TODO:has to be different handled
       session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL, arg = 1))
       req(input$IDA_H0)
       req(input$IDA_D0)
@@ -682,8 +661,19 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       output$IDA_batch <- renderPlot({
         plot.new()
       })
-      iter <- 1
+      session$sendCustomMessage(
+        type = "IDAupdateFieldBatch",
+        list(message = "Initialisation")
+      )
 
+      # TODO: add number of runs per dataset as UI input
+      #   Either a seed is set for all datasets or no seed is set
+      #   then the time is used to calc a seed for each dataset
+      #   If several seeds per dataset should be used the seed UI field is ignored
+      #   Maybe use a drop down menu (Test each dataset several times or Test each dataset only one time)
+      #   Based on the drop down menu the seed field is visible or not
+      # TODO: adapt accordingly the promise list and com_batch$list
+      # TODO: save seeds --> based on Sys.time()
       promises_list <- vector("list", length(df_list))
       com_batch$list <- reactive({lapply(seq_along(df_list), function(x) {
         Communicator$new()
@@ -701,8 +691,12 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
           )
         }, seed = NULL)
       }
+      session$sendCustomMessage(
+        type = "IDAupdateFieldBatch",
+        list(message = "")
+      )
 
-    result_val_batch$result <- promises_list
+      result_val_batch$result <- promises_list
 
       promises::promise_map(promises_list, function(promise) {
         catch(promise, function(e) {
@@ -713,7 +707,6 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
 
       promises::promise_map(promises_list, function(promise) {
         finally(promise, function() {
-          # TODO: set all com batch to ready
           nclicks(0)
           batch_done(TRUE)
         })
@@ -730,12 +723,12 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       })
     })
     observeEvent(input$IDA_status_Batch, {
-      # req(nclicks() != 0) # TODO: uncomment
+      req(nclicks() != 0)
       temp_status <- lapply(com_batch$list(), function(com) {
         paste0("Dataset Nr.: ", parent.frame()$i[], " ", com$getData())
       })
       bind <- function(a, b) {
-        if(is.null(a) && is.null(b)) return("")
+        if(is.null(a) && is.null(b)) return("Initialisation")
         if(is.null(a)) return(b)
         if(is.null(b)) return(a)
         paste0(a, "\n", b)

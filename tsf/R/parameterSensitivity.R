@@ -16,7 +16,9 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
             return()
           }
           if (x %% 10 == 0) {
-            runAsShiny$running((100 / nrow(X)) * x)
+            runAsShiny$running(
+              format_scientific((100.0 / nrow(X)) * x)
+            )
           }
         }
 
@@ -170,4 +172,3 @@ sensitivity <- function(case, parameters, path, additionalParameters,
   }
   sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames, runAsShiny)
 }
-

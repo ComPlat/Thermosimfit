@@ -4,7 +4,7 @@ hgUI <- function(id) {
     tags$script(
       "Shiny.addCustomMessageHandler('HGupdateField', function(message) {
               var result = message.message;
-              $('#HG-HG_output').append(result + '\\n');
+              $('#HG-HG_output').html(result);
             });"
     ),
     tags$script(
@@ -176,7 +176,6 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
     add_info <- reactiveVal()
-    iter <- reactiveVal()
 
     fl <- reactive({
       flush(com$result)
@@ -263,33 +262,16 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     observeEvent(input$HG_status, {
       req(nclicks() != 0)
       m <- com$getData()
+      if(length(nchar(m)) == 0) m <- "Initialisation"
       exportTestValues(
         status1 = {
-          com$getData()
+          m
         }
       )
-      i <- iter()
-
-      if (!is.null(i)) {
-        if (i != extract_iter(m)) {
-          session$sendCustomMessage(
-            type = "HGupdateField",
-            list(message = m)
-          )
-          iter(extract_iter(m))
-        }
-      } else {
-        if (is.null(extract_iter(m))) {
-          session$sendCustomMessage(
-            type = "HGupdateField",
-            list(message = "Initialisation")
-          )
-        }
-        exportTestValues(
-          status2 = "Initialisation"
-        )
-        iter(extract_iter(m))
-      }
+      session$sendCustomMessage(
+        type = "HGupdateField",
+        list(message = m)
+      )
     })
     output$HG_params <- renderDT({
       req(length(result_val()) == 4)
@@ -325,7 +307,7 @@ hgServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       )
       datatable(res,
         escape = FALSE,
-        caption = "Error Metrics: Comparison of in silico signal and seasured signal"
+        caption = "Error Metrics: Comparison of in silico signal and measured signal"
       ) |>
         formatSignif(columns = 1:ncol(res), digits = 6)
     })

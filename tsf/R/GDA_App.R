@@ -4,7 +4,7 @@ gdaUI <- function(id) {
     tags$script(
       "Shiny.addCustomMessageHandler('GDAupdateField', function(message) {
               var result = message.message;
-              $('#GDA-GDA_output').append(result + '\\n');
+              $('#GDA-GDA_output').html(result);
             });"
     ),
     tags$script(
@@ -51,7 +51,7 @@ gdaUI <- function(id) {
         ),
         width = 6,
         title = "Parameter", solidHeader = TRUE,
-        status = "warning", height = 575
+        status = "warning", height = 625
       ),
       box(
         box(
@@ -85,7 +85,7 @@ gdaUI <- function(id) {
           )
         ),
         solidHeader = TRUE,
-        status = "warning", height = 575
+        status = "warning", height = 625
       )
     ),
     fluidRow(
@@ -172,7 +172,6 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
     add_info <- reactiveVal()
-    iter <- reactiveVal()
 
     fl <- reactive({
       flush(com$result)
@@ -260,33 +259,16 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
     observeEvent(input$GDA_status, {
       req(nclicks() != 0)
       m <- com$getData()
+      if(length(nchar(m)) == 0) m <- "Initialisation"
       exportTestValues(
         status1 = {
-          com$getData()
+          m
         }
       )
-      i <- iter()
-
-      if (!is.null(i)) {
-        if (i != extract_iter(m)) {
-          session$sendCustomMessage(
-            type = "GDAupdateField",
-            list(message = m)
-          )
-          iter(extract_iter(m))
-        }
-      } else {
-        if (is.null(extract_iter(m))) {
-          session$sendCustomMessage(
-            type = "GDAupdateField",
-            list(message = "Initialisation")
-          )
-        }
-        exportTestValues(
-          status2 = "Initialisation"
-        )
-        iter(extract_iter(m))
-      }
+      session$sendCustomMessage(
+        type = "GDAupdateField",
+        list(message = m)
+      )
     })
     output$GDA_params <- renderDT({
       req(length(result_val()) == 4)
@@ -321,7 +303,7 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       )
       datatable(res,
         escape = FALSE,
-        caption = "Error Metrics: Comparison of in silico signal and seasured signal"
+        caption = "Error Metrics: Comparison of in silico signal and measured signal"
       ) |>
         formatSignif(columns = 1:ncol(res), digits = 6)
     })
