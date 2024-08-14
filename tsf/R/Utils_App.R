@@ -50,9 +50,9 @@ extract_iter <- function(s) {
 }
 
 # require with notificiation
-rwn <- function(expr, message) {
+rwn <- function(expr, message, duration = 0) {
   if (!expr) {
-    showNotification(message, duration = 0)
+    showNotification(message, duration = duration)
   }
   req(expr)
 }

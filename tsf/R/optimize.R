@@ -156,55 +156,18 @@ opti <- function(case, lowerBounds, upperBounds,
     errorThreshold, Topo, FALSE, runAsShiny
   )
 
-  if (case == "dba_host_const") {
-    df$signal_insilico <- res[[1]][, 1]
-    df$d <- res[[1]][, 2]
-    df$hd <- res[[1]][, 3]
-    params <- data.frame(
-      khd = res[[2]][1], I0 = res[[2]][2],
-      IHD = res[[2]][3], ID = res[[2]][4]
-    )
-    return(list(
-      df, params, plotTSF(df, "dye"),
-      metrices(df$signal, df$signal_insilico)
-    ))
-  } else if (case == "dba_dye_const") {
-    df$signal_insilico <- res[[1]][, 1]
-    df$d <- res[[1]][, 2]
-    df$hd <- res[[1]][, 3]
-    params <- data.frame(
-      khd = res[[2]][1], I0 = res[[2]][2],
-      IHD = res[[2]][3], ID = res[[2]][4]
-    )
-    return(list(
-      df, params, plotTSF(df, "host"),
-      metrices(df$signal, df$signal_insilico)
-    ))
-  } else if (case == "ida") {
-    df$signal_insilico <- res[[1]][, 1]
-    df$d <- res[[1]][, 2]
-    df$hd <- res[[1]][, 3]
-    params <- data.frame(
-      kguest = res[[2]][1], I0 = res[[2]][2],
-      IHD = res[[2]][3], ID = res[[2]][4]
-    )
-    global_minimum <- res[[2]][5]
-    return(list(
-      df, params, plotTSF(df, "guest"),
-      metrices(df$signal, df$signal_insilico)
-    ))
-  } else if (case == "gda") {
-    df$signal_insilico <- res[[1]][, 1]
-    df$d <- res[[1]][, 2]
-    df$hd <- res[[1]][, 3]
-    params <- data.frame(
-      kguest = res[[2]][1], I0 = res[[2]][2],
-      IHD = res[[2]][3], ID = res[[2]][4]
-    )
-    global_minimum <- res[[2]][5]
-    return(list(
-      df, params, plotTSF(df, "dye"),
-      metrices(df$signal, df$signal_insilico)
-    ))
-  }
+  df <- create_data_df(df, res, case)
+  params <- create_params_df(res, case)
+  lowerBounds <- correct_names_params(lowerBounds, case)
+  upperBounds <- correct_names_params(upperBounds, case)
+  additionalParameters <- correct_names_additional_param(
+    additionalParameters, case
+  )
+  return(list(
+    data = df, parameter = params, plot = plot_results(df, case),
+    metrices = metrices(df[, "Signal measured"], df[, "Signal simulated"]),
+    seed = seed, additionalParameters = additionalParameters,
+    lowerBounds = lowerBounds, upperBounds = upperBounds,
+    npop = npop, ngen = ngen, Topology = Topology
+  ))
 }

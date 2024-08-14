@@ -162,6 +162,9 @@ idaUI <- function(id) {
           fluidRow(
             box(
               box(
+                numericInput(NS(id, "NumRepDataset"), min = 1, max = 10,
+                  "How often should each dataset be analysed (using different seeds)",
+                  value = 1),
                 actionButton(NS(id, "IDA_Start_Batch"), "Start batch analysis"),
                 actionButton(NS(id, "IDA_cancel_Batch"), "Cancel"),
                 actionButton(NS(id, "IDA_status_Batch"), "Get Status"),
@@ -171,7 +174,7 @@ idaUI <- function(id) {
               ),
               box(
                 br(),
-                plotOutput(NS(id, "IDA_batch"), width = "1500px", height = "400px"),
+                plotOutput(NS(id, "IDA_batch"), width = "1000px", height = "800px"),
                 width = 12, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Batch analysis", solidHeader = TRUE,
@@ -212,7 +215,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     # ===============================================================================
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
-    result_val_batch <- reactiveValues(result = NULL, seeds = NULL)
+    result_val_batch <- reactiveValues(result = NULL)
     add_info <- reactiveVal()
     batch_done <- reactiveVal(FALSE)
 
@@ -333,12 +336,12 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         formatSignif(columns = 1:ncol(res), digits = 3)
     })
     output$IDA_plot <- renderPlot({
-      req(length(result_val()) == 4)
+      req(length(result_val()) == 11)
       req(!is.null(result_val()[[3]]))
       result_val()[[3]]
     })
     output$IDA_metrices <- renderDT({
-      req(length(result_val()) == 4)
+      req(length(result_val()) == 11)
       req(!is.null(result_val()[[4]]))
       res <- as.data.frame(result_val()[[4]])
       names(res)[1] <- c("MeanSquareError")
@@ -364,7 +367,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         ), sep = "")
       },
       content = function(file) {
-        req(length(result_val()) == 4)
+        req(length(result_val()) == 11)
 
         if (input$file_type == "xlsx") {
           wb <- openxlsx::createWorkbook()
@@ -617,9 +620,21 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
 
     # Batch analysis
     # ===============================================================================
-    current_df <- reactiveVal()
+    destroy_files <- reactive({
+      l <- com_batch$list
+      if(length(l) >= 1) {
+        lapply(l, function(x) {
+          x$destroy()
+        })
+      }
+      com_batch$list <- NULL
+      return()
+    })
+    
+    num_rep_batch <- reactiveVal()
 
     observeEvent(input$IDA_Start_Batch, {
+      # Check running analysis
       if (nclicks() != 0 | nclicks_sense() != 0) {
         showNotification("Already running analysis")
         return(NULL)
@@ -628,6 +643,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       nclicks(nclicks() + 1)
       result_val(data.frame(Status = "Running..."))
       session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL, arg = 1))
+      # check input
       req(input$IDA_H0)
       req(input$IDA_D0)
       req(input$IDA_kHD)
@@ -642,6 +658,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       req(input$IDA_ID_ub)
       req(input$IDA_I0_lb)
       req(input$IDA_I0_ub)
+      req(input$NumRepDataset)
       lb <- c(input$IDA_kHD_lb, input$IDA_I0_lb, input$IDA_IHD_lb, input$IDA_ID_lb)
       lb <- convertToNum(lb)
       req(!("Error" %in% lb))
@@ -655,8 +672,31 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       ngen <- input$IDA_ngen
       topo <- input$IDA_topology
       et <- input$IDA_threshold
+      # check seed case
       seed <- input$Seed
-      if (is.na(seed)) seed <- as.numeric(Sys.time())
+      num_rep <- as.integer(input$NumRepDataset)
+      num_rep_batch(num_rep)
+      seed_case <- NULL
+      if(num_rep > 1 && !is.na(seed)) {
+        showNotification("Found number of replications > 1 and a seed was defined.
+          Only for the first analysis of each dataset respectivly,
+          the seed which will be used.")
+      }
+      if (is.na(seed)) {
+        seed_case <- 1
+      } else {
+        if(num_rep > 1) {
+          seed_case <- 2
+        } else {
+          seed_case <- 3
+        }
+      }
+      seed_origin <- NULL
+      if(seed_case == 3) {
+       seed_origin <- seed
+      }
+      # clear everything
+      batch_done(FALSE)
       fl()
       output$IDA_batch <- renderPlot({
         plot.new()
@@ -665,26 +705,36 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         type = "IDAupdateFieldBatch",
         list(message = "Initialisation")
       )
+      reactive({destroy_files()})
 
-      # TODO: add number of runs per dataset as UI input
-      #   Either a seed is set for all datasets or no seed is set
-      #   then the time is used to calc a seed for each dataset
-      #   If several seeds per dataset should be used the seed UI field is ignored
-      #   Maybe use a drop down menu (Test each dataset several times or Test each dataset only one time)
-      #   Based on the drop down menu the seed field is visible or not
-      # TODO: adapt accordingly the promise list and com_batch$list
-      # TODO: save seeds --> based on Sys.time()
-      promises_list <- vector("list", length(df_list))
-      com_batch$list <- reactive({lapply(seq_along(df_list), function(x) {
+      size <- length(df_list) * num_rep
+      promises_list <- vector("list", size)
+      seeds <- numeric(size)
+      seeds_from <- 1:1e6
+
+      com_batch$list <- reactive({lapply(seq_along(1:size),
+        function(x) {
         Communicator$new()
       })})
-      cl <-com_batch$list()
-      for (i in seq_along(df_list)) {
-        if (!is.null(seed)) seed <- as.numeric(Sys.time())
+
+      cl <- com_batch$list()
+
+      for (i in seq_len(size)) {
+        if(seed_case == 1) {
+          seed <- sample(seeds_from, 1)
+        } else if(seed_case == 2) {
+          if(i %in% seq(1, size, num_rep)) {
+            seed <- seed_origin
+          } else {
+            seed <- sample(seeds_from, 1)
+          }
+        }
+        seeds[i] <- seed
         promises_list[[i]] <- future({
           opti(
             case = "ida", lowerBounds = lb, upperBounds = ub,
-            df_list[[i]], additionalParameters,
+            df_list[[(i - 1) %% length(df_list) + 1]],
+            additionalParameters,
             seed = seed, npop = npop, ngen = ngen,
             Topology = topo,
             errorThreshold = et, runAsShiny = cl[[i]]
@@ -711,6 +761,13 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
           batch_done(TRUE)
         })
       })
+
+      add_info(list(
+        lb, ub,
+        additionalParameters,
+        npop, ngen, topo, et, seeds
+      ))
+
       NULL
     })
 
@@ -724,9 +781,22 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     })
     observeEvent(input$IDA_status_Batch, {
       req(nclicks() != 0)
-      temp_status <- lapply(com_batch$list(), function(com) {
-        paste0("Dataset Nr.: ", parent.frame()$i[], " ", com$getData())
-      })
+      counter_dataset <- 0
+      counter_rep <- 0
+      temp_status <- character(length(com_batch$list()))
+      for (i in seq_along(com_batch$list())) {
+        if ( ((i - 1) %% num_rep_batch()) == 0) {
+          counter_dataset <- counter_dataset + 1
+          counter_rep <- 1
+        } else {
+          counter_rep <- counter_rep + 1
+        }
+        temp_status[i] <- paste0(
+          "Dataset Nr.: ", counter_dataset,
+          "; Replication Nr.:", counter_rep,
+          "; ", com_batch$list()[[i]]$getData()
+        )
+      }
       bind <- function(a, b) {
         if(is.null(a) && is.null(b)) return("Initialisation")
         if(is.null(a)) return(b)
@@ -751,13 +821,12 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       seperate_batch_results(values)
     })
 
-    observeEvent(req(batch_done()), 
-      {
-      req(batch_done())
-      batch_done(FALSE)
+    observeEvent(req(batch_done()), {
+      list <- plot_data()
+      p <- plotStates(list, num_rep_batch()) / 
+        plotParams(list, num_rep_batch()) + plotMetrices(list, num_rep_batch())
       output$IDA_batch <- renderPlot({
-        list <- plot_data()
-        plotStates(list) + plotParams(list) + plotMetrices(list)
+        p
       })
     })
 

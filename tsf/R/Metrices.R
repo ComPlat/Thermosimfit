@@ -14,9 +14,13 @@ metrices <- function(y_true, y_pred) {
   mae <- mean(abs(y_true - y_pred)) # Mean Absolute Error (MAE)
   r2 <- R2(y_true, y_pred) # R-squared (R2)
   r2adjusted <- R2Adjusted(y_true, y_pred)
-  return(list(
+  res <- data.frame(
     mse = mse, rmse = rmse,
     mae = mae, r2 = r2, r2adjusted = r2adjusted
-  ))
+  )
+  names(res) <- c(
+    "MeanSquareError",
+    "RootMeanSquareError", "MeanAbsoluteError", "R2", "R2 adjusted"
+  )
+  return(res)
 }
-
