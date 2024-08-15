@@ -46,66 +46,73 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
                 saveSwarm = FALSE, runAsShiny = FALSE) {
   stopifnot(length(lb) == length(ub))
   if (length(lb) != length(ub)) {
-    return(ErrorClass$new("length of lb and ub differ"))
+    stop("length of lb and ub differ")
   }
   if (!is.numeric(lb)) {
-    return(ErrorClass$new("lb has to be of type numeric"))
+    stop("lb has to be of type numeric")
   }
   if (!is.numeric(ub)) {
-    return(ErrorClass$new("ub has to be of type numeric"))
+    stop("ub has to be of type numeric")
   }
   if (!is.function(loss)) {
-    return(ErrorClass$new("loss has to be of type function"))
+    stop("loss has to be of type function")
   }
   if (!is.numeric(ngen)) {
-    return(ErrorClass$new("ngen has to be of type numeric"))
+    stop("ngen has to be of type numeric")
   }
   if (!is.numeric(npop)) {
-    return(ErrorClass$new("npop has to be of type numeric"))
+    stop("npop has to be of type numeric")
   }
   if (length(ngen) != 1) {
-    return(ErrorClass$new("ngen has to be a scalar"))
+    stop("ngen has to be a scalar")
   }
   if (length(npop) != 1) {
-    return(ErrorClass$new("npop has to be a scalar"))
+    stop("npop has to be a scalar")
   }
   if (length(lb) <= 0) {
-    return(ErrorClass$new("lb and ub need at least one element"))
+    stop("lb and ub need at least one element")
   }
   if (any(lb) < 0) {
-    return(ErrorClass$new("lb should be at least 0"))
+    stop("lb should be at least 0")
   }
   if (any(ub) < 0) {
-    return(ErrorClass$new("ub should be at least 0"))
+    stop("ub should be at least 0")
   }
   if (ngen <= 10) {
-    return(ErrorClass$new("ngen has to be at least 10"))
+    stop("ngen has to be at least 10")
   }
   if (npop <= 5) {
-    return(ErrorClass$new("npop has to be at least 5"))
+    stop("npop has to be at least 5")
   }
   if (!is.numeric(error_threshold)) {
-    return(ErrorClass$new("error_threshold has to be of type numeric"))
+    stop("error_threshold has to be of type numeric")
   }
   if (length(error_threshold) != 1) {
-    return(ErrorClass$new("error_threshold has to be a scalar"))
+    stop("error_threshold has to be a scalar")
   }
   if (!is.logical(global)) {
-    return(ErrorClass$new("global has to be of type logical"))
+    stop("global has to be of type logical")
   }
   if (length(global) != 1) {
-    return(ErrorClass$new("global has to be a scalar"))
+    stop("global has to be a scalar")
   }
   if (!is.logical(saveSwarm)) {
-    return(ErrorClass$new("saveSwarm has to be of type logical"))
+    stop("saveSwarm has to be of type logical")
   }
   if (length(saveSwarm) != 1) {
-    return(ErrorClass$new("saveSwarm has to be a scalar"))
+    stop("saveSwarm has to be a scalar")
   }
   if (any(lb > ub)) {
     w <- which(lb > ub)
     w <- paste(w, collapse = ", ")
     return(ErrorClass$new(paste("lb > ub for: ", w)))
+  }
+  loss_fct <- function(...) {
+    e <- try(loss(...))
+    if (inherits(e, "try-error")) {
+      stop("Could not evaluate the loss function")
+    }
+    return(e)
   }
 
   npar <- length(lb)
@@ -131,7 +138,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
 
   for (i in seq(npop)) {
     swarm[i, ] <- runif(npar, min = lb, max = ub)
-    swarm_errors[i] <- loss(exp(swarm[i, ]), env)
+    swarm_errors[i] <- loss_fct(exp(swarm[i, ]), env)
     swarm_bests[i] <- swarm_errors[i]
   }
 
@@ -206,7 +213,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
       swarm[i, ] <- correctBelowLB(swarm[i, ], lb)
       swarm[i, ] <- correctAboveUB(swarm[i, ], ub)
 
-      error <- loss(swarm[i, ], env)
+      error <- loss_fct(swarm[i, ], env)
 
       if (saveSwarm) error_memory[((iter * npop) + i)] <- error
 
@@ -235,7 +242,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
       if (iter %% 5 == 0) {
         status <- runAsShiny$getStatus()
         if (status == "interrupt") {
-          insilico <- loss(global_best_vec, env, TRUE)
+          insilico <- loss_fct(global_best_vec, env, TRUE)
           return(list(insilico, c(global_best_vec)))
         }
         gbv <- c(
@@ -270,7 +277,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
     }
   }
 
-  insilico <- loss(global_best_vec, env, TRUE)
+  insilico <- loss_fct(global_best_vec, env, TRUE)
   if (saveSwarm) {
     return(list(
       insilico, c(global_best_vec),
