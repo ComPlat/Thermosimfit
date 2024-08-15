@@ -49,10 +49,33 @@ extract_iter <- function(s) {
   as.numeric(a[[1]])
 }
 
+# print notification
+print_noti <- function(message, type = "warning", duration = 10) {
+  showNotification(
+    message,
+    duration = duration,
+    type = type
+  )
+}
+
 # require with notificiation
-rwn <- function(expr, message, duration = 0) {
+rwn <- function(expr, message, type = "warning", duration = 10) {
   if (!expr) {
-    showNotification(message, duration = duration)
+    print_noti(
+      message,
+      duration = duration,
+      type = type
+    )
   }
   req(expr)
+}
+
+# helper
+convert_all_to_num <- function(what, ...) {
+  v <- c(...)
+  v <- convertToNum(v)
+  if (any("Error" %in% v)) {
+    rwn(FALSE, paste0("The ", what, " cannot be converted into a numeric value"))
+  }
+  return(v)
 }

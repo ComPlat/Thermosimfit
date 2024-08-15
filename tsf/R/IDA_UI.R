@@ -1,0 +1,191 @@
+idaUI <- function(id) {
+  tabItem(
+    tabName = "IDA",
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAupdateField', function(message) {
+              var result = message.message;
+              $('#IDA-IDA_output').html(result);
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAclearField', function(message) {
+              $('#IDA-IDA_output').empty();
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAupdateFieldSense', function(message) {
+              var result = message.message;
+              $('#IDA-IDA_output_sense').html(result);
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAclearFieldSense', function(message) {
+              $('#IDA-IDA_output_sense').empty();
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAupdateFieldBatch', function(message) {
+              var result = message.message;
+              $('#IDA-IDA_output_Batch').html(result);
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('IDAclearFieldBatch', function(message) {
+              $('#IDA-IDA_output_Batch').empty();
+            });"
+    ),
+    fluidRow(
+      box(
+        textInput(NS(id, "IDA_H0"), "Host conc. [M]", value = 0),
+        textInput(NS(id, "IDA_D0"), "Dye conc. [M]", value = "0"),
+        textInput(NS(id, "IDA_kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "0"),
+        box(
+          title = "Advanced options",
+          collapsible = TRUE, collapsed = TRUE,
+          box(
+            numericInput(NS(id, "IDA_npop"), "Number of particles", value = 40),
+            numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 1000)
+          ),
+          box(
+            selectInput(NS(id, "IDA_topology"), "Topology of particle swarm",
+              c(
+                "star" = "star",
+                "random arbitrary neighberhood" = "random"
+              ),
+              selected = "random",
+              selectize = FALSE
+            ),
+            numericInput(NS(id, "IDA_threshold"),
+              "Threshold of the error",
+              value = 0.00001
+            ),
+            numericInput(NS(id, "Seed"), "Seed which should be set", value = NULL)
+          ),
+          width = 12
+        ),
+        width = 6,
+        title = "Parameter", solidHeader = TRUE,
+        status = "warning", height = 625
+      ),
+      box(
+        box(
+          textInput(NS(id, "IDA_kHD_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
+          textInput(NS(id, "IDA_kHD_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
+        ),
+        box(
+          textInput(NS(id, "IDA_I0_lb"), "I(0) value lower boundary", value = 0),
+          textInput(NS(id, "IDA_I0_ub"), "I(0) value upper boundary", value = 1e08)
+        ),
+        box(
+          textInput(NS(id, "IDA_IHD_lb"),
+            label = tagList(
+              "I(HD) value lower boundary [1/M]",
+              actionButton(NS(id, "AdviceUBIHD"), "Help",
+                icon = icon("question-circle"),
+                style = "background-color:transparent; border:none;"
+              )
+            ), value = 0
+          ),
+          textInput(NS(id, "IDA_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
+        ),
+        box(
+          textInput(NS(id, "IDA_ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
+          textInput(NS(id, "IDA_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
+        ),
+        width = 6,
+        title = tagList(
+          "Boundaries",
+          actionButton(NS(id, "helpButton"), "Help",
+            icon = icon("question-circle"),
+            style = "background-color:transparent; border:none;"
+          )
+        ),
+        solidHeader = TRUE,
+        status = "warning", height = 625
+      )
+    ),
+    fluidRow(
+      tabBox(
+        id = NS(id, "ResultPanel"),
+        tabPanel(
+          "Optimization",
+          fluidRow(
+            box(
+              box(
+                actionButton(NS(id, "IDA_Start_Opti"), "Start Optimization"),
+                actionButton(NS(id, "IDA_cancel"), "Stop Optimization"),
+                actionButton(NS(id, "IDA_status"), "Get Status"),
+                downloadButton(NS(id, "IDA_download"), "Save result of optimization"),
+                selectInput(NS(id, "file_type"), "Choose file type:",
+                  choices = c("Excel" = "xlsx", "CSV" = "csv")
+                ),
+                verbatimTextOutput(NS(id, "IDA_output")),
+                width = 12
+              ),
+              box(
+                br(),
+                DT::DTOutput(NS(id, "IDA_params")),
+                DT::DTOutput(NS(id, "IDA_metrices")),
+                plotOutput(NS(id, "IDA_plot")),
+                width = 7, solidHeader = TRUE, status = "warning"
+              ),
+              width = 12, title = "Optimization", solidHeader = TRUE,
+              collapsible = TRUE, status = "warning"
+            )
+          )
+        ),
+        tabPanel(
+          "Sensitivity analysis",
+          fluidRow(
+            box(
+              box(
+                numericInput(NS(id, "IDA_sens_bounds"), "+/- boundary in [%]", value = 15),
+                actionButton(NS(id, "IDA_Start_Sensi"), "Start Sensitivity analysis"),
+                actionButton(NS(id, "IDA_cancel_sense"), "Cancel"),
+                actionButton(NS(id, "IDA_status_sense"), "Get Status"),
+                downloadButton(NS(id, "IDA_sensi_download"), "Save result of sensitivity analysis"),
+                verbatimTextOutput(NS(id, "IDA_output_sense")),
+                width = 12
+              ),
+              box(
+                br(),
+                plotOutput(NS(id, "IDA_sensi")),
+                width = 7, solidHeader = TRUE, status = "warning"
+              ),
+              width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
+              collapsible = TRUE, status = "warning"
+            )
+          )
+        ),
+        tabPanel(
+          "Batch processing",
+          fluidRow(
+            box(
+              box(
+                numericInput(NS(id, "NumRepDataset"),
+                  min = 1, max = 10,
+                  "How often should each dataset be analysed (using different seeds)",
+                  value = 1
+                ),
+                actionButton(NS(id, "IDA_Start_Batch"), "Start batch analysis"),
+                actionButton(NS(id, "IDA_cancel_Batch"), "Cancel"),
+                actionButton(NS(id, "IDA_status_Batch"), "Get Status"),
+                downloadButton(NS(id, "IDA_batch_download"), "Save result of batch analysis"),
+                verbatimTextOutput(NS(id, "IDA_output_Batch")),
+                width = 12
+              ),
+              box(
+                br(),
+                plotOutput(NS(id, "IDA_batch"), width = "1000px", height = "800px"),
+                width = 12, solidHeader = TRUE, status = "warning"
+              ),
+              width = 12, title = "Batch analysis", solidHeader = TRUE,
+              collapsible = TRUE, status = "warning"
+            )
+          )
+        ),
+        width = 12
+      )
+    )
+  )
+}

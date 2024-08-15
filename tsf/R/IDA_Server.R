@@ -1,198 +1,8 @@
-idaUI <- function(id) {
-  tabItem(
-    tabName = "IDA",
-    tags$script(
-      "Shiny.addCustomMessageHandler('IDAupdateField', function(message) {
-              var result = message.message;
-              $('#IDA-IDA_output').html(result);
-            });"
-    ),
-    tags$script(
-      "Shiny.addCustomMessageHandler('IDAclearField', function(message) {
-              $('#IDA-IDA_output').empty();
-            });"
-    ),
-    tags$script(
-      "Shiny.addCustomMessageHandler('IDAupdateFieldSense', function(message) {
-              var result = message.message;
-              $('#IDA-IDA_output_sense').html(result);
-            });"
-    ),
-    tags$script(
-      "Shiny.addCustomMessageHandler('IDAclearFieldSense', function(message) {
-              $('#IDA-IDA_output_sense').empty();
-            });"
-    ),
-    tags$script(
-      "Shiny.addCustomMessageHandler('IDAupdateFieldBatch', function(message) {
-              var result = message.message;
-              $('#IDA-IDA_output_Batch').html(result);
-            });"
-    ),
-    tags$script(
-      "Shiny.addCustomMessageHandler('IDAclearFieldBatch', function(message) {
-              $('#IDA-IDA_output_Batch').empty();
-            });"
-    ),
-    fluidRow(
-      box(
-        textInput(NS(id, "IDA_H0"), "Host conc. [M]", value = 0),
-        textInput(NS(id, "IDA_D0"), "Dye conc. [M]", value = "0"),
-        textInput(NS(id, "IDA_kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "0"),
-        box(
-          title = "Advanced options",
-          collapsible = TRUE, collapsed = TRUE,
-          box(
-            numericInput(NS(id, "IDA_npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 1000)
-          ),
-          box(
-            selectInput(NS(id, "IDA_topology"), "Topology of particle swarm",
-              c(
-                "star" = "star",
-                "random arbitrary neighberhood" = "random"
-              ),
-              selected = "random",
-              selectize = FALSE
-            ),
-            numericInput(NS(id, "IDA_threshold"),
-              "Threshold of the error",
-              value = 0.00001
-            ),
-            numericInput(NS(id, "Seed"), "Seed which should be set", value = NULL)
-          ),
-          width = 12
-        ),
-        width = 6,
-        title = "Parameter", solidHeader = TRUE,
-        status = "warning", height = 625
-      ),
-      box(
-        box(
-          textInput(NS(id, "IDA_kHD_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
-          textInput(NS(id, "IDA_kHD_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
-        ),
-        box(
-          textInput(NS(id, "IDA_I0_lb"), "I(0) value lower boundary", value = 0),
-          textInput(NS(id, "IDA_I0_ub"), "I(0) value upper boundary", value = 1e08)
-        ),
-        box(
-          textInput(NS(id, "IDA_IHD_lb"),
-            label = tagList(
-              "I(HD) value lower boundary [1/M]",
-              actionButton(NS(id, "AdviceUBIHD"), "Help",
-                icon = icon("question-circle"),
-                style = "background-color:transparent; border:none;"
-              )
-            ), value = 0
-          ),
-          textInput(NS(id, "IDA_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
-        ),
-        box(
-          textInput(NS(id, "IDA_ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
-          textInput(NS(id, "IDA_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
-        ),
-        width = 6,
-        title = tagList(
-          "Boundaries",
-          actionButton(NS(id, "helpButton"), "Help",
-            icon = icon("question-circle"),
-            style = "background-color:transparent; border:none;"
-          )
-        ),
-        solidHeader = TRUE,
-        status = "warning", height = 625
-      )
-    ),
-    fluidRow(
-      tabBox(
-        id = NS(id, "ResultPanel"),
-        tabPanel(
-          "Optimization",
-          fluidRow(
-            box(
-              box(
-                actionButton(NS(id, "IDA_Start_Opti"), "Start Optimization"),
-                actionButton(NS(id, "IDA_cancel"), "Stop Optimization"),
-                actionButton(NS(id, "IDA_status"), "Get Status"),
-                downloadButton(NS(id, "IDA_download"), "Save result of optimization"),
-                selectInput(NS(id, "file_type"), "Choose file type:",
-                  choices = c("Excel" = "xlsx", "CSV" = "csv")
-                ),
-                verbatimTextOutput(NS(id, "IDA_output")),
-                width = 12
-              ),
-              box(
-                br(),
-                DT::DTOutput(NS(id, "IDA_params")),
-                DT::DTOutput(NS(id, "IDA_metrices")),
-                plotOutput(NS(id, "IDA_plot")),
-                width = 7, solidHeader = TRUE, status = "warning"
-              ),
-              width = 12, title = "Optimization", solidHeader = TRUE,
-              collapsible = TRUE, status = "warning"
-            )
-          )
-        ),
-        tabPanel(
-          "Sensitivity analysis",
-          fluidRow(
-            box(
-              box(
-                numericInput(NS(id, "IDA_sens_bounds"), "+/- boundary in [%]", value = 15),
-                actionButton(NS(id, "IDA_Start_Sensi"), "Start Sensitivity analysis"),
-                actionButton(NS(id, "IDA_cancel_sense"), "Cancel"),
-                actionButton(NS(id, "IDA_status_sense"), "Get Status"),
-                downloadButton(NS(id, "IDA_sensi_download"), "Save result of sensitivity analysis"),
-                verbatimTextOutput(NS(id, "IDA_output_sense")),
-                width = 12
-              ),
-              box(
-                br(),
-                plotOutput(NS(id, "IDA_sensi")),
-                width = 7, solidHeader = TRUE, status = "warning"
-              ),
-              width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
-              collapsible = TRUE, status = "warning"
-            )
-          )
-        ),
-        tabPanel(
-          "Batch processing",
-          fluidRow(
-            box(
-              box(
-                numericInput(NS(id, "NumRepDataset"), min = 1, max = 10,
-                  "How often should each dataset be analysed (using different seeds)",
-                  value = 1),
-                actionButton(NS(id, "IDA_Start_Batch"), "Start batch analysis"),
-                actionButton(NS(id, "IDA_cancel_Batch"), "Cancel"),
-                actionButton(NS(id, "IDA_status_Batch"), "Get Status"),
-                downloadButton(NS(id, "IDA_batch_download"), "Save result of batch analysis"),
-                verbatimTextOutput(NS(id, "IDA_output_Batch")),
-                width = 12
-              ),
-              box(
-                br(),
-                plotOutput(NS(id, "IDA_batch"), width = "1000px", height = "800px"),
-                width = 12, solidHeader = TRUE, status = "warning"
-              ),
-              width = 12, title = "Batch analysis", solidHeader = TRUE,
-              collapsible = TRUE, status = "warning"
-            )
-          )
-        ),
-        width = 12
-      )
-    )
-  )
-}
-
-
-
 idaServer <- function(id, df, df_list, com, com_sense, com_batch,
                       nclicks, nclicks_sense) {
   moduleServer(id, function(input, output, session) {
+    # general stuff
+    # ===============================================================================
     observeEvent(input$helpButton, {
       showModal(modalDialog(
         title = "Help",
@@ -210,8 +20,12 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         footer = NULL
       ))
     })
+    fl <- reactive({
+      flush(com$result)
+      return()
+    })
 
-    # Optimization
+    # reactive values
     # ===============================================================================
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
@@ -219,44 +33,42 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     add_info <- reactiveVal()
     batch_done <- reactiveVal(FALSE)
 
-    fl <- reactive({
-      flush(com$result)
-      return()
-    })
 
+    # Optimization
+    # ===============================================================================
+    check_inputs <- function() {
+      rwn(input$IDA_H0 != "", "Please enter a value for the Host")
+      rwn(input$IDA_D0 != "", "Please enter a value for the Dye")
+      rwn(input$IDA_kHD != "", "Please enter a value for KaHD")
+      rwn(input$IDA_npop != "", "Please enter a value for number of particles") # TODO: numeric input
+      rwn(input$IDA_ngen != "", "Please enter a value for the number of generations") # TODO: numeric input
+      rwn(input$IDA_threshold != "", "Please enter a value for the error threshold") # TODO: numeric input
+      rwn(input$IDA_kHD_lb != "", "Please enter a value for the lower boundary of KaHG")
+      rwn(input$IDA_kHD_ub != "", "Please enter a value for the upper boundary of KaHG")
+      rwn(input$IDA_IHD_lb != "", "Please enter a value for the lower boundary of I(HD)")
+      rwn(input$IDA_IHD_ub != "", "Please enter a value for the upper boundary of I(HD)")
+      rwn(input$IDA_ID_lb != "", "Please enter a value for the lower boundary of I(D)")
+      rwn(input$IDA_ID_ub != "", "Please enter a value for the upper boundary of I(D)")
+      rwn(input$IDA_I0_lb != "", "Please enter a value for the lower boundary of I(0)")
+      rwn(input$IDA_I0_ub != "", "Please enter a value for the upper boundary of I(0)")
+    }
     observeEvent(input$IDA_Start_Opti, {
-         if (nclicks() != 0 | nclicks_sense() != 0) {
-        showNotification("Already running analysis")
+      if (nclicks() != 0 | nclicks_sense() != 0) {
+        print_noti("Already running analysis", type = "warning")
         return(NULL)
       }
       session$sendCustomMessage(type = "IDAclearField", list(message = NULL))
       nclicks(nclicks() + 1)
-      result_val(data.frame(Status = "Running..."))
+      result_val(data.frame(Status = "Running...")) # TODO: is this required check
       com$running()
-      session$sendCustomMessage(type = "IDAclearField", list(message = NULL, arg = 1))
-      req(input$IDA_H0)
-      req(input$IDA_D0)
-      req(input$IDA_kHD)
-      req(input$IDA_npop)
-      req(input$IDA_ngen)
-      req(input$IDA_threshold)
-      req(input$IDA_kHD_lb)
-      req(input$IDA_kHD_ub)
-      req(input$IDA_IHD_lb)
-      req(input$IDA_IHD_ub)
-      req(input$IDA_ID_lb)
-      req(input$IDA_ID_ub)
-      req(input$IDA_I0_lb)
-      req(input$IDA_I0_ub)
-      lb <- c(input$IDA_kHD_lb, input$IDA_I0_lb, input$IDA_IHD_lb, input$IDA_ID_lb)
-      lb <- convertToNum(lb)
-      req(!("Error" %in% lb))
-      ub <- c(input$IDA_kHD_ub, input$IDA_I0_ub, input$IDA_IHD_ub, input$IDA_ID_ub)
-      ub <- convertToNum(ub)
-      req(!("Error" %in% ub))
-      additionalParameters <- c(input$IDA_H0, input$IDA_D0, input$IDA_kHD)
-      additionalParameters <- convertToNum(additionalParameters)
-      req(!("Error" %in% additionalParameters))
+      session$sendCustomMessage(type = "IDAclearField", list(message = NULL, arg = 1)) #TODO: check why is this done twice
+      check_inputs()
+      lb <- convert_all_to_num("lower boundaries", 
+        input$IDA_kHD_lb, input$IDA_I0_lb, input$IDA_IHD_lb, input$IDA_ID_lb)
+      ub <- convert_all_to_num("upper boundaries",
+        input$IDA_kHD_ub, input$IDA_I0_ub, input$IDA_IHD_ub, input$IDA_ID_ub)
+      additionalParameters <- convert_all_to_num("Additional Parameters", 
+        input$IDA_H0, input$IDA_D0, input$IDA_kHD)
       npop <- input$IDA_npop
       ngen <- input$IDA_ngen
       topo <- input$IDA_topology
@@ -831,8 +643,5 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     })
 
   })
-
-
-
 
 }

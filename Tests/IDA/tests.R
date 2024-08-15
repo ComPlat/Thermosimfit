@@ -15,6 +15,33 @@ df <- read.csv("forKonrad-conc-vs-signal.csv",
   header = FALSE
 )
 
+res <- tsf::opti(
+  case = "ida",
+  lowerBounds = c(
+    kG = 1000,
+    I0 = 0,
+    IHD = 0,
+    ID = 0
+  ),
+  upperBounds = c(
+    kG = 10^8,
+    I0 = 100, # started at 10^7 but it ended always at 0...
+    IHD = 10^7,
+    ID = 10^7
+  ),
+  df,
+  additionalParameters = c(
+    host = 0,
+    dye = 0,
+    kHD = 0
+  ),
+  npop = 40,
+  ngen = 20,
+  Topology = "random",
+  errorThreshold = 0.7
+)
+
+
 res <- tsf:::batch(
   case = "ida",
   lowerBounds = c(
@@ -52,47 +79,40 @@ plotStates <- function(list, num_rep = 1) {
     list[[i]]$repetition <- repetitions[i]
   }
   df <- Reduce(rbind, list)
+  # dye and host dye plot
   data <- data.frame(
-    x = rep(df[, 1], 3),
-    y = c(df[, 3], df[, 4], df[, 5]),
+    x = rep(df[, 1], 2),
+    y = c(df[, 4], df[, 5]),
     names = c(
-      rep(names(df)[3], nrow(df)),
       rep(names(df)[4], nrow(df)),
       rep(names(df)[5], nrow(df))
     ),
-    repetition = rep(df$repetition, 3),
-    dataset = rep(df$dataset, 3)
+    repetition = rep(df$repetition, 2),
+    dataset = rep(df$dataset, 2)
   )
-  data_signal_measured <- data.frame(
-    x = df[, 1],
-    y = df[, 2],
-    dataset = df$dataset
-  )
-  p_signal <- ggplot(
-    data = data_signal_measured,
-    aes(x = x, y = y, fill = dataset)
-  ) +
-    geom_line() +
-    xlab(names(df)[1]) +
-    ylab("Signal measured")
-
   base_size <- 10
   if (num_rep > 1) {
     p <- ggplot() +
       geom_boxplot(
         data = data,
         aes(
-          x = x, y = y,
+          x = interaction(dataset, x), y = y,
           fill = factor(dataset),
-          group = interaction(x, dataset)
+          group = interaction(dataset, x)
         ),
         width = 0.25,
         size = 0.25
       ) +
       facet_wrap(. ~ names,
+        strip.position = "left",
         scales = "free_y"
       ) +
-      guides(fill = guide_legend(title = "Datasets"))
+      xlab(names(df)[1]) +
+      ylab(NULL) +
+      guides(fill = guide_legend(title = "Datasets")) +
+      scale_x_discrete(
+        labels = as.character(unique(rbind(data$x, "")))
+      )
   } else {
     p <- ggplot() +
       geom_boxplot(
@@ -104,8 +124,11 @@ plotStates <- function(list, num_rep = 1) {
         )
       ) +
       facet_wrap(~names,
+        strip.position = "left",
         scales = "free_y"
-      )
+      ) +
+      ylab(NULL) +
+      xlab(names(df)[1])
   }
   p <- p + theme(
     legend.position = "bottom",
@@ -113,9 +136,56 @@ plotStates <- function(list, num_rep = 1) {
     axis.text = element_text(size = base_size),
     legend.text = element_text(size = base_size),
     legend.title = element_text(size = base_size),
-    strip.text.x = element_text(size = base_size)
+    strip.text.x = element_text(size = base_size),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
   )
-  return(p / p_signal)
+  # signal plot
+  data_signal_measured <- data.frame(
+    x = c(df[, 1], df[, 1]),
+    y = c(df[, 2], df[, 3]),
+    names = c(
+      rep(names(df)[2], nrow(df)),
+      rep(names(df)[3], nrow(df))
+    ),
+    repetition = rep(df$repetition, 2),
+    dataset = rep(df$dataset, 2)
+  )
+  p_signal <- ggplot(
+    data = data_signal_measured,
+    aes(
+      x = factor(x),
+      y = y,
+      colour = factor(dataset),
+      group = interaction(x, dataset, repetition)
+    )
+  ) +
+    geom_point(
+      data = subset(data_signal_measured, names != "Signal measured"),
+      aes(shape = factor(repetition))
+    ) +
+    geom_line(
+      data = subset(data_signal_measured, names == "Signal measured"),
+      aes(x = factor(x), y = y, group = 1)
+    ) +
+    xlab(names(df)[1]) +
+    ylab(NULL) +
+    theme(
+      legend.position = "bottom",
+      axis.title = element_text(size = base_size * 1.2),
+      axis.text = element_text(size = base_size),
+      legend.text = element_text(size = base_size),
+      legend.title = element_text(size = base_size),
+      strip.text.x = element_text(size = base_size),
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
+    ) +
+    guides(
+      shape = guide_legend(title = "Repetitions"),
+      colour = guide_legend(title = "Datasets"),
+      linetype = guide_legend(title = "Repetitions")
+    ) +
+    facet_wrap(~names, strip.position = "left", scales = "free_y")
+
+  return(p_signal / p)
 }
 
 library(ggplot2)
