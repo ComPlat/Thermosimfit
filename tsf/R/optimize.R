@@ -36,87 +36,87 @@ opti <- function(case, lowerBounds, upperBounds,
                  errorThreshold = -Inf,
                  runAsShiny = FALSE) {
   if (!is.character(case)) {
-    return(ErrorClass$new("case has to be of type character"))
+    stop("case has to be of type character")
   }
   if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
-    return(ErrorClass$new("case is neither dba_dye_const, dba_host_const, ida or gda"))
+    stop("case is neither dba_dye_const, dba_host_const, ida or gda")
   }
   if (!is.numeric(lowerBounds)) {
     return(ErrorClass$new("lowerBounds have to be of type numeric"))
   }
   if (length(lowerBounds) == 0) {
-    return(ErrorClass$new("lowerBounds vector seems to be empty"))
+    stop("lowerBounds vector seems to be empty")
   }
   if (length(lowerBounds) > 4) {
-    return(ErrorClass$new("lowerBounds vector has more than 4 entries"))
+    stop("lowerBounds vector has more than 4 entries")
   }
   if (!is.numeric(upperBounds)) {
-    return(ErrorClass$new("upperBounds have to be of type numeric"))
+    stop("upperBounds have to be of type numeric")
   }
   if (length(upperBounds) == 0) {
-    return(ErrorClass$new("upperBounds vector seems to be empty"))
+    stop("upperBounds vector seems to be empty")
   }
   if (length(upperBounds) > 4) {
-    return(ErrorClass$new("upperBounds vector has more than 4 entries"))
+    stop("upperBounds vector has more than 4 entries")
   }
 
   if (!is.character(path) && !is.data.frame(path)) {
-    return(ErrorClass$new("path has to be of type character or a data.frame"))
+    stop("path has to be of type character or a data.frame")
   }
 
   if (!is.numeric(additionalParameters)) {
-    return(ErrorClass$new("additionalParameters have to be of type numeric"))
+    stop("additionalParameters have to be of type numeric")
   }
   if (case == "hg" && length(additionalParameters) != 1) {
-    return(ErrorClass$new("additionalParameters have to be of length 1"))
+    stop("additionalParameters have to be of length 1")
   }
   if (case == "ida" && length(additionalParameters) != 3) {
-    return(ErrorClass$new("additionalParameters have to be of length 3"))
+    stop("additionalParameters have to be of length 3")
   }
   if (case == "gda" && length(additionalParameters) != 3) {
-    return(ErrorClass$new("additionalParameters have to be of length 3"))
+    stop("additionalParameters have to be of length 3")
   }
   if (!is.numeric(seed) && !is.integer(seed) && !is.null(seed)) {
-    return(ErrorClass$new("Invalid seed argument found"))
+    stop("Invalid seed argument found")
   }
   if (is.null(seed)) {
     seed <- as.numeric(Sys.time())
   }
   if (!is.numeric(npop) && !is.integer(npop)) {
-    return(ErrorClass$new("npop has to be of type numeric or integer"))
+    stop("npop has to be of type numeric or integer")
   }
   if (npop <= 5 || npop > 400) {
-    return(ErrorClass$new("npop has to be between 5 and 400"))
+    stop("npop has to be between 5 and 400")
   }
   if (!is.numeric(ngen) && !is.integer(ngen)) {
-    return(ErrorClass$new("ngen has to be of type numeric or integer"))
+    stop("ngen has to be of type numeric or integer")
   }
   if (ngen <= 5 || npop > 10^7) {
-    return(ErrorClass$new("ngen has to be between 5 and 10^7"))
+    stop("ngen has to be between 5 and 10^7")
   }
   if (!is.character(Topology)) {
-    return(ErrorClass$new("Topology has to be of type character"))
+    stop("Topology has to be of type character")
   }
   if (!(Topology %in% c("star", "random"))) {
-    return(ErrorClass$new("Topology is neither star or random"))
+    stop("Topology is neither star or random")
   }
   Topo <- FALSE
   if (Topology == "star") Topo <- TRUE
   if (!is.numeric(errorThreshold)) {
-    return(ErrorClass$new("errorThreshold has to be of type numeric"))
+    stop("errorThreshold has to be of type numeric")
   }
   df <- NULL
   if (!is.data.frame(path)) {
     df <- try(importData(path))
     if (class(df) == "try-error") {
-      return(ErrorClass$new("Could not read file"))
+      stop("Could not read file")
     }
   } else {
     df <- path
   }
   check <- upperBounds < lowerBounds
   if (any(check == TRUE)) {
-    return(ErrorClass$new("lowerBounds < upperBounds not fulfilled"))
+    stop("lowerBounds < upperBounds not fulfilled")
   }
 
   lossFct <- NULL
@@ -156,7 +156,7 @@ opti <- function(case, lowerBounds, upperBounds,
     errorThreshold, Topo, FALSE, runAsShiny
   ))
   if (class(res) == "try-error") {
-    return(ErrorClass$new(conditionMessage(attr(res, "condition"))))
+    stop(conditionMessage(attr(res, "condition")))
   }
 
   df <- create_data_df(df, res, case)
