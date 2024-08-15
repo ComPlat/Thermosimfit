@@ -151,10 +151,13 @@ opti <- function(case, lowerBounds, upperBounds,
     env$kd <- additionalParameters[3]
   }
   set.seed(seed)
-  res <- pso(
+  res <- try(pso(
     env, lowerBounds, upperBounds, lossFct, ngen, npop,
     errorThreshold, Topo, FALSE, runAsShiny
-  )
+  ))
+  if (class(res) == "try-error") {
+    return(ErrorClass$new(conditionMessage(attr(res, "condition"))))
+  }
 
   df <- create_data_df(df, res, case)
   params <- create_params_df(res, case)
