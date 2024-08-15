@@ -163,7 +163,7 @@ idaUI <- function(id) {
             box(
               box(
                 numericInput(NS(id, "NumRepDataset"),
-                  min = 1, max = 10,
+                  min = 1, max = 5,
                   "How often should each dataset be analysed (using different seeds)",
                   value = 1
                 ),
@@ -176,7 +176,11 @@ idaUI <- function(id) {
               ),
               box(
                 br(),
-                plotOutput(NS(id, "IDA_batch"), width = "1000px", height = "800px"),
+                plotOutput(NS(id, "IDA_batch_data_plot"),
+                  height = 1000, width = 1000
+                ),
+                plotOutput(NS(id, "IDA_batch_params_plot")),
+                plotOutput(NS(id, "IDA_batch_metrices_plot")),
                 width = 12, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Batch analysis", solidHeader = TRUE,

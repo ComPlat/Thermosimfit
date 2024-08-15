@@ -87,7 +87,17 @@ seperate_batch_results <- function(list) {
   metrices <- lapply(list, function(x) {
     x[[4]]
   })
-  list(states = states, params = params, metrices = metrices)
+  seeds <- lapply(list, function(x) {
+    x$seed
+  })
+  list(
+    states = states, params = params, metrices = metrices,
+    lowerBounds = list[[1]]$lowerBounds,
+    upperBounds = list[[1]]$upperBounds,
+    additionalParameters = list[[1]]$additionalParameters,
+    seeds = seeds, npop = list[[1]]$npop, ngen = list[[1]]$ngen,
+    Topology = list[[1]]$Topology
+  )
 }
 
 plotStates <- function(list, num_rep = 1) {
@@ -111,7 +121,7 @@ plotStates <- function(list, num_rep = 1) {
     repetition = rep(df$repetition, 2),
     dataset = rep(df$dataset, 2)
   )
-  base_size <- 10
+  base_size <- 14
   if (num_rep > 1) {
     p <- ggplot() +
       geom_boxplot(
@@ -153,11 +163,12 @@ plotStates <- function(list, num_rep = 1) {
   }
   p <- p + theme(
     legend.position = "bottom",
-    axis.title = element_text(size = base_size * 1.2),
+    axis.title = element_text(size = base_size * 1.2, face = "bold"),
     axis.text = element_text(size = base_size),
     legend.text = element_text(size = base_size),
     legend.title = element_text(size = base_size),
-    strip.text.x = element_text(size = base_size),
+    strip.text.x = element_text(size = base_size * 1.2, face = "bold"),
+    strip.text.y = element_text(size = base_size * 1.2, face = "bold"),
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
   )
   # signal plot
@@ -192,11 +203,12 @@ plotStates <- function(list, num_rep = 1) {
     ylab(NULL) +
     theme(
       legend.position = "bottom",
-      axis.title = element_text(size = base_size * 1.2),
+      axis.title = element_text(size = base_size * 1.2, face = "bold"),
       axis.text = element_text(size = base_size),
       legend.text = element_text(size = base_size),
       legend.title = element_text(size = base_size),
-      strip.text.x = element_text(size = base_size),
+      strip.text.x = element_text(size = base_size, face = "bold"),
+      strip.text.y = element_text(size = base_size * 1.2, face = "bold"),
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
     ) +
     guides(
@@ -228,7 +240,7 @@ plotParams <- function(list, num_rep = 1) {
     ),
     repetition = rep(df$repetition, 4)
   )
-  base_size <- 10
+  base_size <- 14
   if (num_rep > 1) {
     p <- ggplot() +
       geom_boxplot(
@@ -273,11 +285,12 @@ plotParams <- function(list, num_rep = 1) {
   }
   p <- p + theme(
     legend.position = "bottom",
-    axis.title = element_text(size = base_size * 1.2),
+    axis.title = element_text(size = base_size * 1.2, face = "bold"),
     axis.text = element_text(size = base_size),
     legend.text = element_text(size = base_size),
     legend.title = element_text(size = base_size),
-    strip.text.x = element_text(size = base_size)
+    strip.text.x = element_text(size = base_size * 1.2, face = "bold"),
+    strip.text.y = element_text(size = base_size * 1.2, face = "bold")
   )
   return(p)
 }
@@ -304,7 +317,7 @@ plotMetrices <- function(list, num_rep = 1) {
     ),
     repetition = rep(df$repetition, 5)
   )
-  base_size <- 10
+  base_size <- 14
   if (num_rep > 1) {
     p <- ggplot() +
       geom_boxplot(
@@ -349,7 +362,7 @@ plotMetrices <- function(list, num_rep = 1) {
   }
   p <- p + theme(
     legend.position = "bottom",
-    axis.title = element_text(size = base_size * 1.2),
+    axis.title = element_text(size = base_size * 1.2, face = "bold"),
     axis.text = element_text(size = base_size),
     legend.text = element_text(size = base_size),
     legend.title = element_text(size = base_size),
