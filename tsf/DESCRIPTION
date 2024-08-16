@@ -22,7 +22,8 @@ Imports:
   sensitivity,
   openxlsx,
   future,
-  promises
+  promises,
+  callr
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr
 RoxygenNote: 7.3.1

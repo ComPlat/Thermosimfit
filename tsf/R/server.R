@@ -145,7 +145,7 @@ server <- function(input, output, session) {
     DBA_com_sense$destroy()
     IDA_com$destroy()
     IDA_com_sense$destroy()
-    destroy()
+    # destroy() # FIX: this results in an error
     GDA_com$destroy()
     GDA_com_sense$destroy()
   })

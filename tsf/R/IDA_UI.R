@@ -35,16 +35,16 @@ idaUI <- function(id) {
             });"
     ),
     fluidRow(
-      box(
-        textInput(NS(id, "IDA_H0"), "Host conc. [M]", value = 0),
-        textInput(NS(id, "IDA_D0"), "Dye conc. [M]", value = "0"),
-        textInput(NS(id, "IDA_kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "0"),
+      box( # TODO: change this back to 0.
+        textInput(NS(id, "IDA_H0"), "Host conc. [M]", value = 1e-6),
+        textInput(NS(id, "IDA_D0"), "Dye conc. [M]", value = "1e-6"),
+        textInput(NS(id, "IDA_kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "3e6"),
         box(
           title = "Advanced options",
           collapsible = TRUE, collapsed = TRUE,
           box(
             numericInput(NS(id, "IDA_npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 1000)
+            numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 20) # TODO: change back to 1000
           ),
           box(
             selectInput(NS(id, "IDA_topology"), "Topology of particle swarm",
@@ -169,7 +169,6 @@ idaUI <- function(id) {
                 ),
                 actionButton(NS(id, "IDA_Start_Batch"), "Start batch analysis"),
                 actionButton(NS(id, "IDA_cancel_Batch"), "Cancel"),
-                actionButton(NS(id, "IDA_status_Batch"), "Get Status"),
                 downloadButton(NS(id, "IDA_batch_download"), "Save result of batch analysis"),
                 verbatimTextOutput(NS(id, "IDA_output_Batch")),
                 width = 12
@@ -177,7 +176,7 @@ idaUI <- function(id) {
               box(
                 br(),
                 plotOutput(NS(id, "IDA_batch_data_plot"),
-                  height = 1000, width = 1000
+                  height = 1500, width = 1500
                 ),
                 plotOutput(NS(id, "IDA_batch_params_plot")),
                 plotOutput(NS(id, "IDA_batch_metrices_plot")),

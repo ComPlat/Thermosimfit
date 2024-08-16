@@ -1,3 +1,4 @@
+library(shiny) # TODO: remove. I added this as a test that the lsp does not time out
 idaServer <- function(id, df, df_list, com, com_sense, com_batch,
                       nclicks, nclicks_sense) {
   moduleServer(id, function(input, output, session) {
@@ -23,12 +24,15 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
 
     # reactive values
     # ===============================================================================
+    invalid_time <- reactiveVal(1100)
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
     result_val_batch <- reactiveValues(result = NULL, result_splitted = NULL)
     opti_done <- reactiveVal(FALSE)
     sensi_done <- reactiveVal(FALSE)
     batch_done <- reactiveVal(FALSE)
+    batch_results_created <- reactiveVal(FALSE)
+    cancel_batch_clicked <- reactiveVal(FALSE)
 
     # helper
     # ===============================================================================
@@ -48,8 +52,10 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       req(batch_done())
       req(length(result_val_batch$result) > 0)
       lapply(result_val_batch$result, function(x) {
-        req(!is.null(x))
+        if (x$is_alive()) req(x$get_status() != "running")
       })
+      invalid_time(invalid_time() + 1000)
+      nclicks(0)
       return(TRUE)
     }
     # Optimization
@@ -326,8 +332,6 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       }
     )
 
-
-
     # Batch analysis
     # ===============================================================================
     destroy_files <- reactive({
@@ -351,7 +355,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     observeEvent(input$IDA_Start_Batch, {
       # Check running analysis
       if (nclicks() != 0 | nclicks_sense() != 0) {
-        showNotification("Already running analysis")
+        print_noti("Already running analysis")
         return(NULL)
       }
       session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL))
@@ -401,7 +405,9 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         seed_origin <- seed
       }
       # clear everything
+      invalid_time(1100)
       batch_done(FALSE)
+      batch_results_created(FALSE)
       fl()
       output$IDA_batch_data_plot <- renderPlot({
         plot.new()
@@ -412,34 +418,20 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       output$IDA_batch_metrices_plot <- renderPlot({
         plot.new()
       })
-      session$sendCustomMessage(
-        type = "IDAupdateFieldBatch",
-        list(message = "Initialisation")
-      )
-      reactive({
-        destroy_files()
-      })
 
       size <- length(df_list) * num_rep
-      promises_list <- vector("list", size)
+      # TODO: handle load on server
+      if (size > 10) {
+        print_noti("The number of replications is too high.
+          Please reduce the number of replications", type = "error")
+        nclicks(0)
+        return(NULL)
+      }
+      process_list <- vector("list", size)
       seeds <- numeric(size)
       seeds_from <- 1:1e6
 
-      com_batch$list <- reactive({
-        lapply(
-          seq_along(1:size),
-          function(x) {
-            Communicator$new()
-          }
-        )
-      })
-
-      cl <- com_batch$list()
-
-      # TODO: this is a massive load for the server. Somehow this has to be monitored and controlled
-      plan(multicore, workers = 10)
       for (i in seq_len(size)) {
-        print(paste0("Iter: ", i)) # TODO: remove
         if (seed_case == 1) {
           seed <- sample(seeds_from, 1)
         } else if (seed_case == 2) {
@@ -450,41 +442,25 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
           }
         }
         seeds[i] <- seed
-        promises_list[[i]] <- future(
-          {
-            opti(
-              case = "ida", lowerBounds = lb, upperBounds = ub,
-              df_list[[(i - 1) %% length(df_list) + 1]],
-              additionalParameters,
-              seed = seed, npop = npop, ngen = ngen,
-              Topology = topo,
-              errorThreshold = et, runAsShiny = cl[[i]]
+        process_list[[i]] <- callr::r_bg(
+          function(case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold) {
+            res <- tsf::opti(
+              case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold
             )
+            return(res)
           },
-          seed = NULL
+          args = list(
+            "ida", lb, ub, df_list[[(i - 1) %% length(df_list) + 1]],
+            additionalParameters, seed, npop, ngen, topo, et
+          )
         )
       }
-      session$sendCustomMessage(
-        type = "IDAupdateFieldBatch",
-        list(message = "")
-      )
 
-      result_val_batch$result <- promises_list
+      result_val_batch$result <- process_list
 
-      promises::promise_map(promises_list, function(promise) {
-        catch(promise, function(e) {
-          result_val_batch$result(NULL)
-          print(e$message)
-          showNotification(e$message, duration = 0)
-        })
-      })
-
-      promises::promise_map(promises_list, function(promise) {
-        finally(promise, function() {
-          nclicks(0)
-          batch_done(TRUE)
-        })
-      })
+      # TODO: how to handle this?
+      # nclicks(0)
+      batch_done(TRUE)
 
       NULL
     })
@@ -494,24 +470,35 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         cancel_clicked_batch = TRUE
       )
       req(nclicks() != 0)
-      if (is.null(result_val_batch$result) || is.null(com_batch$list)) {
-        nclicks(0)
-        batch_done(TRUE)
-        return(NULL)
-      }
-      lapply(com_batch$list(), function(com) {
-        com$interrupt()
-      })
+      req(!is.null(result_val_batch$result))
+      cancel_batch_clicked(TRUE)
     })
 
-    observeEvent(input$IDA_status_Batch, {
+    # observe status
+    observe({
+      invalidateLater(invalid_time())
       req(nclicks() != 0)
       req(!is.null(result_val_batch$result))
-      req(!is.null(com_batch$list))
+      # is cancel_batch_clicked
+      if (cancel_batch_clicked()) {
+        batch_done(TRUE)
+        cancel_batch_clicked(FALSE)
+        nclicks(0)
+        result_val_batch$result <- NULL
+        lapply(result_val_batch$result, function(process) {
+          process$kill()
+        })
+        session$sendCustomMessage(
+          type = "IDAupdateFieldBatch",
+          list(message = "")
+        )
+        return(NULL)
+      }
+      # check status
       counter_dataset <- 0
       counter_rep <- 0
-      temp_status <- character(length(com_batch$list()))
-      for (i in seq_along(com_batch$list())) {
+      temp_status <- character(length(result_val_batch$result))
+      for (i in seq_along(temp_status)) {
         if (((i - 1) %% num_rep_batch()) == 0) {
           counter_dataset <- counter_dataset + 1
           counter_rep <- 1
@@ -521,7 +508,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         temp_status[i] <- paste0(
           "Dataset Nr.: ", counter_dataset,
           "; Replication Nr.:", counter_rep,
-          "; ", com_batch$list()[[i]]$getData()
+          "; ", result_val_batch$result[[i]]$read_output()
         )
       }
       bind <- function(a, b) {
@@ -548,25 +535,39 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
     })
 
     plot_data <- reactive({
-      values <- lapply(result_val_batch$result, function(fut) {
-        value(fut)
+      values <- lapply(result_val_batch$result, function(process) {
+        process$get_result()
       })
       result_val_batch$result_splitted <- seperate_batch_results(values)
+      lapply(result_val_batch$result, function(process) {
+        process$kill()
+      })
+      result_val_batch$result <- NULL
     })
 
-    observeEvent(req(batch_success()), {
-      list <- plot_data()
-      p1 <- plotStates(list, num_rep_batch())
-      p2 <- plotParams(list, num_rep_batch())
-      p3 <- plotMetrices(list, num_rep_batch())
+    # observe results
+    observe({
+      invalidateLater(invalid_time())
+      if (batch_success() && !batch_results_created()) {
+        plot_data()
+        batch_results_created(TRUE)
+      }
+    })
+
+    observeEvent(req(batch_results_created()), {
       output$IDA_batch_data_plot <- renderPlot({
-        p1
+        req(batch_results_created())
+        plotStates(result_val_batch$result_splitted, num_rep_batch())
       })
+
       output$IDA_batch_params_plot <- renderPlot({
-        p2
+        req(batch_results_created())
+        plotParams(result_val_batch$result_splitted, num_rep_batch())
       })
+
       output$IDA_batch_metrices_plot <- renderPlot({
-        p3
+        req(batch_results_created())
+        plotMetrices(result_val_batch$result_splitted, num_rep_batch())
       })
     })
 
@@ -575,7 +576,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         "result.xlsx"
       },
       content = function(file) {
-        batch_success()
+        req(batch_results_created())
         download_batch_file(
           file,
           result_val_batch$result_splitted,

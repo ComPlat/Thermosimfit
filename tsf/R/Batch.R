@@ -123,6 +123,8 @@ plotStates <- function(list, num_rep = 1) {
   )
   base_size <- 14
   if (num_rep > 1) {
+    xlabels <- as.character(unique(rbind(df[, 1], "")))
+    xlabels[(seq_along(xlabels) %% 10) != 1] <- ""
     p <- ggplot() +
       geom_boxplot(
         data = data,
@@ -142,7 +144,7 @@ plotStates <- function(list, num_rep = 1) {
       ylab(NULL) +
       guides(fill = guide_legend(title = "Datasets")) +
       scale_x_discrete(
-        labels = as.character(unique(rbind(data$x, "")))
+        labels = xlabels
       )
   } else {
     p <- ggplot() +
@@ -295,6 +297,7 @@ plotParams <- function(list, num_rep = 1) {
   return(p)
 }
 
+# TODO: metrices increase label size
 plotMetrices <- function(list, num_rep = 1) {
   list <- list[[3]]
   num_data_sets <- length(list) / num_rep

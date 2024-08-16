@@ -131,7 +131,7 @@ download_file <- function(file, result_val) {
   p <- result_val$plot
   tempfile_plot <- tempfile(fileext = ".png")
   ggsave(tempfile_plot,
-    plot = p, width = 10, height = 6
+    plot = p, width = 15, height = 15, limitsize = FALSE
   )
   insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
   curr_row <- curr_row + 15
@@ -273,22 +273,24 @@ download_batch_file <- function(file, result_val, num_rep) {
   ggsave(tempfile_plot1,
     plot = p1, width = 10, height = 10, limitsize = FALSE
   )
-  insertImage(wb, "Results", tempfile_plot1, startRow = curr_row)
-  curr_row <- curr_row + 70
+  insertImage(wb, "Results", tempfile_plot1,
+    startRow = curr_row
+  )
+  curr_row <- curr_row + 20
 
   tempfile_plot2 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot2,
     plot = p2, width = 10, height = 10, limitsize = FALSE
   )
   insertImage(wb, "Results", tempfile_plot2, startRow = curr_row)
-  curr_row <- curr_row + 70
+  curr_row <- curr_row + 20
 
   tempfile_plot3 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot3,
     plot = p3, width = 10, height = 10, limitsize = FALSE
   )
   insertImage(wb, "Results", tempfile_plot3, startRow = curr_row)
-  curr_row <- curr_row + 70
+  curr_row <- curr_row + 20
 
 
   add_info <- data.frame(
@@ -304,7 +306,9 @@ download_batch_file <- function(file, result_val, num_rep) {
   )
   curr_row <- curr_row + 5
 
-  seeds <- result_val$seeds # TODO: add names/ make a dataframe
+  seeds <- result_val$seeds
+  seeds <- as.data.frame(seeds)
+  names(seeds) <- "Seeds"
   writeData(
     wb, "Results",
     seeds,
