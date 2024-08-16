@@ -437,23 +437,6 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       cl <- com_batch$list()
 
       # TODO: this is a massive load for the server. Somehow this has to be monitored and controlled
-      #
-      # go process runs in the background
-      # the go program monitors the number of cores which are currently in use
-      # the assumption is made that one core is one worker in the future plan
-      # the go program will only allow a certain number of workers to be used
-      # if the number of workers exceeds the required one the program
-      # will not start. The user will be informed about the situation
-      # There has to be some kind of waiting queue
-      # This kind of program can be run also partly.
-      # After all datasets with all repetions are done 
-      # the results have to be combined
-      #
-      # Or start other R process as worker
-      # WIthin the other R process run everything sequentiel
-      # but than this R process is not reactive! --> Does not work blocks
-      # Except if the shiny R process would communicate with the workers
-      # of the other R process.
       plan(multicore, workers = 10)
       for (i in seq_len(size)) {
         print(paste0("Iter: ", i)) # TODO: remove

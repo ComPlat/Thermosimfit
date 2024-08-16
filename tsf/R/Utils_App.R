@@ -268,6 +268,7 @@ download_batch_file <- function(file, result_val, num_rep) {
   p2 <- plotParams(result_val, num_rep)
   p3 <- plotMetrices(result_val, num_rep)
 
+  # TODO: All plots are super ugly. Fix this
   tempfile_plot1 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot1,
     plot = p1, width = 10, height = 10, limitsize = FALSE
@@ -303,7 +304,7 @@ download_batch_file <- function(file, result_val, num_rep) {
   )
   curr_row <- curr_row + 5
 
-  seeds <- result_val$seeds
+  seeds <- result_val$seeds # TODO: add names/ make a dataframe
   writeData(
     wb, "Results",
     seeds,
