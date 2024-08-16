@@ -1,4 +1,14 @@
 server <- function(input, output, session) {
+  isolate({
+    send_and_read_info(paste0("add:", session$token))
+  })
+
+  onSessionEnded(function() {
+    isolate({
+      send_and_read_info(paste0("remove:", session$token))
+    })
+  })
+
   # data import
   # ============================================================================
   data <- reactiveValues(df = NULL)

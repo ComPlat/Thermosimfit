@@ -1,3 +1,26 @@
+# Send information to golang
+# ========================================================================================
+send_and_read_info <- function(message) {
+  if (length(message) == 0) {
+    return()
+  }
+  con <- socketConnection(
+    host = "localhost",
+    port = 8080, blocking = TRUE,
+    server = FALSE,
+    open = "w+b"
+  )
+  bind <- function(a, b) {
+    paste(a, b, collapse = " , ")
+  }
+  m <- Reduce(bind, as.character(message))
+  writeLines(m, con)
+  response <- readLines(con, warn = FALSE)
+  close(con)
+  return(response)
+}
+
+
 format_scientific <- function(x) {
   formatC(x, format = "e", digits = 3)
 }

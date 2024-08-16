@@ -334,6 +334,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
 
     # Batch analysis
     # ===============================================================================
+    # TODO: remove this helper fct
     destroy_files <- reactive({
       l <- com_batch$list
       if (length(l) >= 1) {
@@ -359,7 +360,6 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
         return(NULL)
       }
       session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL))
-      nclicks(nclicks() + 1)
       result_val(data.frame(Status = "Running..."))
       session$sendCustomMessage(type = "IDAclearFieldBatch", list(message = NULL, arg = 1))
       # check input
@@ -391,6 +391,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
           Only for the first analysis of each dataset respectivly,
           the seed which will be used.")
       }
+      # FIX: seed stuff is currently broken. When a seed is set app crushes
       if (is.na(seed)) {
         seed_case <- 1
       } else {
@@ -420,13 +421,18 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       })
 
       size <- length(df_list) * num_rep
-      # TODO: handle load on server
-      if (size > 10) {
-        print_noti("The number of replications is too high.
-          Please reduce the number of replications", type = "error")
-        nclicks(0)
-        return(NULL)
+      status <- send_and_read_info(paste0("request: ", session$token, " :", size))
+      if (status == "Exceeded core limit") {
+        rwn(
+          FALSE,
+          "Exceed core limit. Please reduce the number of datasets or replications."
+        )
       }
+      rwn(
+        status == "Cores allocated",
+        "Could not allocate cores. Please try again later"
+      )
+      nclicks(nclicks() + 1)
       process_list <- vector("list", size)
       seeds <- numeric(size)
       seeds_from <- 1:1e6
@@ -457,11 +463,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       }
 
       result_val_batch$result <- process_list
-
-      # TODO: how to handle this?
-      # nclicks(0)
       batch_done(TRUE)
-
       NULL
     })
 
@@ -492,6 +494,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
           type = "IDAupdateFieldBatch",
           list(message = "")
         )
+        send_and_read_info(paste0("release: ", session$token))
         return(NULL)
       }
       # check status
@@ -542,6 +545,7 @@ idaServer <- function(id, df, df_list, com, com_sense, com_batch,
       lapply(result_val_batch$result, function(process) {
         process$kill()
       })
+      send_and_read_info(paste0("release: ", session$token))
       result_val_batch$result <- NULL
     })
 
