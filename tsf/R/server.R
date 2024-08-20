@@ -27,7 +27,7 @@ server <- function(input, output, session) {
         output$df <- renderDT(data$df)
       }
     } else {
-      showNotification("File cannot be used. Upload into R failed!", duration = 0)
+      print_noti("File cannot be used. Upload into R failed!", duration = 0)
     }
   })
 
@@ -139,14 +139,10 @@ server <- function(input, output, session) {
   hgServer("HG", data$df, HG_com, HG_com_sense, nclicks, nclicks_sense)
   dbaServer("DBA", data$df, DBA_com, DBA_com_sense, nclicks, nclicks_sense)
   idaServer(
-    "IDA", data$df, data_batch$data_frames, IDA_com,
-    IDA_com_sense, IDA_com_batch, nclicks, nclicks_sense
+    "IDA", data, data_batch, IDA_com,
+    IDA_com_sense, IDA_com_batch, nclicks
   )
   gdaServer("GDA", data$df, GDA_com, GDA_com_sense, nclicks, nclicks_sense)
-
-  destroy <- reactive({
-    lapply(IDA_com_batch$list, function(x) x$destroy())
-  })
 
   onStop(function() {
     HG_com$destroy()
@@ -155,7 +151,6 @@ server <- function(input, output, session) {
     DBA_com_sense$destroy()
     IDA_com$destroy()
     IDA_com_sense$destroy()
-    # destroy() # FIX: this results in an error
     GDA_com$destroy()
     GDA_com_sense$destroy()
   })

@@ -113,8 +113,7 @@ idaUI <- function(id) {
             box(
               box(
                 actionButton(NS(id, "IDA_Start_Opti"), "Start Optimization"),
-                actionButton(NS(id, "IDA_cancel"), "Stop Optimization"),
-                actionButton(NS(id, "IDA_status"), "Get Status"),
+                actionButton(NS(id, "IDA_cancel"), "Cancel"),
                 downloadButton(NS(id, "IDA_download"), "Save result of optimization"),
                 selectInput(NS(id, "file_type"), "Choose file type:",
                   choices = c("Excel" = "xlsx", "CSV" = "csv")
@@ -142,14 +141,13 @@ idaUI <- function(id) {
                 numericInput(NS(id, "IDA_sens_bounds"), "+/- boundary in [%]", value = 15),
                 actionButton(NS(id, "IDA_Start_Sensi"), "Start Sensitivity analysis"),
                 actionButton(NS(id, "IDA_cancel_sense"), "Cancel"),
-                actionButton(NS(id, "IDA_status_sense"), "Get Status"),
                 downloadButton(NS(id, "IDA_sensi_download"), "Save result of sensitivity analysis"),
                 verbatimTextOutput(NS(id, "IDA_output_sense")),
                 width = 12
               ),
               box(
                 br(),
-                plotOutput(NS(id, "IDA_sensi")),
+                plotOutput(NS(id, "IDA_sensi_plot")),
                 width = 7, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
@@ -175,9 +173,8 @@ idaUI <- function(id) {
               ),
               box(
                 br(),
-                plotOutput(NS(id, "IDA_batch_data_plot"),
-                  height = 1500, width = 1500
-                ),
+                plotOutput(NS(id, "IDA_batch_signal_plot")),
+                plotOutput(NS(id, "IDA_batch_data_plot")),
                 plotOutput(NS(id, "IDA_batch_params_plot")),
                 plotOutput(NS(id, "IDA_batch_metrices_plot")),
                 width = 12, solidHeader = TRUE, status = "warning"

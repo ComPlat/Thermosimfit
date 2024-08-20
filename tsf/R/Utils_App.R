@@ -20,17 +20,18 @@ send_and_read_info <- function(message) {
   return(response)
 }
 
-
+# Formating stuff
+# ========================================================================================
 format_scientific <- function(x) {
   formatC(x, format = "e", digits = 3)
 }
 
-flush <- function(f) {
+flush <- function(f) { # TODO: still needed?
   file_con <- file(f, open = "w")
   close(file_con)
 }
 
-extract_iter <- function(s) {
+extract_iter <- function(s) { # TODO: still needed?
   if (!is.character(s)) {
     return()
   }
@@ -40,6 +41,47 @@ extract_iter <- function(s) {
   a <- strsplit(s, ";")[[1]]
   a <- strsplit(a, "/")[[1]]
   as.numeric(a[[1]])
+}
+
+# print intermediate results
+# ========================================================================================
+print_ida_gda <- function(stdcout, counter_dataset = NULL, counter_repi = NULL) {
+  temp <- strsplit(stdcout, "\n")[[1]]
+  if (length(temp) >= 3) {
+    temp <- lapply(temp, function(x) {
+      x <- gsub('"', "", x)
+      x <- gsub("\\[.*?\\] ", "", x)
+    })
+    temp[[2]] <- strsplit(temp[[2]], " ")[[1]]
+    temp <- c(temp[[1]], c(temp[[2]]), c(temp[[3]]))
+    names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+    temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
+  } else {
+    return("")
+  }
+  if (is.null(counter_dataset) && is.null(counter_repi)) {
+    return(temp)
+  } else {
+    return(paste0(
+      "Dataset Nr.: ", counter_dataset,
+      "; Replication Nr.:", counter_repi,
+      "; ", temp
+    ))
+  }
+}
+
+format_batch_status <- function(stdout, temp) {
+  if (length(stdout) != length(temp)) {
+    return("")
+  }
+  for (i in seq_along(stdout)) {
+    if (stdout[i] == "") {
+      stdout[i] <- temp[i]
+    } else if ((stdout[i] != temp[i]) && (temp[i] != "")) {
+      stdout[i] <- temp[i]
+    }
+  }
+  return(stdout)
 }
 
 # print notification
@@ -106,6 +148,70 @@ convert_all_to_num <- function(what, ...) {
   return(v)
 }
 
+request_cores <- function(n_cores, token) {
+  status <- send_and_read_info(paste0("request: ", token, " :", n_cores))
+  if (status == "Exceeded core limit") {
+    rwn(
+      FALSE,
+      "Exceed core limit.
+           Please try again later."
+    )
+  }
+  rwn(
+    status == "Cores allocated",
+    "Could not allocate cores. Please try again later"
+  )
+}
+
+call_opti_in_bg <- function(case, lb, ub,
+                            df, ap, seed,
+                            npop, ngen, topo,
+                            et) {
+  callr::r_bg(
+    function(case, lb, ub, df, ap,
+             seed, npop, ngen, Topology, errorThreshold) {
+      res <- tsf::opti(
+        case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold
+      )
+      return(res)
+    },
+    args = list(
+      case, lb, ub, df,
+      ap, seed, npop, ngen, topo, et
+    )
+  )
+}
+
+call_sensi_in_bg <- function(case, optim_params, df, ap, sense_bounds) {
+  callr::r_bg(
+    function(case, optim_params, df, ap, sense_bounds) {
+      res <- tsf::sensitivity(
+        case, optim_params, df, ap, sense_bounds
+      )
+      return(res)
+    },
+    args = list(case, optim_params, df, ap, sense_bounds)
+  )
+}
+
+determine_seed_case <- function(seed, num_rep) {
+  if (num_rep > 1 && !is.na(seed)) {
+    print_noti("Found number of replications > 1 and a seed was defined.
+          Only for the first analysis of each dataset respectivly,
+          the seed which will be used.")
+  }
+  if (is.na(seed)) {
+    seed_case <- 1
+  } else {
+    if (num_rep == 1) {
+      seed_case <- 2
+    } else if (num_rep > 1) {
+      seed_case <- 3
+    }
+  }
+  return(seed_case)
+}
+
 # integer stuff
 # ========================================================================================
 convert_num_to_int <- function(number) {
@@ -121,11 +227,11 @@ is_integer <- function(x) {
 
 # download file
 # ========================================================================================
-download_file <- function(file, result_val) {
+download_file <- function(model, file, result_val) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
   writeData(wb, "Results",
-    "Model: IDA", # TODO: add model name as argument
+    paste0("Model: ", model),
     startCol = 1,
     startRow = 1
   )
@@ -189,9 +295,9 @@ download_file <- function(file, result_val) {
 }
 
 
-download_csv <- function(file, result_val) {
+download_csv <- function(model, file, result_val) {
   # csv file
-  write.table("Model: IDA", file) # TODO: pass model anem as argument
+  write.table(paste0("Model: ", model), file)
   data_trajectories <- result_val$data
   write.table(data_trajectories, file,
     append = TRUE,
@@ -257,11 +363,11 @@ create_df_for_batch <- function(list, what, num_rep) { # TODO: use this fct also
   return(df)
 }
 
-download_batch_file <- function(file, result_val, num_rep) {
+download_batch_file <- function(model, file, result_val, num_rep) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
   writeData(wb, "Results",
-    "Model: IDA",
+    paste0("Model: ", model),
     startCol = 1,
     startRow = 1
   )
@@ -292,11 +398,19 @@ download_batch_file <- function(file, result_val, num_rep) {
   p3 <- plotMetrices(result_val, num_rep)
 
   # TODO: All plots are super ugly. Fix this
-  tempfile_plot1 <- tempfile(fileext = ".png")
-  ggsave(tempfile_plot1,
-    plot = p1, width = 10, height = 10, limitsize = FALSE
+  tempfile_plot1.1 <- tempfile(fileext = ".png")
+  ggsave(tempfile_plot1.1,
+    plot = p1[[1]], width = 10, height = 10, limitsize = FALSE
   )
-  insertImage(wb, "Results", tempfile_plot1,
+  insertImage(wb, "Results", tempfile_plot1.1,
+    startRow = curr_row
+  )
+  curr_row <- curr_row + 20
+  tempfile_plot1.2 <- tempfile(fileext = ".png")
+  ggsave(tempfile_plot1.2,
+    plot = p1[[2]], width = 10, height = 10, limitsize = FALSE
+  )
+  insertImage(wb, "Results", tempfile_plot1.2,
     startRow = curr_row
   )
   curr_row <- curr_row + 20
@@ -351,7 +465,8 @@ download_batch_file <- function(file, result_val, num_rep) {
   )
 
   openxlsx::saveWorkbook(wb, file)
-  unlink(tempfile_plot1)
+  unlink(tempfile_plot1.1)
+  unlink(tempfile_plot1.2)
   unlink(tempfile_plot2)
   unlink(tempfile_plot3)
 }
