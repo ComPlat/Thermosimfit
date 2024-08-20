@@ -184,6 +184,10 @@ plotStates <- function(list, num_rep = 1) {
     repetition = rep(df$repetition, 2),
     dataset = rep(df$dataset, 2)
   )
+
+  xlevels <- levels(factor(data_signal_measured$x))
+  xlabels <- xlevels
+  xlabels[(seq_along(xlevels) %% 3) != 1] <- ""
   p_signal <- ggplot(
     data = data_signal_measured,
     aes(
@@ -197,10 +201,11 @@ plotStates <- function(list, num_rep = 1) {
       data = subset(data_signal_measured, names != "Signal measured"),
       aes(shape = factor(repetition))
     ) +
-    geom_line(
+    geom_smooth(
       data = subset(data_signal_measured, names == "Signal measured"),
-      aes(x = factor(x), y = y, group = 1)
+      aes(x = factor(x), y = y, group = 1, colour = "Measured")
     ) +
+    scale_x_discrete(labels = xlabels) +
     xlab(names(df)[1]) +
     ylab(NULL) +
     theme(
@@ -216,10 +221,10 @@ plotStates <- function(list, num_rep = 1) {
     guides(
       shape = guide_legend(title = "Repetitions"),
       colour = guide_legend(title = "Datasets")
-    ) +
-    facet_wrap(~names, strip.position = "left", scales = "free_y")
-  return(p_signal / p)
+    )
+  return(list(p_signal, p))
 }
+
 
 plotParams <- function(list, num_rep = 1) {
   list <- list[[2]]
@@ -410,7 +415,7 @@ batch <- function(case,
     result[[counter]] <- opti(
       case = case, lowerBounds = lowerBounds, upperBounds = upperBounds,
       list_df[[i]], additionalParameters, seed = seed, npop = npop, ngen = ngen,
-      Topology = Topology, errorThreshold = errorThreshold, runAsShiny = FALSE
+      Topology = Topology, errorThreshold = errorThreshold
     )
     counter <- counter + 1
     if (num_rep > 1) {
@@ -420,7 +425,7 @@ batch <- function(case,
         result[[counter]] <- opti(
           case = case, lowerBounds = lowerBounds, upperBounds = upperBounds,
           list_df[[i]], additionalParameters, seed = seed, npop = npop, ngen = ngen,
-          Topology = Topology, errorThreshold = errorThreshold, runAsShiny = FALSE
+          Topology = Topology, errorThreshold = errorThreshold
         )
         counter <- counter + 1
       }
