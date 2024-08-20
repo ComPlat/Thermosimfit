@@ -13,32 +13,53 @@ import (
 	"sync"
 )
 
+// String helper function
+func processString(s string) string {
+	s = strings.Replace(s, "\n", "", -1)
+	s = strings.TrimSpace(s)
+	return s
+}
+
 // Session list
 type Session struct {
-	id    string
-	cores int
+	id           string
+	cores        int
+	priority     int
+	desiredCores int
 }
 
 // Status
 const (
-	OK             = "OK"
-	TOOMANYCORES   = "Exceeded core limit"
-	CORESALLOCATED = "Cores allocated"
-	NOTENOUGHCORES = "Not enough cores"
+	OK              = "OK"
+	TOOMANYCORES    = "Exceeded core limit"
+	CORESALLOCATED  = "Cores allocated"
+	NOTENOUGHCORES  = "Not enough cores"
+	SESSIONNOTFOUND = "Session not found"
 )
 
 // Core list
-var totalCores = runtime.NumCPU()
+var totalCores = runtime.NumCPU() - 1
 var usedCores = 0
 
 // Shiny-Session list
 var shinySessions = make(map[string]Session)
 var mutex = &sync.Mutex{}
 
+func getSession(s string) Session {
+	session := shinySessions[s]
+	return session
+}
+
+func updateSession(cores int, s string) {
+	shinySessions[s] = Session{s, cores, -1, 0}
+}
+
+func updateSessionPrio(prio int, desiredCore int, s string) {
+	shinySessions[s] = Session{s, 0, prio, desiredCore}
+}
+
 // Request cores
 func requestCores(session *Session) string {
-	mutex.Lock()
-	defer mutex.Unlock()
 	if session.cores > 0 && session.cores <= (totalCores-usedCores) {
 		usedCores += session.cores
 		return CORESALLOCATED
@@ -51,47 +72,51 @@ func requestCores(session *Session) string {
 
 // Release cores
 func releaseCores(session *Session) {
-	mutex.Lock()
-	defer mutex.Unlock()
 	usedCores -= session.cores
 	session.cores = 0
 }
 
 // Handle info from shiny
 func handleInfo(info string) (string, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	status := OK
 	split := strings.Split(info, ":")
 	if (len(split) != 2) && (len(split) != 3) {
 		return status, errors.New("Invalid input from shiny")
 	}
+	if len(split) == 2 {
+		split[0] = processString(split[0])
+		split[1] = processString(split[1])
+	} else if len(split) == 3 {
+		split[0] = processString(split[0])
+		split[1] = processString(split[1])
+		split[2] = processString(split[2])
+	}
+
 	if split[0] == "add" {
-		mutex.Lock()
-		shinySessions[split[1]] = Session{split[1], 0}
-		mutex.Unlock()
+		shinySessions[split[1]] = Session{split[1], 0, -1, 0}
 	} else if split[0] == "remove" {
-		mutex.Lock()
 		session := shinySessions[split[1]]
 		releaseCores(&session)
 		delete(shinySessions, split[1])
-		mutex.Unlock()
 	} else if split[0] == "request" {
-		s := strings.Replace(split[2], "\n", "", -1)
-		cores, err := strconv.Atoi(s)
+		cores, err := strconv.Atoi(split[2])
 		if err != nil {
 			return status, err
 		}
-		mutex.Lock()
-		session := shinySessions[split[1]]
+		session := getSession(split[1])
 		session.cores = cores
-		shinySessions[split[1]] = session
-		mutex.Unlock()
 		status = requestCores(&session)
+		if status == CORESALLOCATED {
+			updateSession(cores, split[1])
+		} else if status == NOTENOUGHCORES {
+			updateSessionPrio(session.priority+1, cores, split[1])
+		}
 	} else if split[0] == "release" {
-		mutex.Lock()
-		session := shinySessions[split[1]]
+		session := getSession(split[1])
 		releaseCores(&session)
-		shinySessions[split[1]] = session
-		mutex.Unlock()
+		updateSession(0, split[1])
 	}
 	return status, nil
 }
@@ -121,6 +146,7 @@ func runTCP(errCh chan<- error) {
 	defer ln.Close()
 
 	for {
+		fmt.Println(usedCores) // TODO: remove this
 		conn, err := ln.Accept()
 		if err != nil {
 			errCh <- err
@@ -129,6 +155,24 @@ func runTCP(errCh chan<- error) {
 		sendRInfo(conn, status)
 		conn.Close()
 	}
+}
+
+// TODO: use this later to allocate cores to sessions with highest priority
+// Session with highest priority available
+func getHighestPriority() string {
+	prio := -1
+	id_max_prio := ""
+	for id, session := range shinySessions {
+		if session.priority > prio {
+			prio = session.priority
+			id_max_prio = id
+		}
+	}
+	session := getSession(id_max_prio)
+	if session.priority >= 0 && session.desiredCores <= (totalCores-usedCores) {
+		return id_max_prio
+	}
+	return ""
 }
 
 func main() {
