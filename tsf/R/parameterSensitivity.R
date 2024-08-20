@@ -10,18 +10,10 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
     p <- NULL
     if (is.data.frame(X)) {
       return(sapply(1:nrow(X), function(x) {
-        if (is(runAsShiny, "Communicator")) {
-          status <- runAsShiny$getStatus()
-          if (status == "interrupt") {
-            return()
-          }
-          if (x %% 10 == 0) {
-            runAsShiny$running(
-              format_scientific((100.0 / nrow(X)) * x)
-            )
-          }
+        progress <- (100.0 / nrow(X) * x)
+        if (progress %% 1 == 0) {
+          print(progress)
         }
-
         temp <- lb + (ub - lb) * X[x, ]
         temp <- as.numeric(temp)
         lossFct(temp, env, FALSE)
