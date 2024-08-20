@@ -234,42 +234,14 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
 
     iter <- iter + 1
 
-    if (iter %% 1 == 0 & is.logical(runAsShiny)) {
-      print(iter)
-      print(global_best_vec)
-      print(global_best_error)
-    } else if (is(runAsShiny, "Communicator")) {
-      if (iter %% 5 == 0) {
-        status <- runAsShiny$getStatus()
-        if (status == "interrupt") {
-          insilico <- loss_fct(global_best_vec, env, TRUE)
-          return(list(insilico, c(global_best_vec)))
-        }
-        gbv <- c(
-          kX = global_best_vec[1], I0 = global_best_vec[2],
-          IHD = global_best_vec[3], ID = global_best_vec[4]
-        )
-        gbv <- format_scientific(gbv)
-        gbv <- Map(function(a, b) {
-          paste(a, " = ", b)
-        }, names(gbv), gbv) |>
-          unlist() |>
-          paste(collapse = ", ")
-        runAsShiny$running(
-          format_scientific((100.0 / ngen) * iter)
-        )
-        runAsShiny$setData(
-          paste(
-            paste0(
-              iter, "/", ngen, ";"
-            ),
-            gbv,
-            "; Error: ",
-            format_scientific(global_best_error),
-            collapse = "\n"
-          )
-        )
-      }
+    print(iter)
+    print(format_scientific(global_best_vec))
+    print(format_scientific(global_best_error))
+    if (is.environment(runAsShiny)) {
+      runAsShiny$insilico <- list(
+        loss_fct(global_best_vec, env, TRUE),
+        c(global_best_vec)
+      )
     }
 
     if (global_best_error < error_threshold) {
