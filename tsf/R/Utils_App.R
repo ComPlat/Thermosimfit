@@ -1,6 +1,13 @@
 # Send information to golang
 # ========================================================================================
 send_and_read_info <- function(message) {
+  # NOTE: In case it is run locally a variable called
+  # local<- TRUE should be defined in the global environment
+  if (!is.null(globalenv()$local)) {
+    if (globalenv()$local) {
+      return()
+    }
+  }
   if (length(message) == 0) {
     return()
   }
@@ -54,7 +61,9 @@ print_ida_gda <- function(stdcout, counter_dataset = NULL, counter_repi = NULL) 
     })
     temp[[2]] <- strsplit(temp[[2]], " ")[[1]]
     temp <- c(temp[[1]], c(temp[[2]]), c(temp[[3]]))
-    names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+    if (length(temp) == 6) {
+      names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+    }
     temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
   } else {
     return("")
@@ -149,6 +158,14 @@ convert_all_to_num <- function(what, ...) {
 }
 
 request_cores <- function(n_cores, token) {
+  # NOTE: In case it is run locally a variable called
+  #  local <- TRUE should be defined in the global environment
+  if (!is.null(globalenv()$local)) {
+    if (globalenv()$local) {
+      return()
+    }
+  }
+
   status <- send_and_read_info(paste0("request: ", token, " :", n_cores))
   if (status == "Exceeded core limit") {
     rwn(

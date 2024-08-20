@@ -2,6 +2,6 @@
 
 R CMD INSTALL ./tsf
 
-Rscript -e "tsf::runApp(4000)"
+Rscript -e "local<- TRUE; tsf::runApp(4000)"
 
 # Rscript TestBatch.R
