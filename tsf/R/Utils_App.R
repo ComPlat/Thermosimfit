@@ -1,12 +1,11 @@
 # Send information to golang
 # ========================================================================================
 send_and_read_info <- function(message) {
-  # NOTE: In case it is run locally a variable called
-  # local<- TRUE should be defined in the global environment
-  if (!is.null(globalenv()$local)) {
-    if (globalenv()$local) {
-      return()
-    }
+  # NOTE: In case it is run on a server the environment variable
+  # SERVER_ENV should be defined (Sys.setenv(TEST_ENV = "TRUE"))
+  on_server <- Sys.getenv("SERVER_ENV", unset = "FALSE") == "TRUE"
+  if (!on_server) {
+    return()
   }
   if (length(message) == 0) {
     return()
@@ -158,14 +157,17 @@ convert_all_to_num <- function(what, ...) {
 }
 
 request_cores <- function(n_cores, token) {
-  # NOTE: In case it is run locally a variable called
-  #  local <- TRUE should be defined in the global environment
-  if (!is.null(globalenv()$local)) {
-    if (globalenv()$local) {
+  # NOTE: In case it is run on a server the environment variable
+  # SERVER_ENV should be defined (Sys.setenv(TEST_ENV = "TRUE"))
+  on_server <- Sys.getenv("SERVER_ENV", unset = "FALSE") == "TRUE"
+  if (!on_server) {
+    return()
+  }
+  if (!is.null(globalenv()$server)) {
+    if (!globalenv()$server) {
       return()
     }
   }
-
   status <- send_and_read_info(paste0("request: ", token, " :", n_cores))
   if (status == "Exceeded core limit") {
     rwn(

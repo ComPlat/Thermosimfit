@@ -1,5 +1,10 @@
-idaHelper <- function(id) {
- moduleServer(id, function(input, output, session) {
+
+
+idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
+  df <- reactive({df_reactive$df})
+  df_list <- reactive({df_list_reactive$data_frames})
+  moduleServer(id, function(input, output, session) {
+
     observeEvent(input$helpButton, {
       showModal(modalDialog(
         title = "Help",
@@ -17,13 +22,6 @@ idaHelper <- function(id) {
         footer = NULL
       ))
     })
-  })
-}
-
-idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
-  df <- reactive({df_reactive$df})
-  df_list <- reactive({df_list_reactive$data_frames})
-  moduleServer(id, function(input, output, session) {
 
     # Optimization
     # ===============================================================================

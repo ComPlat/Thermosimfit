@@ -135,7 +135,6 @@ server <- function(input, output, session) {
 
   hgServer("HG", data$df, HG_com, HG_com_sense, nclicks, nclicks_sense)
   dbaServer("DBA", data$df, DBA_com, DBA_com_sense, nclicks, nclicks_sense)
-  idaHelper("IDA")
   idaServer("IDA", data, data_batch, nclicks)
   gdaServer("GDA", data$df, GDA_com, GDA_com_sense, nclicks, nclicks_sense)
 

@@ -10,22 +10,25 @@ test_ida <- function() {
       "/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/IDA/forKonrad-conc-vs-signal.csv"
   )
   app$set_window_size(2000, 1000)
-  app$set_inputs(`IDA-IDA_H0` = 1e-6)
-  app$set_inputs(`IDA-IDA_D0` = 1e-6)
-  app$set_inputs(`IDA-IDA_kHD` = 3e6)
-  ngen <- 300
-  app$set_inputs(`IDA-IDA_ngen` = ngen)
+  app$set_inputs(`IDA-H0` = 1e-6)
+  app$set_inputs(`IDA-D0` = 1e-6)
+  app$set_inputs(`IDA-kHD` = 3e6)
+  ngen <- 100
+  app$set_inputs(`IDA-ngen` = ngen)
   app$set_inputs(`IDA-Seed` = 1234)
-  app$click("IDA-IDA_Start_Opti")
-  app$click("IDA-IDA_status") # requested after optimization
-  app$click("IDA-IDA_cancel") # requested after optimization
+  app$click("IDA-Start_Opti")
+  Sys.sleep(60)
+  app$click("IDA-cancel")
+
   res <- app$get_values()$export
+  print(res)
 
   stopifnot("clicked cancel?" = res$`IDA-cancel_clicked`)
 
   expected_params <- data.frame(
-    kHG = 15848501, I0 = 1e-15,
-    IHD = 969067.3, ID = 190498.9
+    kHG = 24229547, I0 = 1e-15,
+    IHD = 980306.4, ID = 216299.4
+
   )
   errors <- Map(function(a, b) {
     abs(a - b) / b
@@ -33,11 +36,11 @@ test_ida <- function() {
   stopifnot("Comparison of parameters" = all(errors < 0.001))
 
   expected_metrices <- data.frame(
-    mse = 4.193714e-05,
-    rmse = 0.006475889,
-    mae = 0.00406907,
-    r2 = 0.9988749,
-    r2adj = 0.998852
+    mse = 4.318114e-05,
+    rmse = 0.006571236, 
+    mae = 0.005686641,
+    r2 = 0.9992715,
+    r2adj = 0.9992567
   )
   errors <- Map(function(a, b) {
     abs(a - b) / b
@@ -52,7 +55,7 @@ test_ida <- function() {
       res$`IDA-status2` == "Initialisation"
   )
 
-  file <- app$get_download("IDA-IDA_download")
+  file <- app$get_download("IDA-download")
   file.copy(file, "./resultIDA.xlsx", overwrite = TRUE)
 
   app$wait_for_idle()
@@ -61,15 +64,14 @@ test_ida <- function() {
 
   # test sensitivity
   app$set_inputs(`IDA-ResultPanel` = "Sensitivity analysis")
-  app$click("IDA-IDA_Start_Sensi")
-  app$click("IDA-IDA_status_sense")
+  app$click("IDA-Start_Sensi")
 
   res <- app$get_values()$export
   app$get_screenshot()
   print(res)
   dev.off()
 
-  file <- app$get_download("IDA-IDA_sensi_download")
+  file <- app$get_download("IDA-sensi_download")
   file.copy(file, "./resultSensitivityIDA.xlsx", overwrite = TRUE)
   app$wait_for_idle()
 

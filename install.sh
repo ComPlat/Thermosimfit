@@ -2,6 +2,12 @@
 
 R CMD INSTALL ./tsf
 
-Rscript -e "local<- TRUE; tsf::runApp(4000)"
-
-# Rscript TestBatch.R
+# locally
+Rscript -e "tsf::runApp(4000)"
+exit 0
+# On Server
+Rscript -e "
+Sys.setenv(SERVER_ENV = \"TRUE\")
+tsf::runApp(4000)
+Sys.unsetenv(\"SERVER_ENV\")
+"
