@@ -17,7 +17,6 @@ gdaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
         footer = NULL
       ))
     })
-
     result_val <- reactiveVal()
     result_val_sense <- reactiveVal()
     add_info <- reactiveVal()

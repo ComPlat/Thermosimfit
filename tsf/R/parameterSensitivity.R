@@ -162,5 +162,11 @@ sensitivity <- function(case, parameters, path, additionalParameters,
     env$kd <- additionalParameters[3]
     parameterNames <- c("kGuest", "I0", "IHD", "ID")
   }
-  sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames, runAsShiny)
+  tryCatch(expr = {
+    sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames, runAsShiny)
+  }, interrupt = function(e) {
+    return(ErrorClass$new("Interrputed the calculation of the Sobol indices"))
+  }, error = function(e) {
+    return(ErrorClass$new("An error occured while calculating the Sobol indices"))
+  })
 }

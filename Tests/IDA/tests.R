@@ -31,9 +31,9 @@ res <- tsf::opti(
   ),
   df,
   additionalParameters = c(
-    host = 0,
-    dye = 0,
-    kHD = 0
+    host = 1e-6,
+    dye = 1e-6,
+    kHD = 3e6
   ),
   npop = 40,
   ngen = 20,
@@ -41,7 +41,9 @@ res <- tsf::opti(
   errorThreshold = 0.7
 )
 
+tsf::sensitivity("ida", res[[2]], df, c(1e-6, 1e-6, 3e6), 20)
 
+stop()
 res <- tsf:::batch(
   case = "ida",
   lowerBounds = c(

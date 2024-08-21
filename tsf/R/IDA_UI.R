@@ -4,50 +4,50 @@ idaUI <- function(id) {
     tags$script(
       "Shiny.addCustomMessageHandler('IDAupdateField', function(message) {
               var result = message.message;
-              $('#IDA-IDA_output').html(result);
+              $('#IDA-output').html(result);
             });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAclearField', function(message) {
-              $('#IDA-IDA_output').empty();
+              $('#IDA-output').empty();
             });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAupdateFieldSense', function(message) {
               var result = message.message;
-              $('#IDA-IDA_output_sense').html(result);
+              $('#IDA-output_sense').html(result);
             });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAclearFieldSense', function(message) {
-              $('#IDA-IDA_output_sense').empty();
+              $('#IDA-output_sense').empty();
             });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAupdateFieldBatch', function(message) {
               var result = message.message;
-              $('#IDA-IDA_output_Batch').html(result);
+              $('#IDA-output_Batch').html(result);
             });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAclearFieldBatch', function(message) {
-              $('#IDA-IDA_output_Batch').empty();
+              $('#IDA-output_Batch').empty();
             });"
     ),
     fluidRow(
       box( # TODO: change this back to 0.
-        textInput(NS(id, "IDA_H0"), "Host conc. [M]", value = 1e-6),
-        textInput(NS(id, "IDA_D0"), "Dye conc. [M]", value = "1e-6"),
-        textInput(NS(id, "IDA_kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "3e6"),
+        textInput(NS(id, "H0"), "Host conc. [M]", value = 1e-6),
+        textInput(NS(id, "D0"), "Dye conc. [M]", value = "1e-6"),
+        textInput(NS(id, "kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "3e6"),
         box(
           title = "Advanced options",
           collapsible = TRUE, collapsed = TRUE,
           box(
-            numericInput(NS(id, "IDA_npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "IDA_ngen"), "Number of generations", value = 20) # TODO: change back to 1000
+            numericInput(NS(id, "npop"), "Number of particles", value = 40),
+            numericInput(NS(id, "ngen"), "Number of generations", value = 20) # TODO: change back to 1000
           ),
           box(
-            selectInput(NS(id, "IDA_topology"), "Topology of particle swarm",
+            selectInput(NS(id, "topology"), "Topology of particle swarm",
               c(
                 "star" = "star",
                 "random arbitrary neighberhood" = "random"
@@ -55,7 +55,7 @@ idaUI <- function(id) {
               selected = "random",
               selectize = FALSE
             ),
-            numericInput(NS(id, "IDA_threshold"),
+            numericInput(NS(id, "threshold"),
               "Threshold of the error",
               value = 0.00001
             ),
@@ -69,15 +69,15 @@ idaUI <- function(id) {
       ),
       box(
         box(
-          textInput(NS(id, "IDA_kHD_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
-          textInput(NS(id, "IDA_kHD_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
+          textInput(NS(id, "kHG_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
+          textInput(NS(id, "kHG_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
         ),
         box(
-          textInput(NS(id, "IDA_I0_lb"), "I(0) value lower boundary", value = 0),
-          textInput(NS(id, "IDA_I0_ub"), "I(0) value upper boundary", value = 1e08)
+          textInput(NS(id, "I0_lb"), "I(0) value lower boundary", value = 0),
+          textInput(NS(id, "I0_ub"), "I(0) value upper boundary", value = 1e08)
         ),
         box(
-          textInput(NS(id, "IDA_IHD_lb"),
+          textInput(NS(id, "IHD_lb"),
             label = tagList(
               "I(HD) value lower boundary [1/M]",
               actionButton(NS(id, "AdviceUBIHD"), "Help",
@@ -86,11 +86,11 @@ idaUI <- function(id) {
               )
             ), value = 0
           ),
-          textInput(NS(id, "IDA_IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
+          textInput(NS(id, "IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
         ),
         box(
-          textInput(NS(id, "IDA_ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
-          textInput(NS(id, "IDA_ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
+          textInput(NS(id, "ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
+          textInput(NS(id, "ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
         ),
         width = 6,
         title = tagList(
@@ -112,20 +112,20 @@ idaUI <- function(id) {
           fluidRow(
             box(
               box(
-                actionButton(NS(id, "IDA_Start_Opti"), "Start Optimization"),
-                actionButton(NS(id, "IDA_cancel"), "Cancel"),
-                downloadButton(NS(id, "IDA_download"), "Save result of optimization"),
+                actionButton(NS(id, "Start_Opti"), "Start Optimization"),
+                actionButton(NS(id, "cancel"), "Cancel"),
+                downloadButton(NS(id, "download"), "Save result of optimization"),
                 selectInput(NS(id, "file_type"), "Choose file type:",
                   choices = c("Excel" = "xlsx", "CSV" = "csv")
                 ),
-                verbatimTextOutput(NS(id, "IDA_output")),
+                verbatimTextOutput(NS(id, "output")),
                 width = 12
               ),
               box(
                 br(),
-                DT::DTOutput(NS(id, "IDA_params")),
-                DT::DTOutput(NS(id, "IDA_metrices")),
-                plotOutput(NS(id, "IDA_plot")),
+                DT::DTOutput(NS(id, "params")),
+                DT::DTOutput(NS(id, "metrices")),
+                plotOutput(NS(id, "plot")),
                 width = 7, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Optimization", solidHeader = TRUE,
@@ -138,16 +138,16 @@ idaUI <- function(id) {
           fluidRow(
             box(
               box(
-                numericInput(NS(id, "IDA_sens_bounds"), "+/- boundary in [%]", value = 15),
-                actionButton(NS(id, "IDA_Start_Sensi"), "Start Sensitivity analysis"),
-                actionButton(NS(id, "IDA_cancel_sense"), "Cancel"),
-                downloadButton(NS(id, "IDA_sensi_download"), "Save result of sensitivity analysis"),
-                verbatimTextOutput(NS(id, "IDA_output_sense")),
+                numericInput(NS(id, "sens_bounds"), "+/- boundary in [%]", value = 15),
+                actionButton(NS(id, "Start_Sensi"), "Start Sensitivity analysis"),
+                actionButton(NS(id, "cancel_sense"), "Cancel"),
+                downloadButton(NS(id, "sensi_download"), "Save result of sensitivity analysis"),
+                verbatimTextOutput(NS(id, "output_sense")),
                 width = 12
               ),
               box(
                 br(),
-                plotOutput(NS(id, "IDA_sensi_plot")),
+                plotOutput(NS(id, "sensi_plot")),
                 width = 7, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
@@ -165,18 +165,18 @@ idaUI <- function(id) {
                   "How often should each dataset be analysed (using different seeds)",
                   value = 1
                 ),
-                actionButton(NS(id, "IDA_Start_Batch"), "Start batch analysis"),
-                actionButton(NS(id, "IDA_cancel_Batch"), "Cancel"),
-                downloadButton(NS(id, "IDA_batch_download"), "Save result of batch analysis"),
-                verbatimTextOutput(NS(id, "IDA_output_Batch")),
+                actionButton(NS(id, "Start_Batch"), "Start batch analysis"),
+                actionButton(NS(id, "cancel_Batch"), "Cancel"),
+                downloadButton(NS(id, "batch_download"), "Save result of batch analysis"),
+                verbatimTextOutput(NS(id, "output_Batch")),
                 width = 12
               ),
               box(
                 br(),
-                plotOutput(NS(id, "IDA_batch_signal_plot")),
-                plotOutput(NS(id, "IDA_batch_data_plot")),
-                plotOutput(NS(id, "IDA_batch_params_plot")),
-                plotOutput(NS(id, "IDA_batch_metrices_plot")),
+                plotOutput(NS(id, "batch_signal_plot")),
+                plotOutput(NS(id, "batch_data_plot")),
+                plotOutput(NS(id, "batch_params_plot")),
+                plotOutput(NS(id, "batch_metrices_plot")),
                 width = 12, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Batch analysis", solidHeader = TRUE,

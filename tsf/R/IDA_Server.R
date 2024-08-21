@@ -1,15 +1,10 @@
-idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_batch,
-                      nclicks) {
-  df <- reactive({df_reactive$df})
-  df_list <- reactive({df_list_reactive$data_frames})
-  moduleServer(id, function(input, output, session) {
-    # general stuff
-    # ===============================================================================
+idaHelper <- function(id) {
+ moduleServer(id, function(input, output, session) {
     observeEvent(input$helpButton, {
       showModal(modalDialog(
         title = "Help",
         HTML("Conduct two optimizations. First with wide boundaries. \n
-            Afterwards chose narrow boundaries based on the result of the first optimization."),
+          Afterwards chose narrow boundaries based on the result of the first optimization."),
         easyClose = TRUE,
         footer = NULL
       ))
@@ -22,29 +17,18 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
         footer = NULL
       ))
     })
+  })
+}
 
-    opti_message <-function(message) {
-      session$sendCustomMessage(
-        type = "IDAupdateField",
-        list(message = message)
-      )
-      return(NULL)
-    }
-
-    sensi_message <-function(message) {
-      session$sendCustomMessage(
-        type = "IDAupdateFieldSense",
-        list(message = message)
-      )
-      return(NULL)
-    }
-
-    # reactive values
-    # ===============================================================================
-    invalid_time <- reactiveVal(1100)
+idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
+  df <- reactive({df_reactive$df})
+  df_list <- reactive({df_list_reactive$data_frames})
+  moduleServer(id, function(input, output, session) {
 
     # Optimization
     # ===============================================================================
+    invalid_time <- reactiveVal(1100)
+   
     opti_result_created <- reactiveVal(FALSE)
     opti_result <- reactiveVal()
     process <- reactiveVal()
@@ -52,38 +36,135 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
     setup_done <- reactiveVal(FALSE)
 
     check_inputs <- function() {
-      rwn(input$IDA_H0 != "", "Please enter a value for the Host")
-      rwn(input$IDA_D0 != "", "Please enter a value for the Dye")
-      rwn(input$IDA_kHD != "", "Please enter a value for KaHD")
-      rwn(!is.na(input$IDA_npop),
+      rwn(input$H0 != "", "Please enter a value for the Host")
+      rwn(input$D0 != "", "Please enter a value for the Dye")
+      rwn(input$kHD != "", "Please enter a value for KaHD")
+      rwn(!is.na(input$npop),
         "Please enter a value for number of particles")
-      rwn(!is.na(input$IDA_ngen),
+      rwn(!is.na(input$ngen),
         "Please enter a value for the number of generations")
-      rwn(!is.na(input$IDA_threshold),
+      rwn(!is.na(input$threshold),
         "Please enter a value for the error threshold")
-      rwn(input$IDA_kHD_lb != "",
+      rwn(input$kHG_lb != "",
         "Please enter a value for the lower boundary of KaHG")
-      rwn(input$IDA_kHD_ub != "",
+      rwn(input$kHG_ub != "",
         "Please enter a value for the upper boundary of KaHG")
-      rwn(input$IDA_IHD_lb != "",
+      rwn(input$IHD_lb != "",
         "Please enter a value for the lower boundary of I(HD)")
-      rwn(input$IDA_IHD_ub != "",
+      rwn(input$IHD_ub != "",
         "Please enter a value for the upper boundary of I(HD)")
-      rwn(input$IDA_ID_lb != "",
+      rwn(input$ID_lb != "",
         "Please enter a value for the lower boundary of I(D)")
-      rwn(input$IDA_ID_ub != "",
+      rwn(input$ID_ub != "",
         "Please enter a value for the upper boundary of I(D)")
-      rwn(input$IDA_I0_lb != "",
+      rwn(input$I0_lb != "",
         "Please enter a value for the lower boundary of I(0)")
-      rwn(input$IDA_I0_ub != "",
+      rwn(input$I0_ub != "",
         "Please enter a value for the upper boundary of I(0)")
-      rwn(!is_integer(input$IDA_npop),
+      rwn(!is_integer(input$npop),
         "Please enter an integer value for number of particles")
-      rwn(!is_integer(input$IDA_ngen),
+      rwn(!is_integer(input$ngen),
         "Please enter an integer value for number of generations")
     }
 
-    observeEvent(input$IDA_Start_Opti, {
+    check_inputs_sensi <- function() { 
+      rwn(input$H0 != "",
+        "Please enter a value for the Host")
+      rwn(input$D0 != "",
+        "Please enter a value for the Dye")
+      rwn(input$kHD != "",
+        "Please enter a value for KaHD")
+      rwn(!is_integer(input$sens_bounds),
+        "Please enter an integer value for the sensitivity boundary")
+      rwn(opti_result_created(),
+        "Please run first an optimization") 
+    }
+
+    create_lb <- function() {
+      lb <- convert_all_to_num(
+      "lower boundaries",
+      input$kHG_lb, input$I0_lb, input$IHD_lb, input$ID_lb
+      )
+      return(lb)
+    }
+
+    create_ub <- function() {
+      ub <- convert_all_to_num(
+      "upper boundaries",
+      input$kHG_ub, input$I0_ub, input$IHD_ub, input$ID_ub
+      )
+      return(ub)
+    }
+
+    create_additional_parameters <- function() {
+      additionalParameters <- convert_all_to_num(
+      "Additional Parameters",
+      input$H0, input$D0, input$kHD
+      )
+      return(additionalParameters)
+    }
+
+    create_npop <- function() {
+      npop <- convert_num_to_int(input$npop)
+      return(npop)
+    }
+
+    create_ngen <- function() {
+      ngen <- convert_num_to_int(input$ngen)
+      return(ngen)
+    }
+
+    create_topology <- function() {
+      topo <- input$topology
+      return(topo)
+    }
+
+    create_error_threshold <- function() {
+      et <- input$threshold
+      return(et)
+    }
+
+    get_Model <- function() {
+      "ida"
+    }
+
+    get_Model_capital <- function() {
+      "IDA"
+    }
+
+    get_K_param <- function() {
+      "K<sub>a</sub>(HG) [M]"
+    }
+
+    get_update_field <- function() {
+      "IDAupdateField"
+    }
+    
+    get_update_field_sense <- function() {
+      "IDAupdateFieldSense"
+    }
+
+    get_update_field_batch <- function() {
+      "IDAupdateFieldBatch"
+    }
+
+    get_opti_result <- function() {
+      opti_result()$parameter
+    }
+
+    get_sens_bounds <- function() {
+     input$sens_bounds
+    }
+
+    opti_message <-function(message) {
+      session$sendCustomMessage(
+        type = get_update_field(),
+        list(message = message)
+      )
+      return(NULL)
+    }
+
+    observeEvent(input$Start_Opti, {
       # checks
       if (nclicks() != 0 ) {
         print_noti("Already running analysis", type = "warning")
@@ -91,22 +172,13 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       }
       check_inputs()
       request_cores(1, session$token)
-      lb <- convert_all_to_num(
-        "lower boundaries",
-        input$IDA_kHD_lb, input$IDA_I0_lb, input$IDA_IHD_lb, input$IDA_ID_lb
-      )
-      ub <- convert_all_to_num(
-        "upper boundaries",
-        input$IDA_kHD_ub, input$IDA_I0_ub, input$IDA_IHD_ub, input$IDA_ID_ub
-      )
-      additionalParameters <- convert_all_to_num(
-        "Additional Parameters",
-        input$IDA_H0, input$IDA_D0, input$IDA_kHD
-      )
-      npop <- convert_num_to_int(input$IDA_npop)
-      ngen <- convert_num_to_int(input$IDA_ngen)
-      topo <- input$IDA_topology
-      et <- input$IDA_threshold
+      lb <- create_lb()
+      ub <- create_ub()
+      additionalParameters <- create_additional_parameters()
+      npop <- create_npop()
+      ngen <- create_ngen()
+      topo <- create_topology()
+      et <- create_error_threshold()
       seed <- input$Seed
       if (is.na(seed)) seed <- as.numeric(Sys.time())
      
@@ -116,10 +188,10 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       process(NULL)
       invalid_time(1100)
       nclicks(nclicks() + 1)
-      opti_message("Initializing...")
+      opti_message("Initializing...") # TODO: during initialization cancel crashes app
 
       # start process
-      result <- call_opti_in_bg( "ida", lb, ub, df(),
+      result <- call_opti_in_bg( get_Model(), lb, ub, df(),
         additionalParameters, seed, npop, ngen, topo, et
       )
       process(result)
@@ -139,7 +211,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       return(TRUE)
     }
 
-    observeEvent(input$IDA_cancel, {
+    observeEvent(input$cancel, {
       exportTestValues(
         cancel_clicked = TRUE
       )
@@ -190,10 +262,10 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       }
     })
 
-    output$IDA_params <- renderDT({
+    output$params <- renderDT({
       req(opti_result_created())
       res <-opti_result()[[2]]
-      names(res)[1] <- c("K<sub>a</sub>(HG) [M]")
+      names(res)[1] <- get_K_param()
       exportTestValues(
         df_params = res
       )
@@ -201,12 +273,12 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
         formatSignif(columns = 1:ncol(res), digits = 3)
     })
 
-    output$IDA_plot <- renderPlot({
+    output$plot <- renderPlot({
       req(opti_result_created())
       opti_result()[[3]]
     })
 
-    output$IDA_metrices <- renderDT({
+    output$metrices <- renderDT({
       req(opti_result_created())
       res <- as.data.frame(opti_result()[[4]])
       names(res)[4] <- c("R<sup>2</sup>")
@@ -221,7 +293,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
         formatSignif(columns = 1:ncol(res), digits = 6)
     })
 
-    output$IDA_download <- downloadHandler(
+    output$download <- downloadHandler(
       filename = function() {
         paste("result", switch(input$file_type,
           xlsx = ".xlsx",
@@ -232,35 +304,32 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
         req(opti_result_created())
         result_val <-opti_result()
         if (input$file_type == "xlsx") {
-          download_file("IDA", file, result_val)
+          download_file(get_Model_capital(), file, result_val)
         } else {
-          download_csv("IDA", file, result_val)
+          download_csv(get_Model_capital(), file, result_val)
         }
       }
     )
 
+
+
     # sensitivity
     # ===============================================================================
+
+    sensi_message <-function(message) {
+      session$sendCustomMessage(
+        type = get_update_field_sense(),
+        list(message = message)
+      )
+      return(NULL)
+    }
     sensi_result_created <- reactiveVal(FALSE)
     sensi_result <- reactiveVal()
     sensi_process <- reactiveVal()
     sensi_cancel_clicked <- reactiveVal(FALSE)
     sensi_setup_done <- reactiveVal(FALSE)
 
-    check_inputs_sensi <- function() {
-      rwn(input$IDA_H0 != "",
-        "Please enter a value for the Host")
-      rwn(input$IDA_D0 != "",
-        "Please enter a value for the Dye")
-      rwn(input$IDA_kHD != "",
-        "Please enter a value for KaHD")
-      rwn(!is_integer(input$IDA_sens_bounds),
-        "Please enter an integer value for the sensitivity boundary")
-      rwn(opti_result_created(),
-        "Please run first an optimization") 
-    }
-
-    observeEvent(input$IDA_Start_Sensi, {
+    observeEvent(input$Start_Sensi, {
       # checks
       if (nclicks() != 0) {
         print_noti("Already running analysis", type = "warning")
@@ -268,12 +337,9 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       }
       check_inputs_sensi()
       request_cores(1, session$token)
-      additionalParameters <- convert_all_to_num(
-        "Additional Parameters",
-        input$IDA_H0, input$IDA_D0, input$IDA_kHD
-      )
-      optim_params <- opti_result()$parameter
-      sense_bounds <- input$IDA_sens_bounds
+      additionalParameters <- create_additional_parameters()
+      optim_params <- get_opti_result()
+      sense_bounds <- get_sens_bounds()
       # clear everything
       sensi_setup_done(FALSE)
       invalid_time(1100)
@@ -281,7 +347,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       sensi_result_created(FALSE)
       sensi_message("Initializing...")
       # start process
-      result <- call_sensi_in_bg("ida", optim_params, df(),
+      result <- call_sensi_in_bg(get_Model(), optim_params, df(),
         additionalParameters, sense_bounds)
       nclicks(nclicks() + 1)
       sensi_process(result)
@@ -300,13 +366,13 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       nclicks(0)
       return(TRUE)
     }
-    observeEvent(input$IDA_cancel_sense, {
+    observeEvent(input$cancel_sense, {
       exportTestValues(
         cancel_sense_clicked = TRUE
       )
       req(nclicks() != 0)
       req(!is.null(sensi_process()))
-      cancel_sense_clicked(TRUE)
+      sensi_cancel_clicked(TRUE)
     })
 
     observe({
@@ -318,6 +384,8 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
         sensi_setup_done(TRUE)
         sensi_cancel_clicked(FALSE)
         nclicks(0)
+        sensi_process()$interrupt()
+        sensi_process()$wait()
         sensi_process()$kill()
         sensi_result(NULL)
         sensi_message("")
@@ -356,7 +424,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       } 
     })
 
-    output$IDA_sensi_plot <- renderPlot({
+    output$sensi_plot <- renderPlot({
       req(sensi_result_created())
       req(inherits(sensi_result(), "ggplot"))
       exportTestValues(
@@ -367,7 +435,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       sensi_result()
     })
 
-    output$IDA_sensi_download <- downloadHandler(
+    output$sensi_download <- downloadHandler(
       filename = function() {
         "result.xlsx"
       },
@@ -387,6 +455,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
         unlink(tempfile_plot)
       }
     )
+
 
     # Batch analysis
     # ===============================================================================
@@ -412,7 +481,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       )
     }
 
-    observeEvent(input$IDA_Start_Batch, {
+    observeEvent(input$Start_Batch, {
       # Check running analysis
       if (nclicks() != 0 ) {
         print_noti("Already running analysis")
@@ -421,22 +490,13 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       # check input
       check_inputs()
       check_inputs_batch()
-      lb <- convert_all_to_num(
-        "lower boundaries",
-        input$IDA_kHD_lb, input$IDA_I0_lb, input$IDA_IHD_lb, input$IDA_ID_lb
-      )
-      ub <- convert_all_to_num(
-        "upper boundaries",
-        input$IDA_kHD_ub, input$IDA_I0_ub, input$IDA_IHD_ub, input$IDA_ID_ub
-      )
-      additionalParameters <- convert_all_to_num(
-        "Additional Parameters",
-        input$IDA_H0, input$IDA_D0, input$IDA_kHD
-      )
-      npop <- convert_num_to_int(input$IDA_npop)
-      ngen <- convert_num_to_int(input$IDA_ngen)
-      topo <- input$IDA_topology
-      et <- input$IDA_threshold
+      lb <- create_lb()
+      ub <- create_ub()
+      additionalParameters <- create_additional_parameters()
+      npop <- create_npop()
+      ngen <- create_ngen()
+      topo <- create_topology()
+      et <- create_error_threshold()
       # check seed case
       seed <- input$Seed
       num_rep <- as.integer(input$NumRepDataset)
@@ -451,17 +511,17 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       invalid_time(1100)
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
-      output$IDA_batch_data_plot <- renderPlot({
+      output$batch_data_plot <- renderPlot({
         plot.new()
       })
-      output$IDA_batch_signal_plot <- renderPlot({
+      output$batch_signal_plot <- renderPlot({
         plot.new()
       })
 
-      output$IDA_batch_params_plot <- renderPlot({
+      output$batch_params_plot <- renderPlot({
         plot.new()
       })
-      output$IDA_batch_metrices_plot <- renderPlot({
+      output$batch_metrices_plot <- renderPlot({
         plot.new()
       })
 
@@ -472,6 +532,10 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       process_list <- vector("list", size)
       seeds <- numeric(size)
       seeds_from <- 1:1e6
+      session$sendCustomMessage(
+        type = get_update_field_batch(),
+        list(message = "Initializing...")
+      )
 
       for (i in seq_len(size)) {
         if (seed_case == 1) {
@@ -495,7 +559,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
             return(res)
           },
           args = list(
-            "ida", lb, ub, df_list()[[(i - 1) %% length(df_list()) + 1]],
+            get_Model(), lb, ub, df_list()[[(i - 1) %% length(df_list()) + 1]],
             additionalParameters, seed, npop, ngen, topo, et
           )
         )
@@ -517,7 +581,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       return(TRUE)
     }
 
-    observeEvent(input$IDA_cancel_Batch, {
+    observeEvent(input$cancel_Batch, {
       exportTestValues(
         cancel_clicked_batch = TRUE
       )
@@ -541,14 +605,13 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
           process$wait()
         })
         session$sendCustomMessage(
-          type = "IDAupdateFieldBatch",
+          type = get_update_field_batch(),
           list(message = "")
         )
         send_and_read_info(paste0("release: ", session$token))
         return(NULL)
       }
       # check status
-      # TODO: coordinate printing of status
       counter_dataset <- 0
       counter_rep <- 0
       temp_status <- character(length(result_val_batch$result))
@@ -584,7 +647,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
       })
       req(is.character(m))
       session$sendCustomMessage(
-        type = "IDAupdateFieldBatch",
+        type = get_update_field_batch(),
         list(message = m)
       )
     })
@@ -612,35 +675,35 @@ idaServer <- function(id, df_reactive, df_list_reactive, com, com_sense, com_bat
     })
 
     observeEvent(req(batch_results_created()), {
-      output$IDA_batch_data_plot <- renderPlot({
+      output$batch_data_plot <- renderPlot({
         req(batch_results_created())
         plotStates(result_val_batch$result_splitted, num_rep_batch())[[2]] 
       })
 
-      output$IDA_batch_signal_plot <- renderPlot({
+      output$batch_signal_plot <- renderPlot({
         req(batch_results_created())
         plotStates(result_val_batch$result_splitted, num_rep_batch())[[1]] 
       })
 
-      output$IDA_batch_params_plot <- renderPlot({
+      output$batch_params_plot <- renderPlot({
         req(batch_results_created())
         plotParams(result_val_batch$result_splitted, num_rep_batch())
       })
 
-      output$IDA_batch_metrices_plot <- renderPlot({
+      output$batch_metrices_plot <- renderPlot({
         req(batch_results_created())
         plotMetrices(result_val_batch$result_splitted, num_rep_batch())
       })
     })
 
-    output$IDA_batch_download <- downloadHandler(
+    output$batch_download <- downloadHandler(
       filename = function() {
         "result.xlsx"
       },
       content = function(file) {
         req(batch_results_created())
         download_batch_file(
-          "IDA",
+          get_model_capital(),
           file,
           result_val_batch$result_splitted,
           num_rep_batch()

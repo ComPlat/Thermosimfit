@@ -45,10 +45,27 @@ process <- callr::r_bg(
     df, additionalParameters, seed, npop, ngen, Topology, errorThreshold
   )
 )
-process$is_alive()
-process$get_status()
-process$read_output()
-process$print()
-process$read_output_lines()
-process$signal()
-process$get_result()
+while (process$is_alive()) {
+  process$get_status() |> print()
+  process$read_output() |> cat()
+  Sys.sleep(1)
+}
+print("test")
+process$is_alive() |> print()
+res <- process$get_result()
+
+
+process <- tsf:::call_sensi_in_bg(
+  "ida", res[[2]],
+  df, additionalParameters, 15
+)
+
+while (process$is_alive()) {
+  process$get_status() |> print()
+  process$read_output() |> cat()
+  Sys.sleep(1)
+}
+print("test")
+process$is_alive() |> print()
+res <- process$get_result()
+res
