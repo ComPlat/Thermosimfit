@@ -41,6 +41,10 @@ res <- tsf::opti(
   errorThreshold = 0.7
 )
 
+res
+print(length(res))
+stop()
+
 tsf::sensitivity("ida", res[[2]], df, c(1e-6, 1e-6, 3e6), 20)
 
 stop()

@@ -211,6 +211,11 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       return(TRUE)
     }
 
+    correct_results <- function() {
+      req(opti_result_created())
+      req(!is.null(opti_result()))
+    }
+
     observeEvent(input$cancel, {
       exportTestValues(
         cancel_clicked = TRUE
@@ -231,7 +236,12 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         nclicks(0)
         process()$interrupt()
         process()$wait()
-        opti_result(process()$get_result())
+        e <- try(opti_result(process()$get_result()))
+        if(inherits(e, "try-error")) {
+          opti_result(NULL)
+          opti_result_created(FALSE)
+        }
+        process()$kill()
         opti_message("")
         send_and_read_info(paste0("release: ", session$token))
         return(NULL)
@@ -247,7 +257,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       if(class(process())[[1]] == "r_process") {
         req(!process()$is_alive())
       }
-      opti_result(process()$get_result())
+      try(opti_result(process()$get_result()))
       process()$kill()
       send_and_read_info(paste0("release: ", session$token))
       process(NULL)
@@ -263,7 +273,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     })
 
     output$params <- renderDT({
-      req(opti_result_created())
+      correct_results()
       res <-opti_result()[[2]]
       names(res)[1] <- get_K_param()
       exportTestValues(
@@ -274,12 +284,12 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     })
 
     output$plot <- renderPlot({
-      req(opti_result_created())
+      correct_results()
       opti_result()[[3]]
     })
 
     output$metrices <- renderDT({
-      req(opti_result_created())
+      correct_results()
       res <- as.data.frame(opti_result()[[4]])
       names(res)[4] <- c("R<sup>2</sup>")
       names(res)[5] <- c("R<sup>2</sup> adjusted")
@@ -301,7 +311,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         ), sep = "")
       },
       content = function(file) {
-        req(opti_result_created())
+        correct_results()
         result_val <-opti_result()
         if (input$file_type == "xlsx") {
           download_file(get_Model_capital(), file, result_val)
@@ -415,7 +425,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     observe({
       invalidateLater(invalid_time())
       if (sensi_process_done() && !sensi_result_created()) {
-        get_sensi_result()
+        try(get_sensi_result())
         sensi_result_created(TRUE)
         sensi_process()$kill()
         sensi_process()$wait()
@@ -653,10 +663,14 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     })
 
     plot_data <- reactive({
-      values <- lapply(result_val_batch$result, function(process) {
+      values <- try(lapply(result_val_batch$result, function(process) {
         process$get_result()
-      })
-      result_val_batch$result_splitted <- seperate_batch_results(values)
+      }))
+      if (inherits(values, "try-error")) {
+        result_val_batch$result_splitted <- NULL
+      } else {
+        result_val_batch$result_splitted <- seperate_batch_results(values)
+      }
       lapply(result_val_batch$result, function(process) {
         process$kill()
       })
@@ -675,6 +689,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     })
 
     observeEvent(req(batch_results_created()), {
+      req(length(result_val_batch$result_splitted) > 0)
       output$batch_data_plot <- renderPlot({
         req(batch_results_created())
         plotStates(result_val_batch$result_splitted, num_rep_batch())[[2]] 
@@ -702,6 +717,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       },
       content = function(file) {
         req(batch_results_created())
+        req(length(result_val_batch$result_splitted) > 0)
         download_batch_file(
           get_model_capital(),
           file,

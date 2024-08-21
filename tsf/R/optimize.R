@@ -33,126 +33,183 @@ opti <- function(case, lowerBounds, upperBounds,
                  npop = 40, ngen = 200,
                  Topology = "random",
                  errorThreshold = -Inf) {
-  if (!is.character(case)) {
-    stop("case has to be of type character")
-  }
-  if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
-    stop("case is neither dba_dye_const, dba_host_const, ida or gda")
-  }
-  if (!is.numeric(lowerBounds)) {
-    return(ErrorClass$new("lowerBounds have to be of type numeric"))
-  }
-  if (length(lowerBounds) == 0) {
-    stop("lowerBounds vector seems to be empty")
-  }
-  if (length(lowerBounds) > 4) {
-    stop("lowerBounds vector has more than 4 entries")
-  }
-  if (!is.numeric(upperBounds)) {
-    stop("upperBounds have to be of type numeric")
-  }
-  if (length(upperBounds) == 0) {
-    stop("upperBounds vector seems to be empty")
-  }
-  if (length(upperBounds) > 4) {
-    stop("upperBounds vector has more than 4 entries")
-  }
-
-  if (!is.character(path) && !is.data.frame(path)) {
-    stop("path has to be of type character or a data.frame")
-  }
-
-  if (!is.numeric(additionalParameters)) {
-    stop("additionalParameters have to be of type numeric")
-  }
-  if (case == "hg" && length(additionalParameters) != 1) {
-    stop("additionalParameters have to be of length 1")
-  }
-  if (case == "ida" && length(additionalParameters) != 3) {
-    stop("additionalParameters have to be of length 3")
-  }
-  if (case == "gda" && length(additionalParameters) != 3) {
-    stop("additionalParameters have to be of length 3")
-  }
-  if (!is.numeric(seed) && !is.integer(seed) && !is.null(seed)) {
-    stop("Invalid seed argument found")
-  }
-  if (is.null(seed)) {
-    seed <- as.numeric(Sys.time())
-  }
-  if (!is.numeric(npop) && !is.integer(npop)) {
-    stop("npop has to be of type numeric or integer")
-  }
-  if (npop <= 5 || npop > 400) {
-    stop("npop has to be between 5 and 400")
-  }
-  if (!is.numeric(ngen) && !is.integer(ngen)) {
-    stop("ngen has to be of type numeric or integer")
-  }
-  if (ngen <= 5 || npop > 10^7) {
-    stop("ngen has to be between 5 and 10^7")
-  }
-  if (!is.character(Topology)) {
-    stop("Topology has to be of type character")
-  }
-  if (!(Topology %in% c("star", "random"))) {
-    stop("Topology is neither star or random")
-  }
-  Topo <- FALSE
-  if (Topology == "star") Topo <- TRUE
-  if (!is.numeric(errorThreshold)) {
-    stop("errorThreshold has to be of type numeric")
-  }
-  df <- NULL
-  if (!is.data.frame(path)) {
-    df <- try(importData(path))
-    if (class(df) == "try-error") {
-      stop("Could not read file")
+  tryCatch(expr = {
+    if (!is.character(case)) {
+      stop("case has to be of type character")
     }
-  } else {
-    df <- path
-  }
-  check <- upperBounds < lowerBounds
-  if (any(check == TRUE)) {
-    stop("lowerBounds < upperBounds not fulfilled")
-  }
+    if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
+      stop("case is neither dba_dye_const, dba_host_const, ida or gda")
+    }
+    if (!is.numeric(lowerBounds)) {
+      return(ErrorClass$new("lowerBounds have to be of type numeric"))
+    }
+    if (length(lowerBounds) == 0) {
+      stop("lowerBounds vector seems to be empty")
+    }
+    if (length(lowerBounds) > 4) {
+      stop("lowerBounds vector has more than 4 entries")
+    }
+    if (!is.numeric(upperBounds)) {
+      stop("upperBounds have to be of type numeric")
+    }
+    if (length(upperBounds) == 0) {
+      stop("upperBounds vector seems to be empty")
+    }
+    if (length(upperBounds) > 4) {
+      stop("upperBounds vector has more than 4 entries")
+    }
+    if (!is.character(path) && !is.data.frame(path)) {
+      stop("path has to be of type character or a data.frame")
+    }
+    if (!is.numeric(additionalParameters)) {
+      stop("additionalParameters have to be of type numeric")
+    }
+    if (case == "hg" && length(additionalParameters) != 1) {
+      stop("additionalParameters have to be of length 1")
+    }
+    if (case == "ida" && length(additionalParameters) != 3) {
+      stop("additionalParameters have to be of length 3")
+    }
+    if (case == "gda" && length(additionalParameters) != 3) {
+      stop("additionalParameters have to be of length 3")
+    }
+    if (!is.numeric(seed) && !is.integer(seed) && !is.null(seed)) {
+      stop("Invalid seed argument found")
+    }
+    if (is.null(seed)) {
+      seed <- as.numeric(Sys.time())
+    }
+    if (!is.numeric(npop) && !is.integer(npop)) {
+      stop("npop has to be of type numeric or integer")
+    }
+    if (npop <= 5 || npop > 400) {
+      stop("npop has to be between 5 and 400")
+    }
+    if (!is.numeric(ngen) && !is.integer(ngen)) {
+      stop("ngen has to be of type numeric or integer")
+    }
+    if (ngen <= 5 || npop > 10^7) {
+      stop("ngen has to be between 5 and 10^7")
+    }
+    if (!is.character(Topology)) {
+      stop("Topology has to be of type character")
+    }
+    if (!(Topology %in% c("star", "random"))) {
+      stop("Topology is neither star or random")
+    }
+    if (!is.numeric(errorThreshold)) {
+      stop("errorThreshold has to be of type numeric")
+    }
+    check <- upperBounds < lowerBounds
+    if (any(check == TRUE)) {
+      stop("lowerBounds < upperBounds not fulfilled")
+    }
+  }, error = function(e) {
+    return(ErrorClass$new(conditionMessage(e)))
+  }, interrupt = function(e) {
+    return(ErrorClass$new("Interrupted by user"))
+  })
 
-  lossFct <- NULL
-  env <- new.env()
-  if (case == "dba_host_const") {
-    names(df) <- c("dye", "signal")
-    lossFct <- lossFctHG
-    env$dye <- df[, 1]
-    env$signal <- df[, 2]
-    env$h0 <- additionalParameters[1]
-  } else if (case == "dba_dye_const") {
-    names(df) <- c("host", "signal")
-    lossFct <- lossFctDBA
-    env$host <- df[, 1]
-    env$signal <- df[, 2]
-    env$d0 <- additionalParameters[1]
-  } else if (case == "ida") {
-    names(df) <- c("guest", "signal")
-    lossFct <- lossFctIDA
-    env$ga <- df[, 1]
-    env$signal <- df[, 2]
-    env$h0 <- additionalParameters[1]
-    env$d0 <- additionalParameters[2]
-    env$kd <- additionalParameters[3]
-  } else if (case == "gda") {
-    names(df) <- c("dye", "signal")
-    lossFct <- lossFctGDA
-    env$dye <- df[, 1]
-    env$signal <- df[, 2]
-    env$h0 <- additionalParameters[1]
-    env$ga0 <- additionalParameters[2]
-    env$kd <- additionalParameters[3]
-  }
-  set.seed(seed)
-  runAsShiny <- new.env()
-  runAsShiny$insilico <- NULL
+  Topo <- tryCatch(
+    expr = {
+      if (Topology == "star") {
+        TRUE
+      } else {
+        FALSE
+      }
+    },
+    interrupt = function(e) {
+      return(NULL)
+    },
+    error = function(e) {
+      return(NULL)
+    }
+  )
+
+  df <- tryCatch(
+    expr = {
+      if (!is.data.frame(path)) {
+        importData(path)
+      } else {
+        path
+      }
+    },
+    error = function(e) {
+      return(NULL)
+    },
+    interrupt = function(e) {
+      return(NULL)
+    }
+  )
+
+  lossFct <- tryCatch(
+    expr = {
+      if (case == "dba_host_const") {
+        lossFctHG
+      } else if (case == "dba_dye_const") {
+        lossFctDBA
+      } else if (case == "ida") {
+        lossFctIDA
+      } else if (case == "gda") {
+        lossFctGDA
+      }
+    },
+    error = function(e) {
+      return(NULL)
+    },
+    interrupt = function(e) {
+      return(NULL)
+    }
+  )
+
+  env <- tryCatch(expr = {
+    env <- new.env()
+    if (case == "dba_host_const") {
+      names(df) <- c("dye", "signal")
+      env$dye <- df[, 1]
+      env$signal <- df[, 2]
+      env$h0 <- additionalParameters[1]
+    } else if (case == "dba_dye_const") {
+      names(df) <- c("host", "signal")
+      env$host <- df[, 1]
+      env$signal <- df[, 2]
+      env$d0 <- additionalParameters[1]
+    } else if (case == "ida") {
+      names(df) <- c("guest", "signal")
+      env$ga <- df[, 1]
+      env$signal <- df[, 2]
+      env$h0 <- additionalParameters[1]
+      env$d0 <- additionalParameters[2]
+      env$kd <- additionalParameters[3]
+    } else if (case == "gda") {
+      names(df) <- c("dye", "signal")
+      env$dye <- df[, 1]
+      env$signal <- df[, 2]
+      env$h0 <- additionalParameters[1]
+      env$ga0 <- additionalParameters[2]
+      env$kd <- additionalParameters[3]
+    }
+    env
+  }, error = function(e) {
+    return(NULL)
+  }, interrupt = function(e) {
+    return(NULL)
+  })
+
+
+  runAsShiny <- tryCatch(expr = {
+    runAsShiny <- new.env()
+    runAsShiny$insilico <- NULL
+    runAsShiny
+  }, error = function(e) {
+    return(NULL)
+  }, interrupt = function(e) {
+    return(NULL)
+  })
+
   tryCatch(
     {
+      set.seed(seed)
       res <- pso(
         env, lowerBounds, upperBounds, lossFct, ngen, npop,
         errorThreshold, Topo, FALSE, runAsShiny
