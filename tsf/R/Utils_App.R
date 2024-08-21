@@ -382,6 +382,10 @@ create_df_for_batch <- function(list, what, num_rep) { # TODO: use this fct also
   return(df)
 }
 
+# TODO: add column names
+# TODO: add seed column bname
+# Add the model name
+# Add the tsf version, R version etc.
 download_batch_file <- function(model, file, result_val, num_rep) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")

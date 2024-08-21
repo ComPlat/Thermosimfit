@@ -184,7 +184,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       process(NULL)
       invalid_time(1100)
       nclicks(nclicks() + 1)
-      opti_message("Initializing...") # TODO: during initialization cancel crashes app
+      opti_message("Initializing...") 
 
       # start process
       result <- call_opti_in_bg( get_Model(), lb, ub, df(),
