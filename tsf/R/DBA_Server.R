@@ -1,10 +1,14 @@
-dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
+
+dbaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
+  df <- reactive({df_reactive$df})
+  df_list <- reactive({df_list_reactive$data_frames})
   moduleServer(id, function(input, output, session) {
+
     observeEvent(input$helpButton, {
       showModal(modalDialog(
         title = "Help",
         HTML("Conduct two optimizations. First with wide boundaries. \n
-            Afterwards chose narrow boundaries based on the result of the first optimization."),
+          Afterwards chose narrow boundaries based on the result of the first optimization."),
         easyClose = TRUE,
         footer = NULL
       ))
@@ -18,150 +22,279 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
       ))
     })
 
-    result_val <- reactiveVal()
-    result_val_sense <- reactiveVal()
-    add_info <- reactiveVal()
+    # Optimization
+    # ===============================================================================
+    invalid_time <- reactiveVal(1100)
+   
+    opti_result_created <- reactiveVal(FALSE)
+    opti_result <- reactiveVal()
+    process <- reactiveVal()
+    cancel_clicked <- reactiveVal(FALSE)
+    setup_done <- reactiveVal(FALSE)
 
-    fl <- reactive({
-      flush(com$result)
-      return()
-    })
+    check_inputs <- function() {
+      rwn(input$D0 != "", "Please enter a value for the Dye")
+      rwn(!is.na(input$npop),
+        "Please enter a value for number of particles")
+      rwn(!is.na(input$ngen),
+        "Please enter a value for the number of generations")
+      rwn(!is.na(input$threshold),
+        "Please enter a value for the error threshold")
+      rwn(input$kHD_lb != "",
+        "Please enter a value for the lower boundary of KaHD")
+      rwn(input$kHD_ub != "",
+        "Please enter a value for the upper boundary of KaHD")
+      rwn(input$IHD_lb != "",
+        "Please enter a value for the lower boundary of I(HD)")
+      rwn(input$IHD_ub != "",
+        "Please enter a value for the upper boundary of I(HD)")
+      rwn(input$ID_lb != "",
+        "Please enter a value for the lower boundary of I(D)")
+      rwn(input$ID_ub != "",
+        "Please enter a value for the upper boundary of I(D)")
+      rwn(input$I0_lb != "",
+        "Please enter a value for the lower boundary of I(0)")
+      rwn(input$I0_ub != "",
+        "Please enter a value for the upper boundary of I(0)")
+      rwn(!is_integer(input$npop),
+        "Please enter an integer value for number of particles")
+      rwn(!is_integer(input$ngen),
+        "Please enter an integer value for number of generations")
+    }
 
-    observeEvent(input$DBA_Start_Opti, {
-      if (nclicks() != 0 | nclicks_sense() != 0) {
-        showNotification("Already running analysis")
+    check_inputs_sensi <- function() { 
+      rwn(input$D0 != "",
+        "Please enter a value for the Dye")
+      rwn(!is_integer(input$sens_bounds),
+        "Please enter an integer value for the sensitivity boundary")
+      rwn(opti_result_created(),
+        "Please run first an optimization") 
+    }
+
+    create_lb <- function() {
+      lb <- convert_all_to_num(
+      "lower boundaries",
+      input$kHD_lb, input$I0_lb, input$IHD_lb, input$ID_lb
+      )
+      return(lb)
+    }
+
+    create_ub <- function() {
+      ub <- convert_all_to_num(
+      "upper boundaries",
+      input$kHD_ub, input$I0_ub, input$IHD_ub, input$ID_ub
+      )
+      return(ub)
+    }
+
+    create_additional_parameters <- function() {
+      additionalParameters <- convert_all_to_num(
+      "Additional Parameters",
+      input$D0 
+      )
+      return(additionalParameters)
+    }
+
+    create_npop <- function() {
+      npop <- convert_num_to_int(input$npop)
+      return(npop)
+    }
+
+    create_ngen <- function() {
+      ngen <- convert_num_to_int(input$ngen)
+      return(ngen)
+    }
+
+    create_topology <- function() {
+      topo <- input$topology
+      return(topo)
+    }
+
+    create_error_threshold <- function() {
+      et <- input$threshold
+      return(et)
+    }
+
+    get_Model <- function() {
+      "dba_dye_const"
+    }
+
+    get_Model_capital <- function() {
+      "DBA (Dye constant)"
+    }
+
+    get_K_param <- function() {
+      "K<sub>a</sub>(HD) [M]"
+    }
+
+    get_update_field <- function() {
+      "DBAupdateField"
+    }
+    
+    get_update_field_sense <- function() {
+      "DBAupdateFieldSense"
+    }
+
+    get_update_field_batch <- function() {
+      "DBAupdateFieldBatch"
+    }
+
+    get_opti_result <- function() {
+      opti_result()$parameter
+    }
+
+    get_sens_bounds <- function() {
+     input$sens_bounds
+    }
+
+    opti_message <-function(message) {
+      session$sendCustomMessage(
+        type = get_update_field(),
+        list(message = message)
+      )
+      return(NULL)
+    }
+
+    observeEvent(input$Start_Opti, {
+      # checks
+      if (nclicks() != 0 ) {
+        print_noti("Already running analysis", type = "warning")
         return(NULL)
       }
-      session$sendCustomMessage(type = "DBAclearField", list(message = NULL))
-
-      nclicks(nclicks() + 1)
-      result_val(data.frame(Status = "Running..."))
-      com$running()
-      session$sendCustomMessage(type = "DBAclearField", list(message = NULL, arg = 1))
-      req(input$DBA_D0)
-      req(input$DBA_npop)
-      req(input$DBA_ngen)
-      req(input$DBA_threshold)
-      req(input$DBA_kHD_lb)
-      req(input$DBA_kHD_ub)
-      req(input$DBA_IHD_lb)
-      req(input$DBA_IHD_ub)
-      req(input$DBA_ID_lb)
-      req(input$DBA_ID_ub)
-      req(input$DBA_I0_lb)
-      req(input$DBA_I0_ub)
-      lb <- c(input$DBA_kHD_lb, input$DBA_I0_lb, input$DBA_IHD_lb, input$DBA_ID_lb)
-      lb <- convertToNum(lb)
-      req(!("Error" %in% lb))
-      ub <- c(input$DBA_kHD_ub, input$DBA_I0_ub, input$DBA_IHD_ub, input$DBA_ID_ub)
-      ub <- convertToNum(ub)
-      req(!("Error" %in% ub))
-      additionalParameters <- c(input$DBA_D0)
-      additionalParameters <- convertToNum(additionalParameters)
-      req(!("Error" %in% additionalParameters))
-      npop <- input$DBA_npop
-      ngen <- input$DBA_ngen
-      topo <- input$DBA_topology
-      et <- input$DBA_threshold
+      check_inputs()
+      request_cores(1, session$token)
+      lb <- create_lb()
+      ub <- create_ub()
+      additionalParameters <- create_additional_parameters()
+      npop <- create_npop()
+      ngen <- create_ngen()
+      topo <- create_topology()
+      et <- create_error_threshold()
       seed <- input$Seed
       if (is.na(seed)) seed <- as.numeric(Sys.time())
-      fl()
-      result <- future(
-        {
-          opti(
-            "dba_dye_const", lb, ub, df, additionalParameters,
-            seed,
-            npop, ngen, topo, et, com
-          )
-        },
-        seed = TRUE
-      )
-      promises::`%...>%`(result, result_val())
-      result <- catch(
-        result,
-        function(e) {
-          result_val(NULL)
-          print(e$message)
-          showNotification(e$message, duration = 0)
-        }
-      )
-      result <- finally(
-        result,
-        function() {
-          com$ready()
-          nclicks(0)
-        }
-      )
+     
+      # clear everything
+      setup_done(FALSE)
+      opti_result_created(FALSE)
+      process(NULL)
+      invalid_time(1100)
+      nclicks(nclicks() + 1)
+      opti_message("Initializing...") # TODO: during initialization cancel crashes app
 
-      add_info(list(
-        lb, ub,
-        additionalParameters, npop, ngen, topo, et, seed
-      ))
-
+      # start process
+      result <- call_opti_in_bg( get_Model(), lb, ub, df(),
+        additionalParameters, seed, npop, ngen, topo, et
+      )
+      process(result)
+      setup_done(TRUE)
       NULL
     })
-    observeEvent(input$DBA_cancel, {
+    
+    process_done <- function() {
+      req(setup_done())
+      req(length(process()) > 0)
+      if (process()$is_alive()) {
+        req(process()$get_status() != "running")
+        req(process()$get_status() != "sleeping")
+      }
+      invalid_time(invalid_time() + 1000)
+      nclicks(0)
+      return(TRUE)
+    }
+
+    correct_results <- function() {
+      req(opti_result_created())
+      req(!is.null(opti_result()))
+    }
+
+    observeEvent(input$cancel, {
       exportTestValues(
         cancel_clicked = TRUE
       )
-      com$interrupt()
-    })
-    observeEvent(input$DBA_status, {
       req(nclicks() != 0)
-      m <- com$getData()
-      if (length(nchar(m)) == 0) m <- "Initialisation"
-      exportTestValues(
-        status1 = {
-          m
-        }
-      )
-      session$sendCustomMessage(
-        type = "DBAupdateField",
-        list(message = m)
-      )
+      req(!is.null(process()))
+      cancel_clicked(TRUE)
     })
-    output$DBA_params <- renderDT({
-      req(length(result_val()) == 4)
-      req(!is.null(result_val()[[2]]))
-      res <- result_val()[[2]]
-      names(res)[1] <- c("K<sub>a</sub>(HD) [M]")
-      names(res)[2] <- c("I(0)")
-      names(res)[3] <- c("I(HD)")
-      names(res)[4] <- c("I(D)")
 
+    observe({
+      invalidateLater(invalid_time())
+      req(nclicks() != 0)
+      req(!is.null(process()))
+      # is cancel_clicked
+      if (cancel_clicked()) {
+        setup_done(TRUE)
+        cancel_clicked(FALSE)
+        nclicks(0)
+        process()$interrupt()
+        process()$wait()
+        e <- try(opti_result(process()$get_result()))
+        if(inherits(e, "try-error")) {
+          opti_result(NULL)
+          opti_result_created(FALSE)
+        }
+        process()$kill()
+        opti_message("")
+        send_and_read_info(paste0("release: ", session$token))
+        return(NULL)
+      }
+      # check status
+      m <-process()$read_output()
+      m <- print_ida_gda(m, NULL, NULL)
+      req(is.character(m))
+      if(m != "") opti_message(m)
+    })
+
+    get_opti_data <- reactive({
+      if(class(process())[[1]] == "r_process") {
+        req(!process()$is_alive())
+      }
+      try(opti_result(process()$get_result()))
+      process()$kill()
+      send_and_read_info(paste0("release: ", session$token))
+      process(NULL)
+    })
+
+    # observe results
+    observe({
+      invalidateLater(invalid_time())
+      if (process_done() && !opti_result_created()) {
+        get_opti_data()
+        opti_result_created(TRUE)
+      }
+    })
+
+    output$params <- renderDT({
+      correct_results()
+      res <-opti_result()[[2]]
+      names(res)[1] <- get_K_param()
       exportTestValues(
         df_params = res
       )
-
       datatable(res, escape = FALSE) |>
         formatSignif(columns = 1:ncol(res), digits = 3)
     })
-    output$DBA_plot <- renderPlot({
-      req(length(result_val()) == 4)
-      req(!is.null(result_val()[[3]]))
-      result_val()[[3]]
+
+    output$plot <- renderPlot({
+      correct_results()
+      opti_result()[[3]]
     })
-    output$DBA_metrices <- renderDT({
-      req(length(result_val()) == 4)
-      req(!is.null(result_val()[[4]]))
-      res <- as.data.frame(result_val()[[4]])
-      names(res)[1] <- c("MeanSquareError")
-      names(res)[2] <- c("RootMeanSquareError")
-      names(res)[3] <- c("MeanAbsoluteError")
+
+    output$metrices <- renderDT({
+      correct_results()
+      res <- as.data.frame(opti_result()[[4]])
       names(res)[4] <- c("R<sup>2</sup>")
       names(res)[5] <- c("R<sup>2</sup> adjusted")
-
       exportTestValues(
         df_metrices = res
       )
-
       datatable(res,
         escape = FALSE,
         caption = "Error Metrics: Comparison of in silico signal and measured signal"
       ) |>
         formatSignif(columns = 1:ncol(res), digits = 6)
     })
-    output$DBA_download <- downloadHandler(
+
+    output$download <- downloadHandler(
       filename = function() {
         paste("result", switch(input$file_type,
           xlsx = ".xlsx",
@@ -169,237 +302,151 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
         ), sep = "")
       },
       content = function(file) {
-        req(length(result_val()) == 4)
-
+        correct_results()
+        result_val <-opti_result()
         if (input$file_type == "xlsx") {
-          wb <- openxlsx::createWorkbook()
-          addWorksheet(wb, "Results")
-          writeData(wb, "Results",
-            "Model: DBA dye const",
-            startCol = 1,
-            startRow = 1
-          )
-
-          curr_row <- 3
-          curr_val <- result_val()[[1]]
-          names(curr_val) <- c(
-            "total Host measured [M]", "Signal measured",
-            "Signal simulated", "free Dye simulated [M]", "Host-Dye simulated [M]"
-          )
-          writeData(wb, "Results", curr_val, startRow = curr_row)
-          curr_row <- curr_row + dim(curr_val)[1] + 5
-
-          curr_val <- result_val()[[2]]
-          ai <- add_info()
-          ai[[1]] <- as.data.frame(t(ai[[1]]))
-          ai[[2]] <- as.data.frame(t(ai[[2]]))
-          names(ai[[1]]) <- names(curr_val)
-          names(ai[[2]]) <- names(curr_val)
-          curr_val <- rbind(curr_val, ai[[1]])
-          curr_val <- rbind(curr_val, ai[[2]])
-          names(curr_val)[1] <- c("Ka(HD) [M]")
-          names(curr_val)[2] <- c("I(0)")
-          names(curr_val)[3] <- c("I(HD) [1/M]")
-          names(curr_val)[4] <- c("I(D) [1/M]")
-          curr_val <- cbind(
-            info = c("Opti. results", "lower boundaries", "upper boundaries"),
-            curr_val
-          )
-          writeData(wb, "Results", curr_val, startRow = curr_row)
-          curr_row <- curr_row + dim(curr_val)[1] + 5
-
-          curr_val <- as.data.frame(result_val()[[4]])
-          names(curr_val)[1] <- c("MeanSquareError")
-          names(curr_val)[2] <- c("RootMeanSquareError")
-          names(curr_val)[3] <- c("MeanAbsoluteError")
-          names(curr_val)[4] <- c("R2")
-          names(curr_val)[5] <- c("R2 adjusted")
-          writeData(wb, "Results", curr_val, startRow = curr_row)
-          curr_row <- curr_row + dim(curr_val)[1] + 5
-
-          curr_val <- result_val()[[3]]
-          tempfile_plot <- tempfile(fileext = ".png")
-          ggsave(tempfile_plot,
-            plot = curr_val, width = 10, height = 6
-          )
-          insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
-          curr_row <- curr_row + 15
-
-          curr_val <- data.frame(
-            Dye = ai[[3]],
-            npop = ai[[4]], ngen = ai[[5]], topology = ai[[6]],
-            error_threshold = ai[[7]], seed = ai[[8]]
-          )
-          names(curr_val)[1] <- c("Dye [M]")
-          writeData(
-            wb, "Results",
-            curr_val,
-            startRow = curr_row
-          )
-          curr_row <- curr_row + 5
-
-          writeData(wb, "Results",
-            as.data.frame(R.Version()),
-            startRow = curr_row
-          )
-          curr_row <- curr_row + 5
-
-          writeData(wb, "Results",
-            paste0("tsf version: ", packageVersion("tsf")),
-            startRow = curr_row
-          )
-
-          openxlsx::saveWorkbook(wb, file)
-          unlink(tempfile_plot)
+          download_file(get_Model_capital(), file, result_val)
         } else {
-          # csv file
-          write.table("Model: DBA dye const", file)
-          curr_val <- result_val()[[1]]
-          names(curr_val) <- c(
-            "total Host measured [M]", "Signal measured",
-            "Signal simulated", "free Dye simulated [M]", "Host-Dye simulated [M]"
-          )
-          write.table(curr_val, file,
-            append = TRUE,
-            sep = ",", row.names = FALSE
-          )
-
-          curr_val <- result_val()[[2]]
-          ai <- add_info()
-          ai[[1]] <- as.data.frame(t(ai[[1]]))
-          ai[[2]] <- as.data.frame(t(ai[[2]]))
-          names(ai[[1]]) <- names(curr_val)
-          names(ai[[2]]) <- names(curr_val)
-          curr_val <- rbind(curr_val, ai[[1]])
-          curr_val <- rbind(curr_val, ai[[2]])
-          names(curr_val)[1] <- c("Ka(HD) [M]")
-          names(curr_val)[2] <- c("I(0)")
-          names(curr_val)[3] <- c("I(HD) [1/M]")
-          names(curr_val)[4] <- c("I(D) [1/M]")
-          curr_val <- cbind(
-            info = c("Opti. results", "lower boundaries", "upper boundaries"),
-            curr_val
-          )
-          write.table(curr_val, file,
-            append = TRUE,
-            sep = ",", row.names = FALSE
-          )
-
-          curr_val <- as.data.frame(result_val()[[4]])
-          names(curr_val)[1] <- c("MeanSquareError")
-          names(curr_val)[2] <- c("RootMeanSquareError")
-          names(curr_val)[3] <- c("MeanAbsoluteError")
-          names(curr_val)[4] <- c("R2")
-          names(curr_val)[5] <- c("R2 adjusted")
-          write.table(curr_val, file,
-            append = TRUE,
-            sep = ",", row.names = FALSE
-          )
-
-          curr_val <- data.frame(
-            Dye = ai[[3]],
-            npop = ai[[4]], ngen = ai[[5]], topology = ai[[6]],
-            error_threshold = ai[[7]], seed = ai[[8]]
-          )
-          names(curr_val)[1] <- c("Dye [M]")
-          write.table(curr_val, file,
-            append = TRUE,
-            sep = ",", row.names = FALSE
-          )
-
-          curr_val <- as.data.frame(R.Version())
-          write.table(curr_val, file,
-            append = TRUE,
-            sep = ",", row.names = FALSE
-          )
+          download_csv(get_Model_capital(), file, result_val)
         }
       }
     )
 
 
 
-    observeEvent(input$DBA_Start_Sensi, {
-      if (nclicks_sense() != 0 | nclicks() != 0) {
-        showNotification("Already running analysis")
+    # sensitivity
+    # ===============================================================================
+
+    sensi_message <-function(message) {
+      session$sendCustomMessage(
+        type = get_update_field_sense(),
+        list(message = message)
+      )
+      return(NULL)
+    }
+    sensi_result_created <- reactiveVal(FALSE)
+    sensi_result <- reactiveVal()
+    sensi_process <- reactiveVal()
+    sensi_cancel_clicked <- reactiveVal(FALSE)
+    sensi_setup_done <- reactiveVal(FALSE)
+
+    observeEvent(input$Start_Sensi, {
+      # checks
+      if (nclicks() != 0) {
+        print_noti("Already running analysis", type = "warning")
         return(NULL)
       }
-      nclicks_sense(nclicks_sense() + 1)
-      result_val_sense(data.frame(Status = "Running..."))
-      session$sendCustomMessage(type = "DBAclearFieldSense", list(message = NULL, arg = 1))
-      com_sense$running()
-      req(input$DBA_D0)
-      req(input$DBA_sens_bounds)
-      req(length(result_val()) == 4)
-      additionalParameters <- c(input$DBA_D0)
-      additionalParameters <- convertToNum(additionalParameters)
-      req(!("Error" %in% additionalParameters))
-      optim_params <- result_val()[[2]]
-      sense_bounds <- input$DBA_sens_bounds
-      fl()
-      result_sense <- future(
-        {
-          sensitivity("dba_dye_const", optim_params, df, additionalParameters,
-            sense_bounds,
-            runAsShiny = com_sense
-          )
-        },
-        seed = TRUE
-      )
-      promises::`%...>%`(result_sense, result_val_sense())
-      result_sense <- catch(
-        result_sense,
-        function(e) {
-          result_val_sense(NULL)
-          print(e$message)
-          showNotification(e$message, duration = 0)
-        }
-      )
-      result_sense <- finally(
-        result_sense,
-        function() {
-          com_sense$ready()
-          nclicks_sense(0)
-        }
-      )
+      check_inputs_sensi()
+      request_cores(1, session$token)
+      additionalParameters <- create_additional_parameters()
+      optim_params <- get_opti_result()
+      sense_bounds <- get_sens_bounds()
+      # clear everything
+      sensi_setup_done(FALSE)
+      invalid_time(1100)
+      sensi_process(NULL)
+      sensi_result_created(FALSE)
+      sensi_message("Initializing...")
+      # start process
+      result <- call_sensi_in_bg(get_Model(), optim_params, df(),
+        additionalParameters, sense_bounds)
+      nclicks(nclicks() + 1)
+      sensi_process(result)
+      sensi_setup_done(TRUE)
       NULL
     })
-    observeEvent(input$DBA_cancel_sense, {
+
+    sensi_process_done <- function() {
+      req(sensi_setup_done())
+      req(length(sensi_process()) > 0)
+      if(sensi_process()$is_alive())  {
+        req(sensi_process()$get_status() != "running")
+        req(sensi_process()$get_status() != "sleeping")
+      }
+      invalid_time(invalid_time() + 1000)
+      nclicks(0)
+      return(TRUE)
+    }
+    observeEvent(input$cancel_sense, {
       exportTestValues(
         cancel_sense_clicked = TRUE
       )
-      com_sense$interrupt()
+      req(nclicks() != 0)
+      req(!is.null(sensi_process()))
+      sensi_cancel_clicked(TRUE)
     })
-    observeEvent(input$DBA_status_sense, {
-      req(nclicks_sense() != 0)
-      exportTestValues(
-        status_sense = {
-          com_sense$getStatus()
-        }
-      )
-      session$sendCustomMessage(
-        type = "DBAupdateFieldSense",
-        list(message = com_sense$getStatus())
-      )
+
+    observe({
+      invalidateLater(invalid_time())
+      req(nclicks() != 0)
+      req(!is.null(sensi_process()))
+      # if cancel sense clicked
+      if (sensi_cancel_clicked()) {
+        sensi_setup_done(TRUE)
+        sensi_cancel_clicked(FALSE)
+        nclicks(0)
+        sensi_process()$interrupt()
+        sensi_process()$wait()
+        sensi_process()$kill()
+        sensi_result(NULL)
+        sensi_message("")
+        send_and_read_info(paste0("release: ", session$token))
+        return(NULL)
+      }
+      # check status
+      m <- sensi_process()$read_output()
+      req(is.character(m))
+      if(nchar(m) > 0) {
+        m <- gsub('"', "", m)
+        m <- gsub("\\[.*?\\] ", "", m)
+        m <- gsub("\n", "", m)
+        m <- paste0("Completed: ", m, "%")
+        sensi_message(m)
+      }
     })
-    output$DBA_sensi <- renderPlot({
-      req(inherits(result_val_sense(), "ggplot"))
+
+    get_sensi_result <- reactive({
+      if(class(sensi_process())[[1]] == "r_process") {
+        req(!sensi_process()$is_alive())
+      }
+      sensi_result(sensi_process()$get_result())
+    })
+    
+    # observe results
+    observe({
+      invalidateLater(invalid_time())
+      if (sensi_process_done() && !sensi_result_created()) {
+        try(get_sensi_result())
+        sensi_result_created(TRUE)
+        sensi_process()$kill()
+        sensi_process()$wait()
+        sensi_process(NULL)
+        send_and_read_info(paste0("release: ", session$token))
+      } 
+    })
+
+    output$sensi_plot <- renderPlot({
+      req(sensi_result_created())
+      req(inherits(sensi_result(), "ggplot"))
       exportTestValues(
         sense_plot = {
-          result_val_sense()
+          sensi_result()
         }
       )
-      result_val_sense()
+      sensi_result()
     })
-    output$DBA_sensi_download <- downloadHandler(
+
+    output$sensi_download <- downloadHandler(
       filename = function() {
         "result.xlsx"
       },
       content = function(file) {
+        req(sensi_result_created())
         wb <- openxlsx::createWorkbook()
         addWorksheet(wb, "Results")
         tempfile_plot <- tempfile(fileext = ".png")
-        if (inherits(result_val_sense(), "ggplot")) {
-          curr_val <- result_val_sense()
+        if (sensi_result_created()) {
+          curr_val <- sensi_result()
           ggsave(tempfile_plot,
             plot = curr_val, width = 10, height = 6
           )
@@ -407,6 +454,267 @@ dbaServer <- function(id, df, com, com_sense, nclicks, nclicks_sense) {
         }
         openxlsx::saveWorkbook(wb, file)
         unlink(tempfile_plot)
+      }
+    )
+
+
+    # Batch analysis
+    # ===============================================================================
+    setup_batch_done <- reactiveVal(FALSE)
+    result_val_batch <- reactiveValues(result = NULL, result_splitted = NULL)
+    batch_results_created <- reactiveVal(FALSE)
+    cancel_batch_clicked <- reactiveVal(FALSE)
+    num_rep_batch <- reactiveVal()
+    stdout <- reactiveVal(NULL)
+
+    check_inputs_batch <- function() {
+      rwn(
+        !is.na(input$NumRepDataset),
+        "Please provide a number of replicates/dataset"
+      )
+      rwn(
+        !is_integer(input$NumRepDataset),
+        "Please provide an integer entry for the replicates/dataset"
+      )
+      rwn(
+        length(df_list()) > 0,
+        "The dataset list seems to be empty. Please upload a file"
+      )
+    }
+
+    observeEvent(input$Start_Batch, {
+      # Check running analysis
+      if (nclicks() != 0 ) {
+        print_noti("Already running analysis")
+        return(NULL)
+      }
+      # check input
+      check_inputs()
+      check_inputs_batch()
+      lb <- create_lb()
+      ub <- create_ub()
+      additionalParameters <- create_additional_parameters()
+      npop <- create_npop()
+      ngen <- create_ngen()
+      topo <- create_topology()
+      et <- create_error_threshold()
+      # check seed case
+      seed <- input$Seed
+      num_rep <- as.integer(input$NumRepDataset)
+      num_rep_batch(num_rep)
+      seed_case <- determine_seed_case(seed, num_rep)
+      seed_origin <- NULL
+      if (seed_case == 3) {
+        seed_origin <- seed
+      }
+      # clear everything
+      stdout (NULL)
+      invalid_time(1100)
+      setup_batch_done(FALSE)
+      batch_results_created(FALSE)
+      output$batch_data_plot <- renderPlot({
+        plot.new()
+      })
+      output$batch_signal_plot <- renderPlot({
+        plot.new()
+      })
+
+      output$batch_params_plot <- renderPlot({
+        plot.new()
+      })
+      output$batch_metrices_plot <- renderPlot({
+        plot.new()
+      })
+
+      size <- length(df_list()) * num_rep
+      stdout(character(size))
+      request_cores(size, session$token)
+      nclicks(nclicks() + 1)
+      process_list <- vector("list", size)
+      seeds <- numeric(size)
+      seeds_from <- 1:1e6
+      session$sendCustomMessage(
+        type = get_update_field_batch(),
+        list(message = "Initializing...")
+      )
+
+      for (i in seq_len(size)) {
+        if (seed_case == 1) {
+          seed <- sample(seeds_from, 1)
+        } else if (seed_case == 3) {
+          if (i %in% seq(1, size, num_rep)) {
+            seed <- seed_origin
+          } else {
+            seed <- sample(seeds_from, 1)
+          }
+        } else if (seed_case == 2) {
+            seed <- seed
+        }
+        seeds[i] <- seed
+        process_list[[i]] <- callr::r_bg(
+          function(case, lb, ub, df, ap,
+                   seed, npop, ngen, Topology, errorThreshold) {
+            res <- tsf::opti(
+              case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold
+            )
+            return(res)
+          },
+          args = list(
+            get_Model(), lb, ub, df_list()[[(i - 1) %% length(df_list()) + 1]],
+            additionalParameters, seed, npop, ngen, topo, et
+          )
+        )
+      }
+
+      result_val_batch$result <- process_list
+      setup_batch_done(TRUE)
+      NULL
+    })
+
+    batch_process_done <- function() {
+      req(setup_batch_done())
+      req(length(result_val_batch$result) > 0)
+      lapply(result_val_batch$result, function(x) {
+        if (x$is_alive()) req(x$get_status() != "running")
+      })
+      invalid_time(invalid_time() + 1000)
+      nclicks(0)
+      return(TRUE)
+    }
+
+    observeEvent(input$cancel_Batch, {
+      exportTestValues(
+        cancel_clicked_batch = TRUE
+      )
+      req(nclicks() != 0)
+      req(!is.null(result_val_batch$result))
+      cancel_batch_clicked(TRUE)
+    })
+
+    # observe status
+    observe({
+      invalidateLater(invalid_time())
+      req(nclicks() != 0)
+      req(!is.null(result_val_batch$result))
+      # is cancel_batch_clicked
+      if (cancel_batch_clicked()) {
+        setup_batch_done(TRUE)
+        cancel_batch_clicked(FALSE)
+        nclicks(0)
+        lapply(result_val_batch$result, function(process) {
+          process$interrupt()
+          process$wait()
+        })
+        session$sendCustomMessage(
+          type = get_update_field_batch(),
+          list(message = "")
+        )
+        send_and_read_info(paste0("release: ", session$token))
+        return(NULL)
+      }
+      # check status
+      counter_dataset <- 0
+      counter_rep <- 0
+      temp_status <- character(length(result_val_batch$result))
+      for (i in seq_along(temp_status)) {
+        if (((i - 1) %% num_rep_batch()) == 0) {
+          counter_dataset <- counter_dataset + 1
+          counter_rep <- 1
+        } else {
+          counter_rep <- counter_rep + 1
+        }
+        temp_status[i] <- print_ida_gda(
+          result_val_batch$result[[i]]$read_output(),
+          counter_dataset,
+          counter_rep
+        )
+      }
+      stdout(format_batch_status(stdout(), temp_status))
+      bind <- function(a, b) {
+        if (is.null(a) && is.null(b)) {
+          return("Initialisation")
+        }
+        if (is.null(a)) {
+          return(b)
+        }
+        if (is.null(b)) {
+          return(a)
+        }
+        paste0(a, "\n", b)
+      }
+      m <- tryCatch(Reduce(bind, stdout()), error = function(e) {
+        print(e)
+        return("Error")
+      })
+      req(is.character(m))
+      session$sendCustomMessage(
+        type = get_update_field_batch(),
+        list(message = m)
+      )
+    })
+
+    plot_data <- reactive({
+      values <- try(lapply(result_val_batch$result, function(process) {
+        process$get_result()
+      }))
+      if (inherits(values, "try-error")) {
+        result_val_batch$result_splitted <- NULL
+      } else {
+        result_val_batch$result_splitted <- seperate_batch_results(values)
+      }
+      lapply(result_val_batch$result, function(process) {
+        process$kill()
+      })
+      send_and_read_info(paste0("release: ", session$token))
+      result_val_batch$result <- NULL
+    })
+
+    # observe results
+    observe({
+      invalidateLater(invalid_time())
+      if (batch_process_done() && !batch_results_created()) {
+        plot_data()
+        batch_results_created(TRUE)
+        stdout(NULL)
+      }
+    })
+
+    observeEvent(req(batch_results_created()), {
+      req(length(result_val_batch$result_splitted) > 0)
+      output$batch_data_plot <- renderPlot({
+        req(batch_results_created())
+        plotStates(result_val_batch$result_splitted, num_rep_batch())[[2]] 
+      })
+
+      output$batch_signal_plot <- renderPlot({
+        req(batch_results_created())
+        plotStates(result_val_batch$result_splitted, num_rep_batch())[[1]] 
+      })
+
+      output$batch_params_plot <- renderPlot({
+        req(batch_results_created())
+        plotParams(result_val_batch$result_splitted, num_rep_batch())
+      })
+
+      output$batch_metrices_plot <- renderPlot({
+        req(batch_results_created())
+        plotMetrices(result_val_batch$result_splitted, num_rep_batch())
+      })
+    })
+
+    output$batch_download <- downloadHandler(
+      filename = function() {
+        "result.xlsx"
+      },
+      content = function(file) {
+        req(batch_results_created())
+        req(length(result_val_batch$result_splitted) > 0)
+        download_batch_file(
+          get_Model_capital(),
+          file,
+          result_val_batch$result_splitted,
+          num_rep_batch()
+        )
       }
     )
   })

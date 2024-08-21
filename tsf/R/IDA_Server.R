@@ -717,7 +717,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         req(batch_results_created())
         req(length(result_val_batch$result_splitted) > 0)
         download_batch_file(
-          get_model_capital(),
+          get_Model_capital(),
           file,
           result_val_batch$result_splitted,
           num_rep_batch()

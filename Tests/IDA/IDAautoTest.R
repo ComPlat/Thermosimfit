@@ -17,7 +17,7 @@ test_ida <- function() {
   app$set_inputs(`IDA-ngen` = ngen)
   app$set_inputs(`IDA-Seed` = 1234)
   app$click("IDA-Start_Opti")
-  Sys.sleep(60)
+  Sys.sleep(120)
   app$click("IDA-cancel")
 
   res <- app$get_values()$export
@@ -28,7 +28,6 @@ test_ida <- function() {
   expected_params <- data.frame(
     kHG = 24229547, I0 = 1e-15,
     IHD = 980306.4, ID = 216299.4
-
   )
   errors <- Map(function(a, b) {
     abs(a - b) / b
@@ -37,7 +36,7 @@ test_ida <- function() {
 
   expected_metrices <- data.frame(
     mse = 4.318114e-05,
-    rmse = 0.006571236, 
+    rmse = 0.006571236,
     mae = 0.005686641,
     r2 = 0.9992715,
     r2adj = 0.9992567
@@ -65,10 +64,8 @@ test_ida <- function() {
   # test sensitivity
   app$set_inputs(`IDA-ResultPanel` = "Sensitivity analysis")
   app$click("IDA-Start_Sensi")
-
+  Sys.sleep(1200)
   res <- app$get_values()$export
-  app$get_screenshot()
-  print(res)
   dev.off()
 
   file <- app$get_download("IDA-sensi_download")

@@ -112,8 +112,8 @@ idaUI <- function(id) {
           fluidRow(
             box(
               box(
-                actionButton(NS(id, "Start_Opti"), "Start Optimization"),
-                actionButton(NS(id, "cancel"), "Cancel"),
+                actionButton(NS(id, "Start_Opti"), "Start optimization"),
+                actionButton(NS(id, "cancel"), "Stop optimization"),
                 downloadButton(NS(id, "download"), "Save result of optimization"),
                 selectInput(NS(id, "file_type"), "Choose file type:",
                   choices = c("Excel" = "xlsx", "CSV" = "csv")
@@ -166,7 +166,7 @@ idaUI <- function(id) {
                   value = 1
                 ),
                 actionButton(NS(id, "Start_Batch"), "Start batch analysis"),
-                actionButton(NS(id, "cancel_Batch"), "Cancel"),
+                actionButton(NS(id, "cancel_Batch"), "Stop optimization"),
                 downloadButton(NS(id, "batch_download"), "Save result of batch analysis"),
                 verbatimTextOutput(NS(id, "output_Batch")),
                 width = 12
