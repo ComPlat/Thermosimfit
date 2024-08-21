@@ -253,6 +253,12 @@ plotParams <- function(list, num_rep = 1) {
       geom_boxplot(
         data = data,
         aes(
+          y = y, fill = "Entire data", x = factor(0)
+        )
+      ) +
+      geom_boxplot(
+        data = data,
+        aes(
           x = factor(x), y = y,
           group = factor(x),
           fill = factor(x)
@@ -302,7 +308,6 @@ plotParams <- function(list, num_rep = 1) {
   return(p)
 }
 
-# TODO: metrices increase label size
 plotMetrices <- function(list, num_rep = 1) {
   list <- list[[3]]
   num_data_sets <- length(list) / num_rep
@@ -328,6 +333,12 @@ plotMetrices <- function(list, num_rep = 1) {
   base_size <- 14
   if (num_rep > 1) {
     p <- ggplot() +
+      geom_boxplot(
+        data = data,
+        aes(
+          y = y, fill = "Entire data", x = factor(0)
+        )
+      ) +
       geom_boxplot(
         data = data,
         aes(
@@ -371,13 +382,15 @@ plotMetrices <- function(list, num_rep = 1) {
   p <- p + theme(
     legend.position = "bottom",
     axis.title = element_text(size = base_size * 1.2, face = "bold"),
-    axis.text = element_text(size = base_size),
+    axis.text = element_text(size = base_size, face = "bold"),
     legend.text = element_text(size = base_size),
     legend.title = element_text(size = base_size),
-    strip.text.x = element_text(size = base_size)
+    strip.text.x = element_text(size = base_size * 1.2, face = "bold"),
+    strip.text.y = element_text(size = base_size * 1.2, face = "bold")
   )
   return(p)
 }
+
 
 batch <- function(case,
                   lowerBounds, upperBounds,
