@@ -420,10 +420,9 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   p2 <- plotParams(result_val, num_rep)
   p3 <- plotMetrices(result_val, num_rep)
 
-  # TODO: All plots are super ugly. Fix this
   tempfile_plot1.1 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot1.1,
-    plot = p1[[1]], width = 10, height = 10, limitsize = FALSE
+    plot = p1[[1]]
   )
   insertImage(wb, "Results", tempfile_plot1.1,
     startRow = curr_row
@@ -431,7 +430,7 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   curr_row <- curr_row + 20
   tempfile_plot1.2 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot1.2,
-    plot = p1[[2]], width = 10, height = 10, limitsize = FALSE
+    plot = p1[[2]]
   )
   insertImage(wb, "Results", tempfile_plot1.2,
     startRow = curr_row
@@ -440,24 +439,28 @@ download_batch_file <- function(model, file, result_val, num_rep) {
 
   tempfile_plot2 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot2,
-    plot = p2, width = 10, height = 10, limitsize = FALSE
+    plot = p2
   )
   insertImage(wb, "Results", tempfile_plot2, startRow = curr_row)
   curr_row <- curr_row + 20
 
   tempfile_plot3 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot3,
-    plot = p3, width = 10, height = 10, limitsize = FALSE
+    plot = p3
   )
   insertImage(wb, "Results", tempfile_plot3, startRow = curr_row)
   curr_row <- curr_row + 20
 
-
-  add_info <- data.frame(
-    as.data.frame(t(result_val$additionalParameters)),
-    npop = result_val$npop,
-    ngen = result_val$ngen,
-    topology = result_val$Topology
+  add_info <- result_val$additionalParameters |>
+    t() |>
+    as.data.frame()
+  add_info <- cbind(
+    add_info,
+    data.frame(
+      npop = result_val$npop,
+      ngen = result_val$ngen,
+      Topology = result_val$Topology
+    )
   )
   writeData(
     wb, "Results",
@@ -466,8 +469,10 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   )
   curr_row <- curr_row + 5
 
-  seeds <- result_val$seeds
-  seeds <- as.data.frame(seeds)
+
+  seeds <- result_val$seeds |>
+    unlist() |>
+    as.data.frame()
   names(seeds) <- "Seeds"
   writeData(
     wb, "Results",
