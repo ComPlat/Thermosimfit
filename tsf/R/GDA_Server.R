@@ -243,7 +243,8 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         return(NULL)
       }
       # check status
-      m <-process()$read_output()
+      print_error(process()$read_error())
+      m <- process()$read_output()
       m <- print_ida_gda(m, NULL, NULL)
       req(is.character(m))
       if(m != "") opti_message(m)
@@ -254,6 +255,17 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         req(!process()$is_alive())
       }
       try(opti_result(process()$get_result()))
+      try({
+        if (is.null(opti_result())) {
+          # NOTE: handling error in background process
+          opti_message("")
+          send_and_read_info(paste0("release: ", session$token))
+          process()$wait()
+          process()$kill()
+          process(NULL)
+          return(NULL)
+        }
+      })
       process()$kill()
       send_and_read_info(paste0("release: ", session$token))
       process(NULL)
@@ -399,6 +411,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         return(NULL)
       }
       # check status
+      print_error(sensi_process()$read_error())
       m <- sensi_process()$read_output()
       req(is.character(m))
       if(nchar(m) > 0) {
@@ -422,6 +435,19 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       invalidateLater(invalid_time())
       if (sensi_process_done() && !sensi_result_created()) {
         try(get_sensi_result())
+        try({
+          if (inherits(sensi_result(), "ErrorClass")) {
+            # NOTE: handling error in background process
+            print_error(sensi_result()$message)
+            sensi_result(NULL)
+            sensi_message("")
+            send_and_read_info(paste0("release: ", session$token))
+            sensi_process()$wait()
+            sensi_process()$kill()
+            sensi_process(NULL)
+            return(NULL)
+          }
+        })
         sensi_result_created(TRUE)
         sensi_process()$kill()
         sensi_process()$wait()
@@ -471,6 +497,14 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     cancel_batch_clicked <- reactiveVal(FALSE)
     num_rep_batch <- reactiveVal()
     stdout <- reactiveVal(NULL)
+
+    batch_message <-function(message) {
+      session$sendCustomMessage(
+        type = get_update_field_batch(),
+        list(message = message)
+      )
+      return(NULL)
+    }
 
     check_inputs_batch <- function() {
       rwn(
@@ -618,6 +652,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         return(NULL)
       }
       # check status
+      # NOTE: errors are not printed otherwise screen is full of errors
       counter_dataset <- 0
       counter_rep <- 0
       temp_status <- character(length(result_val_batch$result))
@@ -664,6 +699,8 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       }))
       if (inherits(values, "try-error")) {
         result_val_batch$result_splitted <- NULL
+        batch_message("")
+        print_error("Error in background process")
       } else {
         result_val_batch$result_splitted <- seperate_batch_results(values)
       }

@@ -167,6 +167,7 @@ sensitivity <- function(case, parameters, path, additionalParameters,
   }, interrupt = function(e) {
     return(ErrorClass$new("Interrputed the calculation of the Sobol indices"))
   }, error = function(e) {
-    return(ErrorClass$new("An error occured while calculating the Sobol indices"))
+    em <- conditionMessage(e)
+    return(ErrorClass$new(em))
   })
 }

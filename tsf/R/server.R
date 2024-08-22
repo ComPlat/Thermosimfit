@@ -27,6 +27,9 @@ server <- function(input, output, session) {
         output$df <- renderDT(data$df)
       }
     } else {
+      if (is(df, "ErrorClass")) {
+        print_noti(df$message, duration = 0)
+      }
       print_noti("File cannot be used. Upload into R failed!", duration = 0)
     }
   })
@@ -130,5 +133,4 @@ server <- function(input, output, session) {
   dbaServer("DBA", data, data_batch, nclicks)
   idaServer("IDA", data, data_batch, nclicks)
   gdaServer("GDA", data, data_batch, nclicks)
-
 }

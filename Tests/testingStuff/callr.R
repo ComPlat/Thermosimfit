@@ -21,15 +21,22 @@ upperBounds <- c(
   ID = 10^7
 )
 additionalParameters <- c(
-  host = 1e-6,
-  dye = 1e-6,
-  kHD = 3e6
+  host =  1e-6,
+  dye =  1e-6,
+  kHD =  3e6
+)
+
+additionalParameters <- c( # NOTE: wrong input by purpose
+  host =  0,
+  dye =  0,
+  kHD =  0
 )
 npop <- 40
 ngen <- 20
 Topology <- "random"
 errorThreshold <- 0.7
 seed <- 1234
+
 
 process <- callr::r_bg(
   function(case, lb, ub,
@@ -48,11 +55,18 @@ process <- callr::r_bg(
 while (process$is_alive()) {
   process$get_status() |> print()
   process$read_output() |> cat()
-  Sys.sleep(1)
+  process$read_error() |> cat()
+  Sys.sleep(0.01)
 }
-print("test")
+print("End loop")
 process$is_alive() |> print()
-res <- process$get_result()
+e <- process$read_all_error() |> print()
+# process$get_result() |> print()
+stop()
+
+
+
+
 
 
 process <- tsf:::call_sensi_in_bg(

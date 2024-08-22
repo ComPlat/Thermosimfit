@@ -94,7 +94,7 @@ format_batch_status <- function(stdout, temp) {
 
 # print notification
 # ========================================================================================
-print_noti <- function(message, type = "warning", duration = 10) {
+print_noti <- function(message, type = "warning", duration = 15) {
   showNotification(
     message,
     duration = duration,
@@ -104,7 +104,7 @@ print_noti <- function(message, type = "warning", duration = 10) {
 
 # require with notificiation
 # ========================================================================================
-rwn <- function(expr, message, type = "warning", duration = 10) {
+rwn <- function(expr, message, type = "warning", duration = 15) {
   if (!expr) {
     print_noti(
       message,
@@ -114,6 +114,40 @@ rwn <- function(expr, message, type = "warning", duration = 10) {
   }
   req(expr)
 }
+
+# print errors
+# ========================================================================================
+format_error <- function(e) {
+  if (length(e) == 0) {
+    return()
+  }
+  if (nchar(e) == 0) {
+    return()
+  }
+  e <- strsplit(e, "\n")[[1]]
+  if(length(e) == 1) {
+    return(e)
+  }
+  e_rest <- lapply(e[2:length(e)], function(x) {
+    paste("<br>", x, "</br>") 
+  })
+  e_rest <- Reduce(paste0, e_rest)
+  HTML(c(e[[1]], e_rest))
+}
+
+
+print_error <- function(e) {
+  if (length(e) == 0) {
+    return()
+  }
+  if (nchar(e) == 0) {
+    return()
+  }
+  showNotification(format_error(e),
+    type = "error", duration = 20)
+}
+
+
 
 # helper
 # ========================================================================================
