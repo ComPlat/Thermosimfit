@@ -172,8 +172,14 @@ hgUI <- function(id) {
               box(
                 br(),
                 plotOutput(NS(id, "batch_signal_plot")),
+                br(),
+                br(),
                 plotOutput(NS(id, "batch_data_plot")),
+                br(),
+                br(),
                 plotOutput(NS(id, "batch_params_plot")),
+                br(),
+                br(),
                 plotOutput(NS(id, "batch_metrices_plot")),
                 width = 12, solidHeader = TRUE, status = "warning"
               ),
