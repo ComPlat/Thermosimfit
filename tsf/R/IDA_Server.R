@@ -725,14 +725,10 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
 
     observeEvent(req(batch_results_created()), {
       req(length(result_val_batch$result_splitted) > 0)
+
       output$batch_data_plot <- renderPlot({
         req(batch_results_created())
-        plotStates(result_val_batch$result_splitted, num_rep_batch())[[2]] 
-      })
-
-      output$batch_signal_plot <- renderPlot({
-        req(batch_results_created())
-        plotStates(result_val_batch$result_splitted, num_rep_batch())[[1]] 
+        plotStates(result_val_batch$result_splitted, num_rep_batch())
       })
 
       output$batch_params_plot <- renderPlot({
@@ -744,9 +740,10 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         req(batch_results_created())
         plotMetrices(result_val_batch$result_splitted, num_rep_batch())
       })
+
     })
 
-    output$batch_download <- downloadHandler(
+    output$batch_download <- downloadHandler( # TODO: adapt to new data plot
       filename = function() {
         "result.xlsx"
       },

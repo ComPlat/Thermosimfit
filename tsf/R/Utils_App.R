@@ -416,10 +416,6 @@ create_df_for_batch <- function(list, what, num_rep) { # TODO: use this fct also
   return(df)
 }
 
-# TODO: add column names
-# TODO: add seed column bname
-# Add the model name
-# Add the tsf version, R version etc.
 download_batch_file <- function(model, file, result_val, num_rep) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
@@ -450,23 +446,15 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   writeData(wb, "Results", metrices, startRow = curr_row)
   curr_row <- curr_row + dim(metrices)[1] + 5
 
-  p1 <- plotStates(result_val, num_rep)
+  p1 <- plotStates(result_val, num_rep) # TODO: need smaller text size
   p2 <- plotParams(result_val, num_rep)
   p3 <- plotMetrices(result_val, num_rep)
 
-  tempfile_plot1.1 <- tempfile(fileext = ".png")
-  ggsave(tempfile_plot1.1,
-    plot = p1[[1]]
+  tempfile_plot1 <- tempfile(fileext = ".png")
+  ggsave(tempfile_plot1,
+    plot = p1
   )
-  insertImage(wb, "Results", tempfile_plot1.1,
-    startRow = curr_row
-  )
-  curr_row <- curr_row + 20
-  tempfile_plot1.2 <- tempfile(fileext = ".png")
-  ggsave(tempfile_plot1.2,
-    plot = p1[[2]]
-  )
-  insertImage(wb, "Results", tempfile_plot1.2,
+  insertImage(wb, "Results", tempfile_plot1,
     startRow = curr_row
   )
   curr_row <- curr_row + 20
@@ -527,8 +515,7 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   )
 
   openxlsx::saveWorkbook(wb, file)
-  unlink(tempfile_plot1.1)
-  unlink(tempfile_plot1.2)
+  unlink(tempfile_plot1)
   unlink(tempfile_plot2)
   unlink(tempfile_plot3)
 }

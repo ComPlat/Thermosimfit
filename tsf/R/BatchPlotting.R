@@ -1,12 +1,13 @@
-l <- readRDS("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/Batch/res_batch.rds")
-
-dotSize <- function() 0.5
-lineSize <- function() 0.5
+dotSize <- function() 2
+lineSize <- function() 1
 
 addTheme <- function(p) {
-  base_size <- 6
+  base_size <- 12
   p <- p + theme(
-    legend.position = "top",
+    legend.position = "right",
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(10, 10, 10, 10),
     title = element_text(size = base_size, face = "bold"),
     axis.title = element_text(size = base_size, face = "bold"),
     axis.text = element_text(size = base_size),
@@ -48,11 +49,18 @@ plotSignal <- function(df, Dataset) {
       se = FALSE,
       colour = "grey"
     ) +
+    geom_point(data = df_signal[df_signal$group == "Signal measured", ],
+      aes(
+      x = x,
+      y = y
+      ), size = dotSize(),
+      colour = "grey"
+    ) +
     ylab("Signal [a.u]") +
     xlab(names(df)[1]) +
     ggtitle(paste0("Dataset Nr.", Dataset)) +
     scale_colour_brewer(name = "", palette = "Dark2") +
-    guides(colour = guide_legend(title = "Optimization repetition")) +
+    guides(colour = guide_legend(title = "Repetition")) +
     guides(linetype = guide_legend(title = "Measured"))
 }
 
@@ -103,22 +111,22 @@ combinePlots <- function(p1, p2, p3, keep_legend = FALSE) {
   if (keep_legend) {
     p2 <- p2 + theme(legend.position = "none")
     p3 <- p3 + theme(legend.position = "none")
-    p <- plot_grid(p1, p2, p3, nrow = 3)
-    p <- p + panel_border(colour = "grey")
+    p <- cowplot::plot_grid(p1, p2, p3, nrow = 3)
+    p <- p + cowplot::panel_border(colour = "grey")
     return(p)
   } else {
 
     p1 <- p1 + theme(legend.position = "none")
     p2 <- p2 + theme(legend.position = "none")
     p3 <- p3 + theme(legend.position = "none")
-    p <- plot_grid(p1, p2, p3, nrow = 3)
-    p <- p + panel_border(colour = "grey")
+    p <- cowplot::plot_grid(p1, p2, p3, nrow = 3)
+    p <- p + cowplot::panel_border(colour = "grey")
     return(p)
   }
 }
 
 combineList <- function(plot_list) {
-  plot_grid(plotlist = c(plot_list, legend), ncol = 5)
+  cowplot::plot_grid(plotlist = c(plot_list, legend), ncol = 4)
 }
 
 plotStates <- function(list, num_rep = 1) {
@@ -145,7 +153,3 @@ plotStates <- function(list, num_rep = 1) {
   })
   return(combineList(plot_list))
 }
-
-library(ggplot2)
-library(cowplot)
-plotStates(l, 2)

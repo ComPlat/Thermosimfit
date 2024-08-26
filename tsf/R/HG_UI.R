@@ -171,10 +171,7 @@ hgUI <- function(id) {
               ),
               box(
                 br(),
-                plotOutput(NS(id, "batch_signal_plot")),
-                br(),
-                br(),
-                plotOutput(NS(id, "batch_data_plot")),
+                plotOutput(NS(id, "batch_data_plot"), height = "800px"),
                 br(),
                 br(),
                 plotOutput(NS(id, "batch_params_plot")),

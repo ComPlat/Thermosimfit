@@ -21,9 +21,8 @@ Imports:
   R6,
   sensitivity,
   openxlsx,
-  future,
-  promises,
-  callr
+  callr,
+  cowplot
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr
 RoxygenNote: 7.3.1

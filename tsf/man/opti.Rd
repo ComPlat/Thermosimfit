@@ -10,11 +10,11 @@ opti(
   upperBounds,
   path,
   additionalParameters,
+  seed = NULL,
   npop = 40,
   ngen = 200,
   Topology = "random",
-  errorThreshold = -Inf,
-  runAsShiny = FALSE
+  errorThreshold = -Inf
 )
 }
 \arguments{
@@ -37,6 +37,8 @@ In case of \emph{dba_dye_const} a numeric vector of length 1 is expected which c
 In case of \emph{ida} a numeric vector of length 3 is expected which contains the concentration of the host, dye and the \emph{khd} parameter.
 In case of \emph{gda} a numeric vector of length 3 is expected which contains the concentration of the host, guest and the \emph{khd} parameter.}
 
+\item{seed}{is an optional integer argument defining the seed which is set directly for the optimization. In case the argument is not set the current time is used as seed.}
+
 \item{npop}{is an optional integer argument defining the number of particles during optimization. The default value is set to 40.}
 
 \item{ngen}{is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.}
@@ -44,8 +46,6 @@ In case of \emph{gda} a numeric vector of length 3 is expected which contains th
 \item{Topology}{is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.}
 
 \item{errorThreshold}{is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.}
-
-\item{runAsShiny}{is internally used when running the algorithm from shiny.}
 }
 \value{
 either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the \emph{insilico} signal values are returned.
