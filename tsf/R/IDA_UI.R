@@ -172,14 +172,11 @@ idaUI <- function(id) {
                 width = 12
               ),
               box(
+                uiOutput(NS(id, "batch_data_plot_dynamic")),
                 br(),
-                plotOutput(NS(id, "batch_data_plot"), height = "800px"), #TODO: make it dynamic using renderUI
+                uiOutput(NS(id, "batch_params_plot_dynamic")),
                 br(),
-                br(),
-                plotOutput(NS(id, "batch_params_plot")),
-                br(),
-                br(),
-                plotOutput(NS(id, "batch_metrices_plot")),
+                uiOutput(NS(id, "batch_metrices_plot_dynamic")),
                 width = 12, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Batch analysis", solidHeader = TRUE,

@@ -416,6 +416,27 @@ create_df_for_batch <- function(list, what, num_rep) { # TODO: use this fct also
   return(df)
 }
 
+adjust_theme <- function(p) {
+  base_size <- 4
+  p <- p + theme(
+    legend.position = "right",
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(10, 10, 10, 10),
+    title = element_text(size = base_size, face = "bold"),
+    axis.title = element_text(size = base_size, face = "bold"),
+    axis.text = element_text(size = base_size),
+    legend.text = element_text(size = base_size),
+    legend.title = element_text(size = base_size),
+    legend.key.size = unit(0.25, "cm"),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.margin = margin(5, 5, 5, 5),
+    strip.text.x = element_text(size = base_size, face = "bold"),
+    strip.text.y = element_text(size = base_size, face = "bold")
+  )
+  return(p)
+}
+
 download_batch_file <- function(model, file, result_val, num_rep) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
@@ -446,13 +467,14 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   writeData(wb, "Results", metrices, startRow = curr_row)
   curr_row <- curr_row + dim(metrices)[1] + 5
 
-  p1 <- plotStates(result_val, num_rep) # TODO: need smaller text size
-  p2 <- plotParams(result_val, num_rep)
-  p3 <- plotMetrices(result_val, num_rep)
+  p1 <- plotStates(result_val, num_rep, 4, download = TRUE)
+  p1 <- adjust_theme(p1)
+  p2 <- plotParams(result_val, num_rep, 4)
+  p3 <- plotMetrices(result_val, num_rep, 4)
 
-  tempfile_plot1 <- tempfile(fileext = ".png")
+  tempfile_plot1 <- tempfile(fileext = ".JPEG")
   ggsave(tempfile_plot1,
-    plot = p1
+    plot = p1, units = "cm"
   )
   insertImage(wb, "Results", tempfile_plot1,
     startRow = curr_row

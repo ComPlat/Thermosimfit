@@ -715,22 +715,62 @@ hgServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       }
     })
 
-    observeEvent(req(batch_results_created()), {
-      req(length(result_val_batch$result_splitted) > 0)
+    output$batch_data_plot_dynamic <- renderUI({
+      req(batch_results_created())
+      n_dfs <- length(df_list())
+      n_cols <- 4
+      n_rows <- ceiling(n_dfs / n_cols)
+      base_width <- 500
+      base_height <- 800
+      total_width <- n_cols * base_width
+      total_height <- n_rows * base_height
       output$batch_data_plot <- renderPlot({
-        req(batch_results_created())
         plotStates(result_val_batch$result_splitted, num_rep_batch())
-      })
+      }, height = total_height, width = total_width)
+      style <- paste0("width: ", total_width,
+        "px; height: ", total_height, "px;")
+      div(
+        style = style,
+        plotOutput(session$ns("batch_data_plot"))
+      )
+    })
 
+    output$batch_params_plot_dynamic <- renderUI({
+      req(batch_results_created())
+      n_dfs <- length(df_list())
+      n_cols <- num_rep_batch() * n_dfs
+      base_width <- 300
+      total_width <- n_cols * base_width
+      total_height <- 600
+      if (total_width > 1200) total_width <- 1200
       output$batch_params_plot <- renderPlot({
-        req(batch_results_created())
         plotParams(result_val_batch$result_splitted, num_rep_batch())
-      })
+      }, height = total_height, width = total_width)
+      style <- paste0("width: ", total_width,
+        "px; height: ", total_height, "px;")
+      div(
+        style = style,
+        plotOutput(session$ns("batch_params_plot"))
+      )
+    })
 
+    output$batch_metrices_plot_dynamic <- renderUI({
+      req(batch_results_created())
+      n_dfs <- length(df_list())
+      n_cols <- num_rep_batch() * n_dfs
+      base_width <- 300
+      total_width <- n_cols * base_width
+      total_height <- 600
+      if (total_width > 1200) total_width <- 1200
       output$batch_metrices_plot <- renderPlot({
-        req(batch_results_created())
         plotMetrices(result_val_batch$result_splitted, num_rep_batch())
-      })
+      }, height = total_height, width = total_width)
+      style <- paste0("width: ", total_width,
+        "px; height: ", total_height, "px;")
+      div(
+        style = style,
+        plotOutput(session$ns("batch_metrices_plot"))
+      )
     })
 
     output$batch_download <- downloadHandler(
