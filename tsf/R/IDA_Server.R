@@ -284,7 +284,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
 
     output$params <- renderDT({
       correct_results()
-      res <-opti_result()[[2]]
+      res <- opti_result()[[2]]
       names(res)[1] <- get_K_param()
       exportTestValues(
         df_params = res

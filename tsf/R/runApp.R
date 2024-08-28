@@ -120,6 +120,5 @@ runApp <- function(port) {
   )
 
   options(shiny.host = "0.0.0.0", shiny.port = 3838)
-  plan(multisession)
   shinyApp(ui, server, options = list(port = port))
 }

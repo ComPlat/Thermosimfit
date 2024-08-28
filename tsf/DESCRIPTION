@@ -22,7 +22,8 @@ Imports:
   sensitivity,
   openxlsx,
   callr,
-  cowplot
+  cowplot,
+  RColorBrewer
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr
 RoxygenNote: 7.3.1

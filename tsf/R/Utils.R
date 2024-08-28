@@ -107,11 +107,38 @@ plot_results <- function(df, case) {
     y = df[, "Host-Dye simulated [M]"]
   )
   base_size <- 10
-  p1 <- ggplot(
-    df_com,
-    aes(x = x, y = y, colour = group)
-  ) +
-    geom_point() +
+
+  p1 <- ggplot() +
+    geom_point(data = df_com[df_com$group == "Measured", ],
+      aes(
+        x = x,
+        y = y,
+        colour = "Measured"
+      ), size = 2, alpha = 0.5
+    ) +
+    geom_smooth(data = df_com[df_com$group == "Measured", ],
+      aes(
+        x = x,
+        y = y,
+        colour = "Measured"
+      ),
+      colour = "grey", formula = "y ~ x",
+      size = 1,
+      se = FALSE, method = "loess"
+    ) +
+    geom_point(data = df_com[df_com$group == "Predicted", ],
+      aes(
+        x = x,
+        y = y,
+        colour = "Predicted"
+      ), size = 2, alpha = 0.5
+    ) +
+    scale_colour_manual(
+      values = c(
+        "Measured" = "grey",
+        "Predicted" = RColorBrewer::brewer.pal(8, "Dark2")[1]
+      )
+    ) +
     theme(
       legend.position = "bottom",
       axis.title = element_text(size = base_size * 1.2),
@@ -122,6 +149,7 @@ plot_results <- function(df, case) {
     ) +
     guides(colour = guide_legend(title = ""))
   p1 <- add_axis_labels(p1, case, "Signal [a.u]")
+
   p2 <- ggplot(
     data = df_d,
     aes(x = x, y = y)
@@ -133,6 +161,7 @@ plot_results <- function(df, case) {
       strip.text.x = element_text(size = base_size)
     )
   p2 <- add_axis_labels(p2, case, "Dye [M]")
+
   p3 <- ggplot(
     data = df_hd,
     aes(x = x, y = y)
