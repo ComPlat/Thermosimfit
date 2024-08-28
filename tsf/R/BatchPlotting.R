@@ -2,7 +2,7 @@ dotSize <- function(download = FALSE) {
   if (download) {
     return(1)
   } else {
-    return(2)
+    return(1) # NOTE: maybe has to be adapted
   }
 }
 lineSize <- function(download = FALSE) {
@@ -140,7 +140,8 @@ combineList <- function(plot_list, ncols = 4) {
   cowplot::plot_grid(plotlist = c(plot_list, legend), ncol = ncols)
 }
 
-plotStates <- function(list, num_rep = 1, base_size = 12, download = FALSE) {
+plotStates <- function(list, num_rep = 1, base_size = 12,
+                       download = FALSE, ncols = 4) {
   list <- list[[1]]
   num_data_sets <- length(list) / num_rep
   repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
@@ -162,7 +163,7 @@ plotStates <- function(list, num_rep = 1, base_size = 12, download = FALSE) {
       return(combinePlots(p1, p2, p3, keep_legend = FALSE, base_size))
     }
   })
-  return(combineList(plot_list))
+  return(combineList(plot_list, ncols))
 }
 
 

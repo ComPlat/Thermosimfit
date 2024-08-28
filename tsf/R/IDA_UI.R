@@ -1,4 +1,5 @@
 idaUI <- function(id) {
+  ns <- NS(id)
   tabItem(
     tabName = "IDA",
     tags$script(
@@ -34,6 +35,20 @@ idaUI <- function(id) {
               $('#IDA-output_Batch').empty();
             });"
     ),
+    # From: https://stackoverflow.com/questions/36995142/get-the-size-of-the-window-in-shiny
+    tags$head(tags$script(sprintf('
+      var dimension = [0, 0];
+      $(document).on("shiny:connected", function(e) {
+      dimension[0] = window.innerWidth;
+      dimension[1] = window.innerHeight;
+      Shiny.onInputChange("%s", dimension);
+      });
+      $(window).resize(function(e) {
+      dimension[0] = window.innerWidth;
+      dimension[1] = window.innerHeight;
+      Shiny.onInputChange("%s", dimension);
+      });
+      ', ns("dimension"), ns("dimension")))),
     fluidRow(
       box(
         textInput(NS(id, "H0"), "Host conc. [M]", value = 0),
@@ -172,6 +187,7 @@ idaUI <- function(id) {
                 width = 12
               ),
               box(
+                id = "IDA-output_Batch",
                 uiOutput(NS(id, "batch_data_plot_dynamic")),
                 br(),
                 uiOutput(NS(id, "batch_params_plot_dynamic")),

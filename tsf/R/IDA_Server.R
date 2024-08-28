@@ -725,18 +725,34 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
 
     output$batch_data_plot_dynamic <- renderUI({
       req(batch_results_created())
+      # get dimensions
+      screen_width <- input$dimension[1] * 0.8 # TODO: actually the size of the result plot box is requred not screen size
+      screen_height <- input$dimension[2]
+      # get rows and cols
       n_dfs <- length(df_list())
-      n_cols <- 4
+      n_cols <- ifelse(n_dfs < 4, n_dfs, 4)
       n_rows <- ceiling(n_dfs / n_cols)
-      base_width <- 500
-      base_height <- 800
+      if (n_cols < 4) n_rows <- 1
+      # calc width and height
+      scale_width <- ifelse(n_dfs < 4, n_dfs, 4.5)
+      base_width <- screen_width / scale_width
+      base_height <- screen_height * 0.75
       total_width <- n_cols * base_width
       total_height <- n_rows * base_height
+      if (total_height < (total_width * 0.75))  {
+        total_height <- total_width * 0.75
+      }
       output$batch_data_plot <- renderPlot({
-        plotStates(result_val_batch$result_splitted, num_rep_batch())
+        plotStates(
+          result_val_batch$result_splitted,
+          num_rep_batch(), ncols = n_cols
+        )
       }, height = total_height, width = total_width)
-      style <- paste0("width: ", total_width,
-        "px; height: ", total_height, "px;")
+
+      style <- paste0(
+        "width: ", total_width,
+        "px; height: ", total_height, "px;"
+      )
       div(
         style = style,
         plotOutput(session$ns("batch_data_plot"))
