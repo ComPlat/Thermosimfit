@@ -12,7 +12,7 @@ library(tsf)
 df <- read.csv("forKonrad-conc-vs-signal.csv",
   sep = ";",
   dec = ".",
-  header = FALSE
+  header = TRUE
 )
 
 res <- tsf::opti(
@@ -42,7 +42,6 @@ res <- tsf::opti(
 )
 
 res
-print(length(res))
 stop()
 
 tsf::sensitivity("ida", res[[2]], df, c(1e-6, 1e-6, 3e6), 20)

@@ -23,7 +23,8 @@ Imports:
   openxlsx,
   callr,
   cowplot,
-  RColorBrewer
+  RColorBrewer,
+  plotly
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr
 RoxygenNote: 7.3.1

@@ -293,9 +293,9 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         formatSignif(columns = 1:ncol(res), digits = 3)
     })
 
-    output$plot <- renderPlot({
+    output$plot <- renderPlotly({
       correct_results()
-      opti_result()[[3]]
+      plot_results_plotly(opti_result()[[1]], get_Model())
     })
 
     output$metrices <- renderDT({
@@ -553,11 +553,8 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       invalid_time(1100)
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
-      output$batch_data_plot <- renderPlot({
-        plot.new()
-      })
-      output$batch_signal_plot <- renderPlot({
-        plot.new()
+      output$batch_data_plot <- renderPlotly({
+        plotly::plot_ly()
       })
 
       output$batch_params_plot <- renderPlot({
@@ -742,20 +739,20 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       if (total_height < (total_width * 0.75))  {
         total_height <- total_width * 0.75
       }
-      output$batch_data_plot <- renderPlot({
-        plotStates(
+      output$batch_data_plot <- renderPlotly({
+        plotStatesPlotly(
           result_val_batch$result_splitted,
           num_rep_batch(), ncols = n_cols
         )
-      }, height = total_height, width = total_width)
-
+      })
       style <- paste0(
         "width: ", total_width,
         "px; height: ", total_height, "px;"
       )
+      print(style) # TODO: remove
       div(
         style = style,
-        plotOutput(session$ns("batch_data_plot"))
+        plotlyOutput(session$ns("batch_data_plot"))
       )
     })
 

@@ -1,8 +1,3 @@
-library(ggplot2)
-l <- readRDS("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/Batch/res_batch.rds")
-setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/Batch")
-result_val <- l
-num_rep <- 2
 
 dotSizePlotly <- function() {
     return(10)
@@ -27,14 +22,14 @@ plotSignalPlotly <- function(df, Dataset) {
     x = smoothed$x,
     y = smoothed$y
   )
-  p <- plot_ly(data = df_signal, x = ~x, y = ~y) 
+  p <- plot_ly(data = df_signal, x = ~x, y = ~y)
   reps <- unique(df$repetition)
   legend_group <- paste0("Signal", 1:length(reps))
   sig_sim <- df_signal[df_signal$group != "Signal measured", ]
   for (i in seq_along(reps)) {
     temp <- sig_sim[sig_sim$repetitions == reps[i], ]
     p <- p %>% add_trace(
-      data = temp, 
+      data = temp,
       x = ~x, y = ~y,
       type = "scatter",
       mode = "markers",
@@ -72,7 +67,7 @@ plotFreeDyePlotly <- function(df, Dataset) {
     y = df[, 4],
     repetitions = df$repetition
   )
-  p <- plot_ly()
+  p <- plot_ly(width = 600, height = 600)
   reps <- unique(df$repetition)
   legend_group <- paste0("Dye", 1:length(reps))
   for (i in seq_along(reps)) {
@@ -84,7 +79,7 @@ plotFreeDyePlotly <- function(df, Dataset) {
         color = ~factor(repetitions),
         type = "scatter",
         mode = "markers",
-        name = ~paste0("Repetition", factor(repetitions)),
+        name = ~paste0("Repetition (Dye)", factor(repetitions)),
         legendgroup = legend_group[i]
       )
   }
@@ -97,7 +92,7 @@ plotHostDyePlotly <- function(df, Dataset) {
     y = df[, 5],
     repetitions = df$repetition
   )
-  p <- plot_ly()
+  p <- plot_ly(width = 600, height = 600)
   reps <- unique(df$repetition)
   legend_group <- paste0("Host-Dye", 1:length(reps))
   for (i in seq_along(reps)) {
@@ -109,7 +104,7 @@ plotHostDyePlotly <- function(df, Dataset) {
       color = ~factor(repetitions),
       type = "scatter",
       mode = "markers",
-      name = ~paste0("Repetition", factor(repetitions)),
+      name = ~paste0("Repetition (Host-Dye)", factor(repetitions)),
       legendgroup = legend_group[i]
     )
   }
@@ -182,16 +177,11 @@ plotStatesPlotly <- function(list, num_rep = 1, ncols = 4) {
 
   p <- subplot(signal_p, dye_p, host_dye_p,
     shareX = FALSE, shareY = FALSE,
-    # widths = 1,
-    heights = 1,
-    titleX = TRUE, titleY = TRUE, which_layout = 0) %>%
+    margin = 0.07,
+    titleX = TRUE, titleY = TRUE, which_layout = 0) %>% #TODO: find alternative this results in a warning
     layout(
-      margin = list(l = 80, r = 40, b = 100, t = 100)
+      margin = list(l = 80, r = 40, b = 40, t = 10),
+      width = 1200, height = 1000 # TODO: this is deprecated but the correct way to do it in plot_ly does not work
     )
   return(p)
 }
-
-library(dplyr)
-library(plotly)
-res <- plotStatesPlotly(result_val, 2)
-htmlwidgets::saveWidget(res, "plot.html")

@@ -140,7 +140,7 @@ idaUI <- function(id) {
                 br(),
                 DT::DTOutput(NS(id, "params")),
                 DT::DTOutput(NS(id, "metrices")),
-                plotOutput(NS(id, "plot")),
+                plotlyOutput(NS(id, "plot")),
                 width = 7, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Optimization", solidHeader = TRUE,

@@ -313,7 +313,7 @@ download_file <- function(model, file, result_val) {
   p <- result_val$plot
   tempfile_plot <- tempfile(fileext = ".png")
   ggsave(tempfile_plot,
-    plot = p, width = 15, height = 15, limitsize = FALSE
+    plot = p, width = 15, height = 15, limitsize = FALSE, dpi = 600
   )
   insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
   curr_row <- curr_row + 15

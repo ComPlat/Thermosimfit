@@ -173,5 +173,109 @@ plot_results <- function(df, case) {
       strip.text.x = element_text(size = base_size)
     )
   p3 <- add_axis_labels(p3, case, "Host-Dye [M]")
-  p1 / (p2 + p3)
+  p1 + p2 + p3
+}
+
+plot_results_plotly <- function(df, case) {
+  case_df <- data.frame(
+    dba_host_const = "total Dye measured [M]",
+    dba_dye_const = "total Host measured [M]",
+    ida = "total Guest measured [M]",
+    gda = "total Dye measured [M]"
+  )
+  x_col <- case_df[case] |> as.character()
+  df_com <- data.frame(
+    x = rep(df[, x_col], 2),
+    y = c(df[, "Signal measured"], df[, "Signal simulated"]),
+    group = c(
+      rep("Measured", length(df[, x_col])),
+      rep("Predicted", length(df[, x_col]))
+    )
+  )
+  df_d <- data.frame(
+    x = df[, x_col],
+    y = df[, "free Dye simulated [M]"]
+  )
+  df_hd <- data.frame(
+    x = df[, x_col],
+    y = df[, "Host-Dye simulated [M]"]
+  )
+  base_size <- 10
+
+  colors <- c(
+    "Measured" = "grey",
+    "Predicted" = RColorBrewer::brewer.pal(8, "Dark2")[1] # TODO: fix this results in wanring
+  )
+
+  p1 <- plot_ly() %>%
+    # Measured points
+    add_trace(
+      data = df_com[df_com$group == "Measured", ],
+      x = ~x, y = ~y,
+      type = "scatter",
+      mode = "markers",
+      marker = list(color = colors["Measured"], size = 10, opacity = 0.5),
+      name = "Measured"
+    ) %>%
+    # Measured smoothed line
+    add_trace(
+      data = df_com[df_com$group == "Measured", ],
+      x = ~x, y = ~y,
+      type = "scatter",
+      mode = "lines",
+      line = list(color = "grey", width = 2),
+      name = "Measured Loess",
+      showlegend = FALSE
+    ) %>%
+    # Predicted points
+    add_trace(
+      data = df_com[df_com$group == "Predicted", ],
+      x = ~x, y = ~y,
+      type = "scatter",
+      mode = "markers",
+      marker = list(color = colors["Predicted"], size = 10, opacity = 0.5),
+      name = "Predicted"
+    )
+
+  p2 <- plot_ly() %>%
+    add_trace(
+      data = df_d,
+      x = ~x, y = ~y,
+      type = "scatter",
+      mode = "markers",
+      showlegend = FALSE
+    )
+
+  p3 <- plot_ly() %>%
+    add_trace(
+      data = df_hd,
+      x = ~x, y = ~y,
+      type = "scatter",
+      mode = "markers",
+      showlegend = FALSE
+    )
+
+  case_df <- data.frame(
+    dba_host_const = "total Dye measured [M]",
+    dba_dye_const = "total Host measured [M]",
+    ida = "total Guest measured [M]",
+    gda = "total Dye measured [M]"
+  )
+  x_col <- case_df[case] |> as.character()
+
+  subplot(
+    p1, p2, p3,
+    nrows = 2,
+    margin = 0.05,
+    shareX = FALSE,
+    shareY = FALSE
+  ) %>%
+    layout(
+      xaxis = list(title = x_col),
+      xaxis2 = list(title = x_col),
+      xaxis3 = list(title = x_col),
+      yaxis = list(title = "Signal [a.u]"),
+      yaxis2 = list(title = "Dye [M]"),
+      yaxis3 = list(title = "Host-Dye [M]")
+    )
 }
