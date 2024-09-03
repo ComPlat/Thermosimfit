@@ -23,6 +23,7 @@
 #' @param ngen is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.
 #' @param Topology is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.
 #' @param errorThreshold is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.
+#' @param add_info is an optional character argument which is printed during optimization
 #' @return either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the *insilico* signal values are returned.
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
@@ -32,7 +33,7 @@ opti <- function(case, lowerBounds, upperBounds,
                  seed = NULL,
                  npop = 40, ngen = 200,
                  Topology = "random",
-                 errorThreshold = -Inf) {
+                 errorThreshold = -Inf, add_info = "") {
   tryCatch(expr = {
     if (!is.character(case)) {
       stop("case has to be of type character")
@@ -212,7 +213,7 @@ opti <- function(case, lowerBounds, upperBounds,
       set.seed(seed)
       res <- pso(
         env, lowerBounds, upperBounds, lossFct, ngen, npop,
-        errorThreshold, Topo, FALSE, runAsShiny
+        errorThreshold, Topo, FALSE, runAsShiny, add_info
       )
       df <- create_data_df(df, res, case)
       params <- create_params_df(res, case)

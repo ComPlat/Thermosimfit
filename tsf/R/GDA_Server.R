@@ -245,7 +245,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       # check status
       print_error(process()$read_error())
       m <- process()$read_output()
-      m <- print_ida_gda(m, NULL, NULL)
+      m <- print_status(m, NULL, NULL, get_Model())
       req(is.character(m))
       if(m != "") opti_message(m)
     })
@@ -282,7 +282,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
 
     output$params <- renderDT({
       correct_results()
-      res <-opti_result()[[2]]
+      res <- opti_result()[[2]]
       names(res)[1] <- get_K_param()
       exportTestValues(
         df_params = res
@@ -291,9 +291,9 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         formatSignif(columns = 1:ncol(res), digits = 3)
     })
 
-    output$plot <- renderPlot({
+    output$plot <- renderPlotly({
       correct_results()
-      opti_result()[[3]]
+      plot_results_plotly(opti_result()[[1]], get_Model())
     })
 
     output$metrices <- renderDT({
@@ -551,10 +551,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       invalid_time(1100)
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
-      output$batch_data_plot <- renderPlot({
-        plot.new()
-      })
-      output$batch_signal_plot <- renderPlot({
+      output$batch_data_plot <- renderPlotly({
         plot.new()
       })
 
@@ -663,10 +660,11 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         } else {
           counter_rep <- counter_rep + 1
         }
-        temp_status[i] <- print_ida_gda(
+        temp_status[i] <- print_status(
           result_val_batch$result[[i]]$read_output(),
           counter_dataset,
-          counter_rep
+          counter_rep,
+          get_Model()
         )
       }
       stdout(format_batch_status(stdout(), temp_status))
@@ -718,65 +716,13 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         plot_data()
         batch_results_created(TRUE)
         stdout(NULL)
+        output$batch_data_plot <- renderPlotly({
+          entirePlotPlotly(
+            result_val_batch$result_splitted,
+            num_rep_batch(), ncols = 4
+          )
+        })
       }
-    })
-
-    output$batch_data_plot_dynamic <- renderUI({
-      req(batch_results_created())
-      n_dfs <- length(df_list())
-      n_cols <- 4
-      n_rows <- ceiling(n_dfs / n_cols)
-      base_width <- 500
-      base_height <- 800
-      total_width <- n_cols * base_width
-      total_height <- n_rows * base_height
-      output$batch_data_plot <- renderPlot({
-        plotStates(result_val_batch$result_splitted, num_rep_batch())
-      }, height = total_height, width = total_width)
-      style <- paste0("width: ", total_width,
-        "px; height: ", total_height, "px;")
-      div(
-        style = style,
-        plotOutput(session$ns("batch_data_plot"))
-      )
-    })
-
-    output$batch_params_plot_dynamic <- renderUI({
-      req(batch_results_created())
-      n_dfs <- length(df_list())
-      n_cols <- num_rep_batch() * n_dfs
-      base_width <- 300
-      total_width <- n_cols * base_width
-      total_height <- 600
-      if (total_width > 1200) total_width <- 1200
-      output$batch_params_plot <- renderPlot({
-        plotParams(result_val_batch$result_splitted, num_rep_batch())
-      }, height = total_height, width = total_width)
-      style <- paste0("width: ", total_width,
-        "px; height: ", total_height, "px;")
-      div(
-        style = style,
-        plotOutput(session$ns("batch_params_plot"))
-      )
-    })
-
-    output$batch_metrices_plot_dynamic <- renderUI({
-      req(batch_results_created())
-      n_dfs <- length(df_list())
-      n_cols <- num_rep_batch() * n_dfs
-      base_width <- 300
-      total_width <- n_cols * base_width
-      total_height <- 600
-      if (total_width > 1200) total_width <- 1200
-      output$batch_metrices_plot <- renderPlot({
-        plotMetrices(result_val_batch$result_splitted, num_rep_batch())
-      }, height = total_height, width = total_width)
-      style <- paste0("width: ", total_width,
-        "px; height: ", total_height, "px;")
-      div(
-        style = style,
-        plotOutput(session$ns("batch_metrices_plot"))
-      )
     })
 
     output$batch_download <- downloadHandler(
@@ -786,6 +732,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       content = function(file) {
         req(batch_results_created())
         req(length(result_val_batch$result_splitted) > 0)
+
         download_batch_file(
           get_Model_capital(),
           file,
@@ -796,4 +743,3 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     )
   })
 }
-

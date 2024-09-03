@@ -7,13 +7,13 @@ lineSize <- function() {
 }
 
 baseSize <- function() {
-  return(6)
+  return(8)
 }
 
 addTheme <- function(p, base_size = 6) {
   p <- p + theme(
-    title = element_text(size = base_size * 1.5, face = "bold"),
-    axis.title = element_text(size = base_size * 1.5, face = "bold"),
+    title = element_text(size = base_size, face = "bold"),
+    axis.title = element_text(size = base_size, face = "bold"),
     axis.text = element_text(size = base_size),
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
     plot.margin = margin(5, 5, 5, 5),
@@ -124,8 +124,8 @@ combinePlots <- function(p1, p2, p3, index, base_size = 6) {
     cowplot::draw_plot(p) +
     cowplot::draw_label(
       paste0("Dataset Nr.", index),
-      x = 0.5, y = 1.0, hjust = -2.1, vjust = 1.2,
-      size = 14)
+      x = 0.5, y = 1.0, hjust = -1.5, vjust = 1.2,
+      size = 12)
   return(p)
 }
 

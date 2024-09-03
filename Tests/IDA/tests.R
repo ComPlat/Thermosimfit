@@ -9,6 +9,96 @@
 # Signal-Dye	2.00E+05
 setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/IDA")
 library(tsf)
+
+# Test several opti calls in parallel
+path <- "/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/IDA/idaBatch.csv"
+list_df <- tsf:::importDataBatch(path)
+seeds <- 1:length(list_df)
+messages <- paste0(1:length(list_df))
+lowerBounds = c(
+  kG = 1000,
+  I0 = 0,
+  IHD = 0,
+  ID = 0
+)
+upperBounds = c(
+  kG = 10^8,
+  I0 = 100, # started at 10^7 but it ended always at 0...
+  IHD = 10^7,
+  ID = 10^7
+)
+additionalParameters = c(
+  host = 1e-6,
+  dye = 1e-6,
+  kHD = 3e6
+)
+
+print_status <- function(stdcout,
+                         counter_dataset = NULL,
+                         counter_repi = NULL, model) {
+  temp <- strsplit(stdcout, "\n")[[1]]
+  if (length(temp) >= 4) {
+    temp <- lapply(temp, function(x) {
+      x <- gsub('"', "", x)
+      x <- gsub("\\[.*?\\] ", "", x)
+    })
+    temp[[3]] <- strsplit(temp[[3]], " ")[[1]]
+    if (temp[[1]] != "") {
+      temp <- c(temp[[1]], temp[[2]], c(temp[[3]]), c(temp[[4]]))
+    } else {
+      temp <- c(temp[[2]], c(temp[[3]]), c(temp[[4]]))
+    }
+    if (length(temp) == 6) {
+      if (model == "ida" || model == "gda") {
+        names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+      } else if (model == "hg" || model == "dba") {
+        names(temp) <- c("Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
+      }
+    }
+    if (length(temp) == 7) {
+      if (model == "ida" || model == "gda") {
+        names(temp) <- c("Opti Nr", "Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+      } else if (model == "hg" || model == "dba") {
+        names(temp) <- c("Opti Nr", "Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
+      }
+    }
+    temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
+  } else {
+    return("")
+  }
+  if (is.null(counter_dataset) && is.null(counter_repi)) {
+    return(temp)
+  } else {
+    return(paste0(
+      "Dataset Nr.: ", counter_dataset,
+      "; Replication Nr.:", counter_repi,
+      "; ", temp
+    ))
+  }
+}
+
+res <- tsf:::call_several_opti_in_bg(
+  case = "ida",
+  lb = lowerBounds,
+  ub = upperBounds,
+  df_list = list_df,
+  ap = additionalParameters,
+  seed_list = seeds,
+  npop = 40,
+  ngen = 20,
+  topo = "random",
+  et = 0.7,
+  messages = messages
+)
+while (TRUE) {
+  if (!res$is_alive()) break
+  status <- print_status(res$read_output(), NULL, NULL, "ida")
+  print(status)
+  Sys.sleep(1)
+}
+res$get_result()
+stop()
+
 df <- read.csv("forKonrad-conc-vs-signal.csv",
   sep = ";",
   dec = ".",

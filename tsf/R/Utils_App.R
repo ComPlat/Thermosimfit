@@ -51,17 +51,35 @@ extract_iter <- function(s) { # TODO: still needed?
 
 # print intermediate results
 # ========================================================================================
-print_ida_gda <- function(stdcout, counter_dataset = NULL, counter_repi = NULL) {
+
+print_status <- function(stdcout,
+                         counter_dataset = NULL,
+                         counter_repi = NULL, model) {
   temp <- strsplit(stdcout, "\n")[[1]]
-  if (length(temp) >= 3) {
+  if (length(temp) >= 4) {
     temp <- lapply(temp, function(x) {
       x <- gsub('"', "", x)
       x <- gsub("\\[.*?\\] ", "", x)
     })
-    temp[[2]] <- strsplit(temp[[2]], " ")[[1]]
-    temp <- c(temp[[1]], c(temp[[2]]), c(temp[[3]]))
+    temp[[3]] <- strsplit(temp[[3]], " ")[[1]]
+    if (temp[[1]] != "") {
+      temp <- c(temp[[1]], temp[[2]], c(temp[[3]]), c(temp[[4]]))
+    } else {
+      temp <- c(temp[[2]], c(temp[[3]]), c(temp[[4]]))
+    }
     if (length(temp) == 6) {
-      names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+      if (model == "ida" || model == "gda") {
+        names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+      } else if (model == "hg" || model == "dba") {
+        names(temp) <- c("Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
+      }
+    }
+    if (length(temp) == 7) {
+      if (model == "ida" || model == "gda") {
+        names(temp) <- c("Opti Nr", "Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+      } else if (model == "hg" || model == "dba") {
+        names(temp) <- c("Opti Nr", "Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
+      }
     }
     temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
   } else {

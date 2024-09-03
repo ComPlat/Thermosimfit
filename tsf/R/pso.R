@@ -26,6 +26,7 @@
 #'        calculated for each generation.
 #' @param saveSwarm is a logical value defining whether the entire optimization should be saved.
 #' @param runAsShiny is an internal parameter which is used when running the shiny app interface.
+#' @param add_message is an optional character argument which is printed during optimization
 #' @examples
 #' rosenbrock <- function(parameter, env, Ignore) {
 #'   value <- 0
@@ -43,7 +44,7 @@
 #'   0.00001, TRUE, FALSE
 #' )
 pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
-                saveSwarm = FALSE, runAsShiny = FALSE) {
+                saveSwarm = FALSE, runAsShiny = FALSE, add_message = "") {
   stopifnot(length(lb) == length(ub))
   if (length(lb) != length(ub)) {
     stop("length of lb and ub differ")
@@ -234,6 +235,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
 
     iter <- iter + 1
 
+    print(add_message)
     print(iter)
     print(format_scientific(global_best_vec))
     print(format_scientific(global_best_error))

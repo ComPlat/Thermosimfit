@@ -120,7 +120,7 @@ dbaUI <- function(id) {
                 br(),
                 DT::DTOutput(NS(id, "params")),
                 DT::DTOutput(NS(id, "metrices")),
-                plotOutput(NS(id, "plot")),
+                plotlyOutput(NS(id, "plot")),
                 width = 7, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Optimization", solidHeader = TRUE,
@@ -167,11 +167,8 @@ dbaUI <- function(id) {
                 width = 12
               ),
               box(
-                uiOutput(NS(id, "batch_data_plot_dynamic")),
-                br(),
-                uiOutput(NS(id, "batch_params_plot_dynamic")),
-                br(),
-                uiOutput(NS(id, "batch_metrices_plot_dynamic")),
+                id = "DBA-output_Batch",
+                plotlyOutput(NS(id, "batch_data_plot"), height = 1200),
                 width = 12, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Batch analysis", solidHeader = TRUE,

@@ -161,3 +161,41 @@ batch <- function(case,
     plotMetrices(list, num_rep)
   )
 }
+
+call_several_opti <- function(case, lb, ub,
+                                    df_list, ap, seed_list,
+                                    npop, ngen, topo,
+                                    et, messages) {
+  res <- vector("list", length(df_list))
+  for (i in seq_len(length(df_list))) {
+    df <- df_list[[i]]
+    seed <- seed_list[[i]]
+    m <- messages[[i]]
+    result <- tsf::opti(
+      case, lb, ub, df, ap, seed, npop, ngen,
+      topo, et, m
+    )
+    res[[i]] <- result
+  }
+  return(res)
+}
+
+call_several_opti_in_bg <- function(case, lb, ub, df_list, ap,
+                                    seed_list, npop, ngen, topo,
+                                    et, messages) {
+
+  callr::r_bg(
+    function(case, lb, ub, df_list, ap,
+             seed_list, npop, ngen, Topology, errorThreshold, messages) {
+      res <- tsf:::call_several_opti(
+        case, lb, ub, df_list, ap, seed_list, npop, ngen,
+        Topology, errorThreshold, messages
+      )
+      return(res)
+    },
+    args = list(
+      case, lb, ub, df_list,
+      ap, seed_list, npop, ngen, topo, et, messages
+    )
+  )
+}

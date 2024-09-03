@@ -247,7 +247,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       # check status
       print_error(process()$read_error())
       m <- process()$read_output()
-      m <- print_ida_gda(m, NULL, NULL)
+      m <- print_status(m, NULL, NULL, get_Model())
       req(is.character(m))
       if(m != "") opti_message(m)
     })
@@ -521,6 +521,18 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         length(df_list()) > 0,
         "The dataset list seems to be empty. Please upload a file"
       )
+      rwn( # TODO: update also other server code
+        !is_integer(input$NumCores),
+        "Please provide an integer entry for number of cores"
+      )
+    }
+
+    get_num_core <- function() {
+      res <- convert_num_to_int(input$NumCores)
+      if(res == 0) {
+        res <- 1
+      }
+      return(res)
     }
 
     observeEvent(input$Start_Batch, {
@@ -539,6 +551,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       ngen <- create_ngen()
       topo <- create_topology()
       et <- create_error_threshold()
+      num_cores <- get_num_core()
       # check seed case
       seed <- input$Seed
       num_rep <- as.integer(input$NumRepDataset)
@@ -576,6 +589,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         list(message = "Initializing...")
       )
 
+      # 1. create seeds in loop
       for (i in seq_len(size)) {
         if (seed_case == 1) {
           seed <- sample(seeds_from, 1)
@@ -589,20 +603,28 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
             seed <- seed
         }
         seeds[i] <- seed
-        process_list[[i]] <- callr::r_bg(
-          function(case, lb, ub, df, ap,
-                   seed, npop, ngen, Topology, errorThreshold) {
-            res <- tsf::opti(
-              case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold
-            )
-            return(res)
-          },
-          args = list(
-            get_Model(), lb, ub, df_list()[[(i - 1) %% length(df_list()) + 1]],
-            additionalParameters, seed, npop, ngen, topo, et
-          )
-        )
       }
+
+      # 2. split df_list and seed_list by number of cores
+      groups <- ceiling(1:size / (size / num_cores))
+      dfs <- split(df_list(), groups)
+      seeds <- split(seeds, groups)
+
+      # TODO: 3. Create message lists for each process
+      messages <- lapply(groups, function(x) {
+        return(as.list(rep("", length(x))))
+      })
+
+      # 4. create process list by calling call_several_opti_in_bg
+      process_list <- lapply(seq_len(length(groups)), function(x) {
+        temp_dfs <- dfs[[x]]
+        temp_seeds <- seeds[[x]]
+        temp_messages <- messages[[x]]
+        call_several_opti_in_bg(
+          get_Model(), lb, ub, temp_dfs, additionalParameters,
+          temp_seeds, npop, ngen, topo, et, temp_messages
+        )
+      })
 
       result_val_batch$result <- process_list
       setup_batch_done(TRUE)
@@ -662,10 +684,11 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         } else {
           counter_rep <- counter_rep + 1
         }
-        temp_status[i] <- print_ida_gda(
+        temp_status[i] <- print_status(
           result_val_batch$result[[i]]$read_output(),
-          counter_dataset,
-          counter_rep
+          NULL, #counter_dataset,
+          NULL, #counter_rep, # TODO: if it is anyways handled by messages than one can get rid of these arguments
+          get_Model()
         )
       }
       stdout(format_batch_status(stdout(), temp_status))

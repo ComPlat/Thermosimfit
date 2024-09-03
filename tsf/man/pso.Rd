@@ -14,7 +14,8 @@ pso(
   error_threshold,
   global = FALSE,
   saveSwarm = FALSE,
-  runAsShiny = FALSE
+  runAsShiny = FALSE,
+  add_message = ""
 )
 }
 \arguments{
@@ -42,6 +43,8 @@ calculated for each generation.}
 \item{saveSwarm}{is a logical value defining whether the entire optimization should be saved.}
 
 \item{runAsShiny}{is an internal parameter which is used when running the shiny app interface.}
+
+\item{add_message}{is an optional character argument which is printed during optimization}
 }
 \description{
 Interface to the particle swarm optimization (pso) algorithm.
