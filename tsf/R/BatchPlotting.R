@@ -1,28 +1,20 @@
-dotSize <- function(download = FALSE) {
-  if (download) {
-    return(1)
-  } else {
-    return(1) # NOTE: maybe has to be adapted
-  }
-}
-lineSize <- function(download = FALSE) {
-  if(download){
-    return(0.5)}
-  return(1)
+dotSize <- function() {
+  return(0.5)
 }
 
-addTheme <- function(p, base_size = 12) {
+lineSize <- function() {
+  return(0.5)
+}
+
+baseSize <- function() {
+  return(6)
+}
+
+addTheme <- function(p, base_size = 6) {
   p <- p + theme(
-    legend.position = "right",
-    legend.justification = c("right", "top"),
-    legend.box.just = "right",
-    legend.margin = margin(10, 10, 10, 10),
-    title = element_text(size = base_size, face = "bold"),
-    axis.title = element_text(size = base_size, face = "bold"),
+    title = element_text(size = base_size * 1.5, face = "bold"),
+    axis.title = element_text(size = base_size * 1.5, face = "bold"),
     axis.text = element_text(size = base_size),
-    legend.text = element_text(size = base_size),
-    legend.title = element_text(size = base_size),
-    legend.key.size = unit(0.25, "cm"),
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
     plot.margin = margin(5, 5, 5, 5),
     strip.text.x = element_text(size = base_size, face = "bold"),
@@ -31,7 +23,7 @@ addTheme <- function(p, base_size = 12) {
   return(p)
 }
 
-plotSignal <- function(df, Dataset, download = FALSE) {
+plotSignal <- function(df, Dataset) {
   df_signal <- data.frame(
     x = rep(df[, 1], 2),
     y = c(df[, 2], df[, 3]),
@@ -39,7 +31,7 @@ plotSignal <- function(df, Dataset, download = FALSE) {
       rep("Signal measured", nrow(df)),
       rep("Signal simulated", nrow(df))
     ),
-    repetitions =df$repetition
+    repetitions = paste0("Run Nr. ", df$repetition)
   )
   ggplot() +
     geom_point(data = df_signal[df_signal$group != "Signal measured", ],
@@ -47,36 +39,33 @@ plotSignal <- function(df, Dataset, download = FALSE) {
         x = x,
         y = y,
         colour = factor(repetitions)
-      ), size = dotSize(download)
+      ), size = dotSize()
     ) +
     geom_smooth(data = df_signal[df_signal$group == "Signal measured", ],
       aes(
         x = x,
         y = y,
-        linetype = ""
+        colour = group
       ),
-      size = lineSize(download),
+      linewidth = lineSize(),
       method = "loess",
       formula = 'y ~ x',
-      se = FALSE,
-      colour = "grey"
+      se = FALSE
     ) +
     geom_point(data = df_signal[df_signal$group == "Signal measured", ],
       aes(
-      x = x,
-      y = y
-      ), size = dotSize(download),
-      colour = "grey"
+        x = x,
+        y = y,
+        colour = group
+      ),
+      size = dotSize()
     ) +
     ylab("Signal [a.u]") +
     xlab(names(df)[1]) +
-    ggtitle(paste0("Dataset Nr.", Dataset)) +
-    scale_colour_brewer(name = "", palette = "Dark2") +
-    guides(colour = guide_legend(title = "Repetition")) +
-    guides(linetype = guide_legend(title = "Measured"))
+    scale_colour_brewer(name = "", palette = "Dark2")
 }
 
-plotFreeDye <- function(df, download) {
+plotFreeDye <- function(df) {
   df_dye <- data.frame(
     x = df[, 1],
     y = df[, 4],
@@ -88,7 +77,7 @@ plotFreeDye <- function(df, download) {
         x = x,
         y = y,
         colour = factor(repetitions)
-      ), size = dotSize(download)
+      ), size = dotSize()
     ) +
     ylab("Dye [M]") +
     xlab(names(df)[1]) +
@@ -96,7 +85,7 @@ plotFreeDye <- function(df, download) {
     guides(colour = guide_legend(title = "Repetition"))
 }
 
-plotHostDye <- function(df, download) {
+plotHostDye <- function(df) {
   df_host_dye <- data.frame(
     x = df[, 1],
     y = df[, 5],
@@ -108,7 +97,7 @@ plotHostDye <- function(df, download) {
         x = x,
         y = y,
         colour = factor(repetitions)
-      ), size = dotSize(download)
+      ), size = dotSize()
     ) +
     ylab("Host-Dye [M]") +
     xlab(names(df)[1]) +
@@ -116,32 +105,32 @@ plotHostDye <- function(df, download) {
     guides(colour = guide_legend(title = "Repetition"))
 }
 
-combinePlots <- function(p1, p2, p3, keep_legend = FALSE, base_size = 12) {
+combinePlots <- function(p1, p2, p3, index, base_size = 6) {
+  p1 <- addTheme(p1, base_size)
+  legend <- cowplot::get_legend(p1 + theme(
+    legend.text = element_text(size = base_size),
+    legend.title = element_text(size = base_size),
+    legend.key.size = unit(0.25, "cm")
+  ))
   p1 <- addTheme(p1, base_size)
   p2 <- addTheme(p2, base_size)
   p3 <- addTheme(p3, base_size)
-  if (keep_legend) {
-    p2 <- p2 + theme(legend.position = "none")
-    p3 <- p3 + theme(legend.position = "none")
-    p <- cowplot::plot_grid(p1, p2, p3, nrow = 3)
-    p <- p + cowplot::panel_border(colour = "grey", size = 2)
-    return(p)
-  } else {
-    p1 <- p1 + theme(legend.position = "none")
-    p2 <- p2 + theme(legend.position = "none")
-    p3 <- p3 + theme(legend.position = "none")
-    p <- cowplot::plot_grid(p1, p2, p3, nrow = 3)
-    p <- p + cowplot::panel_border(colour = "grey", size = 2)
-    return(p)
-  }
+  p1 <- p1 + theme(legend.position = "none")
+  p2 <- p2 + theme(legend.position = "none")
+  p3 <- p3 + theme(legend.position = "none")
+  p <- cowplot::plot_grid(p1, p2, p3, nrow = 1)
+  p <- cowplot::plot_grid(p, legend, nrow = 1, rel_widths = c(0.8, 0.2))
+  p <- cowplot::ggdraw() +
+    cowplot::draw_plot(p) +
+    cowplot::draw_label(
+      paste0("Dataset Nr.", index),
+      x = 0.5, y = 1.0, hjust = -2.1, vjust = 1.2,
+      size = 14)
+  return(p)
 }
 
-combineList <- function(plot_list, ncols = 4) {
-  cowplot::plot_grid(plotlist = c(plot_list, legend), ncol = ncols)
-}
-
-plotStates <- function(list, num_rep = 1, base_size = 12,
-                       download = FALSE, ncols = 4) {
+plotStates <- function(list, num_rep = 1) {
+  base_size <- baseSize()
   list <- list[[1]]
   num_data_sets <- length(list) / num_rep
   repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
@@ -154,19 +143,13 @@ plotStates <- function(list, num_rep = 1, base_size = 12,
   groups <- unique(df$dataset)
   plot_list <- lapply(groups, function(x) {
     temp_df <- df[df$dataset == x, ]
-    p1 <- plotSignal(temp_df, x, download)
-    p2 <- plotFreeDye(temp_df, download)
-    p3 <- plotHostDye(temp_df, download)
-    if (x == 1) {
-      return(combinePlots(p1, p2, p3, keep_legend = TRUE, base_size))
-    } else {
-      return(combinePlots(p1, p2, p3, keep_legend = FALSE, base_size))
-    }
+    p1 <- plotSignal(temp_df, x)
+    p2 <- plotFreeDye(temp_df)
+    p3 <- plotHostDye(temp_df)
+    return(combinePlots(p1, p2, p3, parent.frame()$i[], base_size))
   })
-  return(combineList(plot_list, ncols))
+  return(plot_list)
 }
-
-
 
 plotParams <- function(list, num_rep = 1, base_size = 12) {
   list <- list[[2]]

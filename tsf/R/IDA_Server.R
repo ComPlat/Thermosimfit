@@ -554,7 +554,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
       output$batch_data_plot <- renderPlotly({
-        plotly::plot_ly()
+        plot.new()
       })
 
       output$batch_params_plot <- renderPlot({
@@ -717,81 +717,13 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         plot_data()
         batch_results_created(TRUE)
         stdout(NULL)
+        output$batch_data_plot <- renderPlotly({
+          entirePlotPlotly(
+            result_val_batch$result_splitted,
+            num_rep_batch(), ncols = 4
+          )
+        })
       }
-    })
-
-    output$batch_data_plot_dynamic <- renderUI({
-      req(batch_results_created())
-      # get dimensions
-      screen_width <- input$dimension[1] * 0.8 # TODO: actually the size of the result plot box is requred not screen size
-      screen_height <- input$dimension[2]
-      # get rows and cols
-      n_dfs <- length(df_list())
-      n_cols <- ifelse(n_dfs < 4, n_dfs, 4)
-      n_rows <- ceiling(n_dfs / n_cols)
-      if (n_cols < 4) n_rows <- 1
-      # calc width and height
-      scale_width <- ifelse(n_dfs < 4, n_dfs, 4.5)
-      base_width <- screen_width / scale_width
-      base_height <- screen_height * 0.75
-      total_width <- n_cols * base_width
-      total_height <- n_rows * base_height
-      if (total_height < (total_width * 0.75))  {
-        total_height <- total_width * 0.75
-      }
-      output$batch_data_plot <- renderPlotly({
-        plotStatesPlotly(
-          result_val_batch$result_splitted,
-          num_rep_batch(), ncols = n_cols
-        )
-      })
-      style <- paste0(
-        "width: ", total_width,
-        "px; height: ", total_height, "px;"
-      )
-      print(style) # TODO: remove
-      div(
-        style = style,
-        plotlyOutput(session$ns("batch_data_plot"))
-      )
-    })
-
-    output$batch_params_plot_dynamic <- renderUI({
-      req(batch_results_created())
-      n_dfs <- length(df_list())
-      n_cols <- num_rep_batch() * n_dfs
-      base_width <- 300
-      total_width <- n_cols * base_width
-      total_height <- 600
-      if (total_width > 1200) total_width <- 1200
-      output$batch_params_plot <- renderPlot({
-        plotParams(result_val_batch$result_splitted, num_rep_batch())
-      }, height = total_height, width = total_width)
-      style <- paste0("width: ", total_width,
-        "px; height: ", total_height, "px;")
-      div(
-        style = style,
-        plotOutput(session$ns("batch_params_plot"))
-      )
-    })
-
-    output$batch_metrices_plot_dynamic <- renderUI({
-      req(batch_results_created())
-      n_dfs <- length(df_list())
-      n_cols <- num_rep_batch() * n_dfs
-      base_width <- 300
-      total_width <- n_cols * base_width
-      total_height <- 600
-      if (total_width > 1200) total_width <- 1200
-      output$batch_metrices_plot <- renderPlot({
-        plotMetrices(result_val_batch$result_splitted, num_rep_batch())
-      }, height = total_height, width = total_width)
-      style <- paste0("width: ", total_width,
-        "px; height: ", total_height, "px;")
-      div(
-        style = style,
-        plotOutput(session$ns("batch_metrices_plot"))
-      )
     })
 
     output$batch_download <- downloadHandler(
@@ -801,6 +733,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       content = function(file) {
         req(batch_results_created())
         req(length(result_val_batch$result_splitted) > 0)
+
         download_batch_file(
           get_Model_capital(),
           file,

@@ -204,7 +204,7 @@ plot_results_plotly <- function(df, case) {
 
   colors <- c(
     "Measured" = "grey",
-    "Predicted" = RColorBrewer::brewer.pal(8, "Dark2")[1] # TODO: fix this results in wanring
+    "Predicted" = RColorBrewer::brewer.pal(8, "Dark2")[1]
   )
 
   p1 <- plot_ly() %>%

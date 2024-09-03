@@ -313,7 +313,7 @@ download_file <- function(model, file, result_val) {
   p <- result_val$plot
   tempfile_plot <- tempfile(fileext = ".png")
   ggsave(tempfile_plot,
-    plot = p, width = 15, height = 15, limitsize = FALSE, dpi = 600
+    plot = p, width = 15, height = 15, limitsize = FALSE
   )
   insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
   curr_row <- curr_row + 15
@@ -467,19 +467,25 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   writeData(wb, "Results", metrices, startRow = curr_row)
   curr_row <- curr_row + dim(metrices)[1] + 5
 
-  p1 <- plotStates(result_val, num_rep, 4, download = TRUE)
-  p1 <- adjust_theme(p1)
+  p1 <- plotStates(result_val, num_rep)
+  temp_files_p1 <- lapply(seq_len(length(p1)), function(x) {
+    tempfile(fileext = ".png")
+  })
+
+  for (i in seq_len(length(p1))) {
+    p <- p1[[i]]
+    f <- temp_files_p1[[i]]
+    ggsave(f, plot = p,
+      dpi = 600
+    )
+    insertImage(wb, "Results", f,
+      startRow = curr_row
+    )
+    curr_row <- curr_row + 20
+  }
+
   p2 <- plotParams(result_val, num_rep, 4)
   p3 <- plotMetrices(result_val, num_rep, 4)
-
-  tempfile_plot1 <- tempfile(fileext = ".JPEG")
-  ggsave(tempfile_plot1,
-    plot = p1, units = "cm"
-  )
-  insertImage(wb, "Results", tempfile_plot1,
-    startRow = curr_row
-  )
-  curr_row <- curr_row + 20
 
   tempfile_plot2 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot2,
@@ -513,7 +519,6 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   )
   curr_row <- curr_row + 5
 
-
   seeds <- result_val$seeds |>
     unlist() |>
     as.data.frame()
@@ -537,7 +542,7 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   )
 
   openxlsx::saveWorkbook(wb, file)
-  unlink(tempfile_plot1)
+  lapply(temp_files_p1, unlink)
   unlink(tempfile_plot2)
   unlink(tempfile_plot3)
 }

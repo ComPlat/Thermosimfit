@@ -1,6 +1,6 @@
 
 dotSizePlotly <- function() {
-    return(10)
+    return(4)
 }
 
 lineSizePlotly <- function() {
@@ -22,7 +22,7 @@ plotSignalPlotly <- function(df, Dataset) {
     x = smoothed$x,
     y = smoothed$y
   )
-  p <- plot_ly(data = df_signal, x = ~x, y = ~y)
+  p <- plot_ly(data = df_signal, x = ~x, y = ~y, height = 4000)
   reps <- unique(df$repetition)
   legend_group <- paste0("Signal", 1:length(reps))
   sig_sim <- df_signal[df_signal$group != "Signal measured", ]
@@ -37,7 +37,7 @@ plotSignalPlotly <- function(df, Dataset) {
       color = ~factor(repetitions),
       name = ~paste0("Repetition signal simulated", factor(repetitions)),
       legendgroup = legend_group[i]
-    )
+    ) %>% layout(margin = 0.015)
   }
   p <- p %>%
     add_trace(
@@ -57,7 +57,7 @@ plotSignalPlotly <- function(df, Dataset) {
       marker = list(size = dotSizePlotly(), color = "grey"),
       name = "Signal measured",
       legendgroup = "Measured"
-    )
+    ) %>% layout(margin = 0.015)
   return(p)
 }
 
@@ -67,7 +67,7 @@ plotFreeDyePlotly <- function(df, Dataset) {
     y = df[, 4],
     repetitions = df$repetition
   )
-  p <- plot_ly(width = 600, height = 600)
+  p <- plot_ly()
   reps <- unique(df$repetition)
   legend_group <- paste0("Dye", 1:length(reps))
   for (i in seq_along(reps)) {
@@ -79,9 +79,10 @@ plotFreeDyePlotly <- function(df, Dataset) {
         color = ~factor(repetitions),
         type = "scatter",
         mode = "markers",
+        marker = list(size = dotSizePlotly()),
         name = ~paste0("Repetition (Dye)", factor(repetitions)),
         legendgroup = legend_group[i]
-      )
+      ) %>% layout(margin = 0.015)
   }
   return(p)
 }
@@ -92,7 +93,7 @@ plotHostDyePlotly <- function(df, Dataset) {
     y = df[, 5],
     repetitions = df$repetition
   )
-  p <- plot_ly(width = 600, height = 600)
+  p <- plot_ly()
   reps <- unique(df$repetition)
   legend_group <- paste0("Host-Dye", 1:length(reps))
   for (i in seq_along(reps)) {
@@ -103,10 +104,11 @@ plotHostDyePlotly <- function(df, Dataset) {
       y = ~y,
       color = ~factor(repetitions),
       type = "scatter",
+      marker = list(size = dotSizePlotly()),
       mode = "markers",
       name = ~paste0("Repetition (Host-Dye)", factor(repetitions)),
       legendgroup = legend_group[i]
-    )
+    ) %>% layout(margin = 0.015)
   }
   return(p)
 }
@@ -127,17 +129,20 @@ plotStatesPlotly <- function(list, num_rep = 1, ncols = 4) {
     p1 <- plotSignalPlotly(temp_df, x) %>%
       layout(
         xaxis = list(title = names(df)[1]),
-        yaxis = list(title = "Signal [a.u]")
+        yaxis = list(title = "Signal [a.u]"),
+        margin = 0.015
       )
     p2 <- plotFreeDyePlotly(temp_df, x) %>%
       layout(
         xaxis = list(title = names(df)[1]),
-        yaxis = list(title = "Dye [M]")
+        yaxis = list(title = "Dye [M]"),
+        margin = 0.015
       )
     p3 <- plotHostDyePlotly(temp_df, x) %>%
       layout(
         xaxis = list(title = names(df)[1]),
-        yaxis = list(title = "Host-Dye [M]")
+        yaxis = list(title = "Host-Dye [M]"),
+        margin = 0.015
       )
     if (x != 1) {
       p1 <- p1 %>% style(showlegend = FALSE)
@@ -178,10 +183,124 @@ plotStatesPlotly <- function(list, num_rep = 1, ncols = 4) {
   p <- subplot(signal_p, dye_p, host_dye_p,
     shareX = FALSE, shareY = FALSE,
     margin = 0.07,
-    titleX = TRUE, titleY = TRUE, which_layout = 0) %>% #TODO: find alternative this results in a warning
-    layout(
-      margin = list(l = 80, r = 40, b = 40, t = 10),
-      width = 1200, height = 1000 # TODO: this is deprecated but the correct way to do it in plot_ly does not work
-    )
+    titleX = TRUE, titleY = TRUE, which_layout = 0) %>% # TODO: find alternative this results in a warning
   return(p)
+}
+
+plotParamsPlotly <- function(list, num_rep = 1) {
+  list <- list[[2]]
+  num_data_sets <- length(list) / num_rep
+  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
+  data_sets <- rep(1:num_data_sets, each = num_rep)
+  for (i in seq_along(list)) {
+    list[[i]]$dataset <- data_sets[i]
+    list[[i]]$repetition <- repetitions[i]
+  }
+  df <- Reduce(rbind, list)
+  data <- data.frame(
+    x = rep(df$dataset, 4),
+    y = c(df[, 1], df[, 2], df[, 3], df[, 4]),
+    names = c(
+      rep(names(df)[1], nrow(df)),
+      rep(names(df)[2], nrow(df)),
+      rep(names(df)[3], nrow(df)),
+      rep(names(df)[4], nrow(df))
+    ),
+    repetition = rep(df$repetition, 4)
+  )
+  plot_list <- list()
+  names <- unique(data$names)
+  for (i in seq_along(names)) {
+    temp <- data[data$names == names[i], ]
+    plot_list[[i]] <- plot_ly() %>%
+      add_trace(
+        data = temp,
+        y = ~y,
+        x = ~factor("Entire data"),
+        type = "box",
+        name = paste0("Entire data: ", names[i])
+      ) %>%
+      add_trace(
+      data = temp,
+      y = ~y,
+      x = ~factor(x),
+      type = "box",
+      name = names[i]
+    ) %>%
+      layout(
+        yaxis = list(title = names[i]),
+        xaxis = list(title = "Datasets")
+      )
+  }
+  p <- subplot(plot_list[[1]], plot_list[[2]],
+               plot_list[[3]], plot_list[[4]],
+    nrows = 4,
+    titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE,
+      margin = 0.015)
+  return(p)
+}
+
+plotMetricesPlotly <- function(list, num_rep = 1, base_size = 12) {
+  list <- list[[3]]
+  num_data_sets <- length(list) / num_rep
+  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
+  data_sets <- rep(1:num_data_sets, each = num_rep)
+  for (i in seq_along(list)) {
+    list[[i]]$dataset <- data_sets[i]
+    list[[i]]$repetition <- repetitions[i]
+  }
+  df <- Reduce(rbind, list)
+  data <- data.frame(
+    x = rep(df[, 6], 5),
+    y = c(df[, 1], df[, 2], df[, 3], df[, 4], df[, 5]),
+    names = c(
+      rep(names(df)[1], nrow(df)),
+      rep(names(df)[2], nrow(df)),
+      rep(names(df)[3], nrow(df)),
+      rep(names(df)[4], nrow(df)),
+      rep(names(df)[5], nrow(df))
+    ),
+    repetition = rep(df$repetition, 5)
+  )
+  plot_list <- list()
+  names <- unique(data$names)
+  for (i in seq_along(names)) {
+    temp <- data[data$names == names[i], ]
+    plot_list[[i]] <- plot_ly() %>%
+      add_trace(
+        data = temp,
+        y = ~y,
+        x = ~factor("Entire data"),
+        type = "box",
+        name = paste0("Entire data: ", names[i])
+      ) %>%
+      add_trace(
+        data = temp,
+        y = ~y,
+        x = ~factor(x),
+        type = "box",
+        name = names[i]
+      ) %>%
+      layout(
+        yaxis = list(title = names[i]),
+        xaxis = list(title = "Datasets")
+      )
+  }
+  p <- subplot(plot_list[[1]], plot_list[[2]],
+    plot_list[[3]], plot_list[[4]], plot_list[[5]],
+    nrows = 5,
+    titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE,
+  margin = 0.015)
+  return(p)
+
+}
+
+entirePlotPlotly <- function(list, num_rep = 1, ncols = 4) {
+  states <- plotStatesPlotly(list, num_rep, ncols)
+  params <- plotParamsPlotly(list, num_rep)
+  metrices <- plotMetricesPlotly(list, num_rep)
+  subplot(states, params, metrices, nrows = 1,
+    shareX = FALSE, titleX = TRUE, titleY = TRUE,
+    widths = c(0.7, 0.15, 0.15),
+  margin = 0.02)
 }
