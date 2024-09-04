@@ -52,9 +52,7 @@ extract_iter <- function(s) { # TODO: still needed?
 # print intermediate results
 # ========================================================================================
 
-print_status <- function(stdcout,
-                         counter_dataset = NULL,
-                         counter_repi = NULL, model) {
+print_status <- function(stdcout, model) {
   temp <- strsplit(stdcout, "\n")[[1]]
   if (length(temp) >= 4) {
     temp <- lapply(temp, function(x) {
@@ -73,26 +71,20 @@ print_status <- function(stdcout,
       } else if (model == "hg" || model == "dba") {
         names(temp) <- c("Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
       }
+      temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
     }
     if (length(temp) == 7) {
       if (model == "ida" || model == "gda") {
-        names(temp) <- c("Opti Nr", "Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
+        names(temp) <- c("", "Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
       } else if (model == "hg" || model == "dba") {
-        names(temp) <- c("Opti Nr", "Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
+        names(temp) <- c("", "Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
       }
+      temp <- ifelse(names(temp) != "", paste0(names(temp), " = ",temp), temp)
+      temp <- paste(temp, collapse = "; ")
     }
-    temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
-  } else {
-    return("")
-  }
-  if (is.null(counter_dataset) && is.null(counter_repi)) {
     return(temp)
   } else {
-    return(paste0(
-      "Dataset Nr.: ", counter_dataset,
-      "; Replication Nr.:", counter_repi,
-      "; ", temp
-    ))
+    return("")
   }
 }
 
@@ -164,8 +156,6 @@ print_error <- function(e) {
   showNotification(format_error(e),
     type = "error", duration = 20)
 }
-
-
 
 # helper
 # ========================================================================================

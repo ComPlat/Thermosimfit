@@ -33,51 +33,51 @@ additionalParameters = c(
   kHD = 3e6
 )
 
-print_status <- function(stdcout,
-                         counter_dataset = NULL,
-                         counter_repi = NULL, model) {
-  temp <- strsplit(stdcout, "\n")[[1]]
-  if (length(temp) >= 4) {
-    temp <- lapply(temp, function(x) {
-      x <- gsub('"', "", x)
-      x <- gsub("\\[.*?\\] ", "", x)
-    })
-    temp[[3]] <- strsplit(temp[[3]], " ")[[1]]
-    if (temp[[1]] != "") {
-      temp <- c(temp[[1]], temp[[2]], c(temp[[3]]), c(temp[[4]]))
-    } else {
-      temp <- c(temp[[2]], c(temp[[3]]), c(temp[[4]]))
-    }
-    if (length(temp) == 6) {
-      if (model == "ida" || model == "gda") {
-        names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
-      } else if (model == "hg" || model == "dba") {
-        names(temp) <- c("Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
+call_several_opti_in_bg <- function(case, lb, ub, df_list, ap,
+                                    seed_list, npop, ngen, topo,
+                                    et, messages) {
+  process <- callr::r_bg(
+    function(case, lb, ub, df_list, ap,
+             seed_list, npop, ngen, topo,
+             et, messages) {
+      env <- new.env()
+      env$intermediate_results <- lapply(seq_len(length((df_list))),
+        function(x) x)
+
+      for (i in seq_len(length(df_list))) {
+        tryCatch(
+          expr = {
+            df <- df_list[[i]]
+            seed <- seed_list[[i]]
+            m <- messages[[i]]
+            result <- tsf::opti(
+              case, lb, ub, df, ap, seed, npop, ngen,
+              topo, et, m
+            )
+            env$intermediate_results[[i]] <- result
+            return(env$intermediate_results)
+          },
+          interrupt = function(e) {
+            warning("interrupted!")
+            return(env$intermediate_results)
+          },
+          error = function(e) {
+            warning("\n\n Probably not finished optimisation \n\n")
+            return(env$intermediate_results)
+          }
+        )
       }
-    }
-    if (length(temp) == 7) {
-      if (model == "ida" || model == "gda") {
-        names(temp) <- c("Opti Nr", "Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
-      } else if (model == "hg" || model == "dba") {
-        names(temp) <- c("Opti Nr", "Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
-      }
-    }
-    temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
-  } else {
-    return("")
-  }
-  if (is.null(counter_dataset) && is.null(counter_repi)) {
-    return(temp)
-  } else {
-    return(paste0(
-      "Dataset Nr.: ", counter_dataset,
-      "; Replication Nr.:", counter_repi,
-      "; ", temp
-    ))
-  }
+    },
+    args = list(
+      case, lb, ub, df_list,
+      ap, seed_list, npop, ngen, topo,
+      et, messages
+    )
+  )
+  return(process)
 }
 
-res <- tsf:::call_several_opti_in_bg(
+res <- call_several_opti_in_bg(
   case = "ida",
   lb = lowerBounds,
   ub = upperBounds,
@@ -90,198 +90,19 @@ res <- tsf:::call_several_opti_in_bg(
   et = 0.7,
   messages = messages
 )
+
+counter <- 1
+Sys.sleep(5)
 while (TRUE) {
   if (!res$is_alive()) break
-  status <- print_status(res$read_output(), NULL, NULL, "ida")
-  print(status)
-  Sys.sleep(1)
+  cat(res$read_output())
+  res$interrupt()
+  res$wait()
 }
-res$get_result()
-stop()
-
-df <- read.csv("forKonrad-conc-vs-signal.csv",
-  sep = ";",
-  dec = ".",
-  header = TRUE
-)
-
-res <- tsf::opti(
-  case = "ida",
-  lowerBounds = c(
-    kG = 1000,
-    I0 = 0,
-    IHD = 0,
-    ID = 0
-  ),
-  upperBounds = c(
-    kG = 10^8,
-    I0 = 100, # started at 10^7 but it ended always at 0...
-    IHD = 10^7,
-    ID = 10^7
-  ),
-  df,
-  additionalParameters = c(
-    host = 1e-6,
-    dye = 1e-6,
-    kHD = 3e6
-  ),
-  npop = 40,
-  ngen = 20,
-  Topology = "random",
-  errorThreshold = 0.7
-)
-
-res
-stop()
-
-tsf::sensitivity("ida", res[[2]], df, c(1e-6, 1e-6, 3e6), 20)
-
-stop()
-res <- tsf:::batch(
-  case = "ida",
-  lowerBounds = c(
-    kG = 1000,
-    I0 = 0,
-    IHD = 0,
-    ID = 0
-  ),
-  upperBounds = c(
-    kG = 10^8,
-    I0 = 100, # started at 10^7 but it ended always at 0...
-    IHD = 10^7,
-    ID = 10^7
-  ),
-  "/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/IDA/idaBatch.csv",
-  additionalParameters = c(
-    host = 1.00E-06,
-    dye = 1.00E-06,
-    kHD = 3.00E+06
-  ),
-  npop = 40,
-  ngen = 20,
-  Topology = "random",
-  errorThreshold = 0.7,
-  num_rep = 2
-)
-
-plotStates <- function(list, num_rep = 1) {
-  list <- list[[1]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
-  df <- Reduce(rbind, list)
-  # dye and host dye plot
-  data <- data.frame(
-    x = rep(df[, 1], 2),
-    y = c(df[, 4], df[, 5]),
-    names = c(
-      rep(names(df)[4], nrow(df)),
-      rep(names(df)[5], nrow(df))
-    ),
-    repetition = rep(df$repetition, 2),
-    dataset = rep(df$dataset, 2)
-  )
-  base_size <- 10
-  if (num_rep > 1) {
-    p <- ggplot() +
-      geom_boxplot(
-        data = data,
-        aes(
-          x = interaction(dataset, x), y = y,
-          fill = factor(dataset),
-          group = interaction(dataset, x)
-        ),
-        width = 0.25,
-        size = 0.25
-      ) +
-      facet_wrap(. ~ names,
-        strip.position = "left",
-        scales = "free_y"
-      ) +
-      xlab(names(df)[1]) +
-      ylab(NULL) +
-      guides(fill = guide_legend(title = "Datasets")) +
-      scale_x_discrete(
-        labels = as.character(unique(rbind(data$x, "")))
-      )
-  } else {
-    p <- ggplot() +
-      geom_boxplot(
-        data = data,
-        aes(
-          x = x,
-          y = y,
-          group = factor(x)
-        )
-      ) +
-      facet_wrap(~names,
-        strip.position = "left",
-        scales = "free_y"
-      ) +
-      ylab(NULL) +
-      xlab(names(df)[1])
-  }
-  p <- p + theme(
-    legend.position = "bottom",
-    axis.title = element_text(size = base_size * 1.2),
-    axis.text = element_text(size = base_size),
-    legend.text = element_text(size = base_size),
-    legend.title = element_text(size = base_size),
-    strip.text.x = element_text(size = base_size),
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
-  )
-  # signal plot
-  data_signal_measured <- data.frame(
-    x = c(df[, 1], df[, 1]),
-    y = c(df[, 2], df[, 3]),
-    names = c(
-      rep(names(df)[2], nrow(df)),
-      rep(names(df)[3], nrow(df))
-    ),
-    repetition = rep(df$repetition, 2),
-    dataset = rep(df$dataset, 2)
-  )
-  p_signal <- ggplot(
-    data = data_signal_measured,
-    aes(
-      x = factor(x),
-      y = y,
-      colour = factor(dataset),
-      group = interaction(x, dataset, repetition)
-    )
-  ) +
-    geom_point(
-      data = subset(data_signal_measured, names != "Signal measured"),
-      aes(shape = factor(repetition))
-    ) +
-    geom_line(
-      data = subset(data_signal_measured, names == "Signal measured"),
-      aes(x = factor(x), y = y, group = 1)
-    ) +
-    xlab(names(df)[1]) +
-    ylab(NULL) +
-    theme(
-      legend.position = "bottom",
-      axis.title = element_text(size = base_size * 1.2),
-      axis.text = element_text(size = base_size),
-      legend.text = element_text(size = base_size),
-      legend.title = element_text(size = base_size),
-      strip.text.x = element_text(size = base_size),
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
-    ) +
-    guides(
-      shape = guide_legend(title = "Repetitions"),
-      colour = guide_legend(title = "Datasets"),
-      linetype = guide_legend(title = "Repetitions")
-    ) +
-    facet_wrap(~names, strip.position = "left", scales = "free_y")
-
-  return(p_signal / p)
-}
-
-library(ggplot2)
-plotStates(res[[1]], 2)
+cat("Counter ", counter, "\n")
+print("Errors:")
+print(res$read_all_error())
+result <- res$get_result()
+cat("Length results ", length(result), "\n")
+trash <- lapply(result, function(x) print(class(x)))
+result

@@ -562,7 +562,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         seed_origin <- seed
       }
       # clear everything
-      stdout (NULL)
+      stdout(NULL)
       invalid_time(1100)
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
@@ -578,8 +578,11 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       })
 
       size <- length(df_list()) * num_rep
-      stdout(character(size))
-      request_cores(size, session$token)
+      if (num_cores > size) {
+        num_cores <- size
+      }
+      stdout(character(num_cores))
+      request_cores(num_cores, session$token)
       nclicks(nclicks() + 1)
       process_list <- vector("list", size)
       seeds <- numeric(size)
@@ -600,23 +603,37 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
             seed <- sample(seeds_from, 1)
           }
         } else if (seed_case == 2) {
-            seed <- seed
+          seed <- seed # TODO: check is this correct
         }
         seeds[i] <- seed
       }
 
-      # 2. split df_list and seed_list by number of cores
-      groups <- ceiling(1:size / (size / num_cores))
-      dfs <- split(df_list(), groups)
-      seeds <- split(seeds, groups)
+      # 2. Create message lists for each process
+      messages <- character(size)
+      counter_messages <- 1
+      for (i in seq_len(length(df_list()))) {
+        for (j in seq_len(num_rep)) {
+          messages[counter_messages] <- paste0("Dataset = ", i, "; Replicate = ", j)
+          counter_messages <- counter_messages + 1
+        }
+      }
 
-      # TODO: 3. Create message lists for each process
-      messages <- lapply(groups, function(x) {
-        return(as.list(rep("", length(x))))
-      })
+      # 3. split df_list, seed_list and messages by number of cores
+      groups <- ceiling(1:size / (size / num_cores))
+      dfs <- df_list()
+      if (length(groups) > length(dfs)) {
+        counter <- 1
+        while (length(groups) > length(dfs)) {
+          dfs <- c(dfs, dfs[counter])
+          counter <- counter + 1
+        }
+      }
+      dfs <- split(dfs, groups)
+      seeds <- split(seeds, groups)
+      messages <- split(messages, groups)
 
       # 4. create process list by calling call_several_opti_in_bg
-      process_list <- lapply(seq_len(length(groups)), function(x) {
+      process_list <- lapply(seq_len(length(dfs)), function(x) {
         temp_dfs <- dfs[[x]]
         temp_seeds <- seeds[[x]]
         temp_messages <- messages[[x]]
@@ -658,36 +675,32 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       req(!is.null(result_val_batch$result))
       # is cancel_batch_clicked
       if (cancel_batch_clicked()) {
-        setup_batch_done(TRUE)
-        cancel_batch_clicked(FALSE)
-        nclicks(0)
         lapply(result_val_batch$result, function(process) {
           process$interrupt()
           process$wait()
         })
+
+        # FIX: press cancel in init phase --> crash
+        # FIX: press cancel like a morron --> crash
+        # FIX: press cancel in two following runs --> crash
+
+        setup_batch_done(TRUE)
+        cancel_batch_clicked(FALSE)
+        nclicks(0)
         session$sendCustomMessage(
           type = get_update_field_batch(),
-          list(message = "")
+          list(message = "Shutdown process") # TODO: clean up
         )
         send_and_read_info(paste0("release: ", session$token))
         return(NULL)
       }
       # check status
       # NOTE: errors are not printed otherwise screen is full of errors
-      counter_dataset <- 0
-      counter_rep <- 0
       temp_status <- character(length(result_val_batch$result))
       for (i in seq_along(temp_status)) {
-        if (((i - 1) %% num_rep_batch()) == 0) {
-          counter_dataset <- counter_dataset + 1
-          counter_rep <- 1
-        } else {
-          counter_rep <- counter_rep + 1
-        }
+        # TODO: add core and add progress of core
         temp_status[i] <- print_status(
           result_val_batch$result[[i]]$read_output(),
-          NULL, #counter_dataset,
-          NULL, #counter_rep, # TODO: if it is anyways handled by messages than one can get rid of these arguments
           get_Model()
         )
       }
@@ -716,10 +729,35 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     })
 
     plot_data <- reactive({
-      values <- try(lapply(result_val_batch$result, function(process) {
-        process$get_result()
-      }))
-      if (inherits(values, "try-error")) {
+      values <- try({
+        res <- list()
+        counter <- 1
+        for (i in seq_along(result_val_batch$result)) {
+          temp <- result_val_batch$result[[i]]$get_result()
+          if (length(temp) == 1) {
+            res[[counter]] <- temp[[1]]
+            counter <- counter + 1
+          } else {
+            for (j in seq_along(temp)) {
+              res[[counter]] <- temp[[j]]
+              counter <- counter + 1
+            }
+          }
+        }
+        res
+      })
+
+      values <- Filter(Negate(is.integer), values)
+
+      if (!all(is.list(values))) {
+        result_val_batch$result_splitted <- NULL
+        batch_message("")
+        print_error("Error in background process")
+      } else if(length(values) == 0) {
+        result_val_batch$result_splitted <- NULL
+        batch_message("")
+        print_error("Error in background process")
+      } else if (inherits(values, "try-error")) {
         result_val_batch$result_splitted <- NULL
         batch_message("")
         print_error("Error in background process")
@@ -740,6 +778,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         plot_data()
         batch_results_created(TRUE)
         stdout(NULL)
+        req(is.list(result_val_batch$result_splitted))
         output$batch_data_plot <- renderPlotly({
           entirePlotPlotly(
             result_val_batch$result_splitted,

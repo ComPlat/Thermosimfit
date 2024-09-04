@@ -165,37 +165,79 @@ batch <- function(case,
 call_several_opti <- function(case, lb, ub,
                                     df_list, ap, seed_list,
                                     npop, ngen, topo,
-                                    et, messages) {
-  res <- vector("list", length(df_list))
-  for (i in seq_len(length(df_list))) {
-    df <- df_list[[i]]
-    seed <- seed_list[[i]]
-    m <- messages[[i]]
-    result <- tsf::opti(
-      case, lb, ub, df, ap, seed, npop, ngen,
-      topo, et, m
-    )
-    res[[i]] <- result
-  }
-  return(res)
+                                    et, messages, env) {
+  env <- new.env()
+  env$intermediate_results <- vector("list", length(df_list))
+  tryCatch(
+    expr = {
+      for (i in seq_len(length(df_list))) {
+        df <- df_list[[i]]
+        seed <- seed_list[[i]]
+        m <- messages[[i]]
+        result <- tsf::opti(
+          case, lb, ub, df, ap, seed, npop, ngen,
+          topo, et, m
+        )
+        env$intermediate_results[[i]] <- result
+      }
+      return(env$intermediate_results)
+    },
+    interrupt = function(e) {
+      return(env$intermediate_results)
+    },
+    error = function(e) {
+      stop(conditionMessage(e))
+    }
+  )
 }
 
 call_several_opti_in_bg <- function(case, lb, ub, df_list, ap,
                                     seed_list, npop, ngen, topo,
                                     et, messages) {
-
-  callr::r_bg(
+  process <- callr::r_bg(
     function(case, lb, ub, df_list, ap,
-             seed_list, npop, ngen, Topology, errorThreshold, messages) {
-      res <- tsf:::call_several_opti(
-        case, lb, ub, df_list, ap, seed_list, npop, ngen,
-        Topology, errorThreshold, messages
-      )
-      return(res)
+             seed_list, npop, ngen, topo,
+             et, messages) {
+      env <- new.env()
+      env$intermediate_results <- lapply(seq_len(length((df_list))),
+        function(x) x)
+
+      for (i in seq_len(length(df_list))) {
+        tryCatch(
+          expr = {
+            df <- df_list[[i]]
+            seed <- seed_list[[i]]
+            m <- messages[[i]]
+            result <- tsf::opti(
+              case, lb, ub, df, ap, seed, npop, ngen,
+              topo, et, m
+            )
+            env$intermediate_results[[i]] <- result
+            writeLines(paste0("i: ", i), "test.txt")
+            if (i == length(df_list)) {
+              return(env$intermediate_results)
+            } else {
+              next
+            }
+          },
+          interrupt = function(e) {
+            warning("interrupted!")
+            writeLines(paste0("interrupted i: ", i), "test.txt")
+            return(env$intermediate_results)
+          },
+          error = function(e) {
+            warning("\n\n Probably not finished optimisation \n\n")
+            writeLines(paste0("error i: ", i), "test.txt")
+            return(env$intermediate_results)
+          }
+        )
+      }
     },
     args = list(
       case, lb, ub, df_list,
-      ap, seed_list, npop, ngen, topo, et, messages
+      ap, seed_list, npop, ngen, topo,
+      et, messages
     )
   )
+  return(process)
 }

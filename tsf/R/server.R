@@ -72,6 +72,16 @@ server <- function(input, output, session) {
 
   data_batch <- reactiveValues(data_frames = NULL)
 
+  # TODO: remove
+  # list_dataframes <-
+  #   importDataBatch("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/IDA/idaBatch.csv")
+  #
+  # observe({ output$active_df <- renderDT(data$df)
+  #   data_batch$data_frames <- list_dataframes
+  #   data$df <- data_batch$data_frames[[1]]
+  #   output$df <- renderDT(data$df)
+  # })
+
   observeEvent(input$upload_batch, {
     req(input$upload_batch)
     list_dataframes <- importDataBatch(input$upload_batch$datapath)

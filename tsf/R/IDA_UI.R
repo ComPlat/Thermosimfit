@@ -46,7 +46,7 @@ idaUI <- function(id) {
           collapsible = TRUE, collapsed = TRUE,
           box(
             numericInput(NS(id, "npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "ngen"), "Number of generations", value = 1000)
+            numericInput(NS(id, "ngen"), "Number of generations", value = 20) #TODO: change back to 1000; Better error message when invalid ngen is set
           ),
           box(
             selectInput(NS(id, "topology"), "Topology of particle swarm",
