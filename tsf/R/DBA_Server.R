@@ -245,7 +245,7 @@ dbaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       # check status
       print_error(process()$read_error())
       m <- process()$read_output()
-      m <- print_status(m, NULL, NULL, get_Model())
+      m <- print_status(m, get_Model())
       req(is.character(m))
       if(m != "") opti_message(m)
     })
