@@ -411,15 +411,8 @@ download_csv <- function(model, file, result_val) {
 
 # download batch file
 # ========================================================================================
-create_df_for_batch <- function(list, what, num_rep) { # TODO: use this fct also in the plotting fcts of Batch.R
+create_df_for_batch <- function(list, what) {
   list <- list[[what]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
   df <- Reduce(rbind, list)
   return(df)
 }
@@ -445,7 +438,7 @@ adjust_theme <- function(p) {
   return(p)
 }
 
-download_batch_file <- function(model, file, result_val, num_rep) {
+download_batch_file <- function(model, file, result_val) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
   writeData(wb, "Results",
@@ -455,11 +448,11 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   )
 
   curr_row <- 3
-  data_trajectories <- create_df_for_batch(result_val, "states", num_rep)
+  data_trajectories <- create_df_for_batch(result_val, "states")
   writeData(wb, "Results", data_trajectories, startRow = curr_row)
   curr_row <- curr_row + dim(data_trajectories)[1] + 5
 
-  parameter <- create_df_for_batch(result_val, "params", num_rep)
+  parameter <- create_df_for_batch(result_val, "params")
   writeData(wb, "Results", parameter, startRow = curr_row)
   curr_row <- curr_row + dim(parameter)[1] + 5
 
@@ -471,11 +464,11 @@ download_batch_file <- function(model, file, result_val, num_rep) {
   writeData(wb, "Results", boundaries, startRow = curr_row)
   curr_row <- curr_row + dim(boundaries)[1] + 5
 
-  metrices <- create_df_for_batch(result_val, "metrices", num_rep)
+  metrices <- create_df_for_batch(result_val, "metrices")
   writeData(wb, "Results", metrices, startRow = curr_row)
   curr_row <- curr_row + dim(metrices)[1] + 5
 
-  p1 <- plotStates(result_val, num_rep)
+  p1 <- plotStates(result_val)
   temp_files_p1 <- lapply(seq_len(length(p1)), function(x) {
     tempfile(fileext = ".png")
   })
@@ -492,8 +485,8 @@ download_batch_file <- function(model, file, result_val, num_rep) {
     curr_row <- curr_row + 20
   }
 
-  p2 <- plotParams(result_val, num_rep, 4)
-  p3 <- plotMetrices(result_val, num_rep, 4)
+  p2 <- plotParams(result_val)
+  p3 <- plotMetrices(result_val)
 
   tempfile_plot2 <- tempfile(fileext = ".png")
   ggsave(tempfile_plot2,

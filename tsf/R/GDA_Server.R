@@ -31,6 +31,9 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     cancel_clicked <- reactiveVal(FALSE)
     setup_done <- reactiveVal(FALSE)
 
+    # NOTE: Start of model specific code
+    # ===============================================================================
+
     check_inputs <- function() {
       rwn(input$H0 != "", "Please enter a value for the Host")
       rwn(input$G0 != "", "Please enter a value for the Guest")
@@ -143,6 +146,9 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     get_update_field_batch <- function() {
       "GDAupdateFieldBatch"
     }
+
+    # NOTE: End of model specific code
+    # ===============================================================================
 
     get_opti_result <- function() {
       opti_result()$parameter
@@ -492,11 +498,12 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     # Batch analysis
     # ===============================================================================
     setup_batch_done <- reactiveVal(FALSE)
-    result_val_batch <- reactiveValues(result = NULL, result_splitted = NULL)
     batch_results_created <- reactiveVal(FALSE)
     cancel_batch_clicked <- reactiveVal(FALSE)
     num_rep_batch <- reactiveVal()
     stdout <- reactiveVal(NULL)
+    task_queue <- reactiveVal(NULL)
+    result_batch <- reactiveVal()
 
     batch_message <-function(message) {
       session$sendCustomMessage(
@@ -519,6 +526,18 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         length(df_list()) > 0,
         "The dataset list seems to be empty. Please upload a file"
       )
+      rwn( # TODO: update also other server code
+        !is_integer(input$NumCores),
+        "Please provide an integer entry for number of cores"
+      )
+    }
+
+    get_num_core <- function() {
+      res <- convert_num_to_int(input$NumCores)
+      if(res == 0) {
+        res <- 1
+      }
+      return(res)
     }
 
     observeEvent(input$Start_Batch, {
@@ -537,6 +556,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       ngen <- create_ngen()
       topo <- create_topology()
       et <- create_error_threshold()
+      num_cores <- get_num_core()
       # check seed case
       seed <- input$Seed
       num_rep <- as.integer(input$NumRepDataset)
@@ -547,7 +567,8 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         seed_origin <- seed
       }
       # clear everything
-      stdout (NULL)
+      stdout(NULL)
+      result_batch(NULL)
       invalid_time(1100)
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
@@ -563,10 +584,12 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       })
 
       size <- length(df_list()) * num_rep
-      stdout(character(size))
-      request_cores(size, session$token)
+      if (num_cores > size) {
+        num_cores <- size
+      }
+      stdout(character(num_cores))
+      request_cores(num_cores, session$token)
       nclicks(nclicks() + 1)
-      process_list <- vector("list", size)
       seeds <- numeric(size)
       seeds_from <- 1:1e6
       session$sendCustomMessage(
@@ -574,6 +597,7 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         list(message = "Initializing...")
       )
 
+      # 1. create seeds in loop
       for (i in seq_len(size)) {
         if (seed_case == 1) {
           seed <- sample(seeds_from, 1)
@@ -584,35 +608,57 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
             seed <- sample(seeds_from, 1)
           }
         } else if (seed_case == 2) {
-            seed <- seed
+          seed <- seed # TODO: check is this correct
         }
         seeds[i] <- seed
-        process_list[[i]] <- callr::r_bg(
-          function(case, lb, ub, df, ap,
-                   seed, npop, ngen, Topology, errorThreshold) {
-            res <- tsf::opti(
-              case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold
-            )
-            return(res)
-          },
-          args = list(
-            get_Model(), lb, ub, df_list()[[(i - 1) %% length(df_list()) + 1]],
-            additionalParameters, seed, npop, ngen, topo, et
-          )
-        )
       }
 
-      result_val_batch$result <- process_list
+      # 2. Create message lists for each process
+      messages <- character(size)
+      counter_messages <- 1
+      for (i in seq_len(length(df_list()))) {
+        for (j in seq_len(num_rep)) {
+          messages[counter_messages] <-
+            paste0("Dataset = ", i, "; Replicate = ", j)
+          counter_messages <- counter_messages + 1
+        }
+      }
+
+      # 3. Fill task queue
+      groups <- ceiling(1:size / (size / num_cores))
+      dfs <- df_list()
+      if (length(groups) > length(dfs)) {
+        counter <- 1
+        while (length(groups) > length(dfs)) {
+          dfs <- c(dfs, dfs[counter])
+          counter <- counter + 1
+        }
+      }
+      task_queue(TaskQueue$new(
+        get_Model(),
+        lb, ub, dfs,
+        additionalParameters, seeds,
+        npop, ngen, topo, et,
+        messages, num_cores
+      ))
+
+      # 4. assign tasks
+      task_queue()$assign()
+
       setup_batch_done(TRUE)
       NULL
     })
 
     batch_process_done <- function() {
       req(setup_batch_done())
-      req(length(result_val_batch$result) > 0)
-      lapply(result_val_batch$result, function(x) {
-        if (x$is_alive()) req(x$get_status() != "running")
-      })
+      req(!is.null(task_queue()))
+      if (task_queue()$check() &&
+            !task_queue()$queue_empty()) {
+        task_queue()$assign()
+      }
+      if (!task_queue()$queue_empty()) {
+        return(FALSE)
+      }
       invalid_time(invalid_time() + 1000)
       nclicks(0)
       return(TRUE)
@@ -623,7 +669,6 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         cancel_clicked_batch = TRUE
       )
       req(nclicks() != 0)
-      req(!is.null(result_val_batch$result))
       cancel_batch_clicked(TRUE)
     })
 
@@ -631,43 +676,20 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     observe({
       invalidateLater(invalid_time())
       req(nclicks() != 0)
-      req(!is.null(result_val_batch$result))
+      req(!is.null(task_queue()))
+      req(task_queue()$filled)
       # is cancel_batch_clicked
       if (cancel_batch_clicked()) {
+        task_queue()$interrupt()
         setup_batch_done(TRUE)
         cancel_batch_clicked(FALSE)
         nclicks(0)
-        lapply(result_val_batch$result, function(process) {
-          process$interrupt()
-          process$wait()
-        })
-        session$sendCustomMessage(
-          type = get_update_field_batch(),
-          list(message = "")
-        )
         send_and_read_info(paste0("release: ", session$token))
         return(NULL)
       }
-      # check status
-      # NOTE: errors are not printed otherwise screen is full of errors
-      counter_dataset <- 0
-      counter_rep <- 0
-      temp_status <- character(length(result_val_batch$result))
-      for (i in seq_along(temp_status)) {
-        if (((i - 1) %% num_rep_batch()) == 0) {
-          counter_dataset <- counter_dataset + 1
-          counter_rep <- 1
-        } else {
-          counter_rep <- counter_rep + 1
-        }
-        temp_status[i] <- print_status(
-          result_val_batch$result[[i]]$read_output(),
-          counter_dataset,
-          counter_rep,
-          get_Model()
-        )
-      }
-      stdout(format_batch_status(stdout(), temp_status))
+      # NOTE: check status
+      # (errors are not printed otherwise screen is full of errors)
+      stdout(task_queue()$get_status(stdout()))
       bind <- function(a, b) {
         if (is.null(a) && is.null(b)) {
           return("Initialisation")
@@ -691,37 +713,33 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       )
     })
 
-    plot_data <- reactive({
-      values <- try(lapply(result_val_batch$result, function(process) {
-        process$get_result()
-      }))
+    get_data <- reactive({
+      values <- try({
+        task_queue()$seperate_results()
+      })
       if (inherits(values, "try-error")) {
-        result_val_batch$result_splitted <- NULL
         batch_message("")
         print_error("Error in background process")
-      } else {
-        result_val_batch$result_splitted <- seperate_batch_results(values)
       }
-      lapply(result_val_batch$result, function(process) {
-        process$kill()
-      })
+      task_queue()$kill()
       send_and_read_info(paste0("release: ", session$token))
-      result_val_batch$result <- NULL
     })
 
     # observe results
     observe({
       invalidateLater(invalid_time())
       if (batch_process_done() && !batch_results_created()) {
-        plot_data()
+        get_data()
         batch_results_created(TRUE)
         stdout(NULL)
+        values <- task_queue()$results
+        result_batch(values)
         output$batch_data_plot <- renderPlotly({
           entirePlotPlotly(
-            result_val_batch$result_splitted,
-            num_rep_batch(), ncols = 4
+            values
           )
         })
+        task_queue(NULL)
       }
     })
 
@@ -731,13 +749,12 @@ gdaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       },
       content = function(file) {
         req(batch_results_created())
-        req(length(result_val_batch$result_splitted) > 0)
-
+        req(!is.null(result_batch()))
+        values <- result_batch()
         download_batch_file(
           get_Model_capital(),
           file,
-          result_val_batch$result_splitted,
-          num_rep_batch()
+          values
         )
       }
     )

@@ -37,16 +37,15 @@ idaUI <- function(id) {
     ),
     fluidRow(
       box(
-        # TODO: change back to 0
-        textInput(NS(id, "H0"), "Host conc. [M]", value = 1e-6),
-        textInput(NS(id, "D0"), "Dye conc. [M]", value = "1e-6"),
-        textInput(NS(id, "kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "3e6"),
+        textInput(NS(id, "H0"), "Host conc. [M]", value = 0),
+        textInput(NS(id, "D0"), "Dye conc. [M]", value = "0"),
+        textInput(NS(id, "kHD"), HTML("K<sub>a</sub>(HD) [1/M]"), value = "0"),
         box(
           title = "Advanced options",
           collapsible = TRUE, collapsed = TRUE,
           box(
             numericInput(NS(id, "npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "ngen"), "Number of generations", value = 20) #TODO: change back to 1000; Better error message when invalid ngen is set
+            numericInput(NS(id, "ngen"), "Number of generations", value = 1000)
           ),
           box(
             selectInput(NS(id, "topology"), "Topology of particle swarm",
@@ -168,7 +167,7 @@ idaUI <- function(id) {
                   value = 1
                 ),
                 numericInput(NS(id, "NumCores"),
-                  min = 1, max = 20, # NOTE: maybe adapt to number of cores availabel
+                  min = 1, max = 20,
                   "How many cores should be used for the batch analysis?",
                   value = 1
                 ),

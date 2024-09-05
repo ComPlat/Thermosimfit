@@ -129,16 +129,9 @@ combinePlots <- function(p1, p2, p3, index, base_size = 6) {
   return(p)
 }
 
-plotStates <- function(list, num_rep = 1) {
+plotStates <- function(list) {
   base_size <- baseSize()
   list <- list[[1]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
   df <- Reduce(rbind, list)
   groups <- unique(df$dataset)
   plot_list <- lapply(groups, function(x) {
@@ -151,15 +144,8 @@ plotStates <- function(list, num_rep = 1) {
   return(plot_list)
 }
 
-plotParams <- function(list, num_rep = 1, base_size = 12) {
+plotParams <- function(list) {
   list <- list[[2]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
   df <- Reduce(rbind, list)
   data <- data.frame(
     x = rep(df[, 5], 4),
@@ -172,56 +158,33 @@ plotParams <- function(list, num_rep = 1, base_size = 12) {
     ),
     repetition = rep(df$repetition, 4)
   )
-  if (num_rep > 1) {
-    p <- ggplot() +
-      geom_boxplot(
-        data = data,
-        aes(
-          y = y, fill = "Entire data", x = factor(0)
-        )
-      ) +
-      geom_boxplot(
-        data = data,
-        aes(
-          x = factor(x), y = y,
-          group = factor(x),
-          fill = factor(x)
-        )
-      ) +
-      facet_wrap(. ~ names,
-        scales = "free_y",
-        strip.position = "left"
-      ) +
-      xlab(NULL) +
-      ylab(NULL) +
-      theme(
-        panel.spacing = unit(2, "lines"),
-        strip.background = element_blank(),
-        strip.placement = "outside"
-      ) +
-      guides(fill = guide_legend(title = "Datasets"))
-  } else {
-    p <- ggplot() +
-      geom_boxplot(
-        data = data,
-        aes(
-          x = factor(x),
-          y = y,
-          group = names
-        )
-      ) +
-      facet_wrap(~names,
-        scales = "free_y",
-        strip.position = "left"
-      ) +
-      xlab(NULL) +
-      ylab(NULL) +
-      theme(
-        panel.spacing = unit(2, "lines"),
-        strip.background = element_blank(),
-        strip.placement = "outside"
+  p <- ggplot() +
+    geom_boxplot(
+      data = data,
+      aes(
+        y = y, fill = "Entire data", x = factor(0)
       )
-  }
+    ) +
+    geom_boxplot(
+      data = data,
+      aes(
+        x = factor(x), y = y,
+        group = factor(x),
+        fill = factor(x)
+      )
+    ) +
+    facet_wrap(. ~ names,
+      scales = "free_y",
+      strip.position = "left"
+    ) +
+    xlab(NULL) +
+    ylab(NULL) +
+    theme(
+      panel.spacing = unit(2, "lines"),
+      strip.background = element_blank(),
+      strip.placement = "outside"
+    ) +
+    guides(fill = guide_legend(title = "Datasets"))
   p <- addTheme(p)
   p <- p + theme(
     plot.background = element_rect(color = "grey", fill = NA, size = 2)
@@ -229,15 +192,8 @@ plotParams <- function(list, num_rep = 1, base_size = 12) {
   return(p)
 }
 
-plotMetrices <- function(list, num_rep = 1, base_size = 12) {
+plotMetrices <- function(list) {
   list <- list[[3]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
   df <- Reduce(rbind, list)
   data <- data.frame(
     x = rep(df[, 6], 5),
@@ -251,56 +207,33 @@ plotMetrices <- function(list, num_rep = 1, base_size = 12) {
     ),
     repetition = rep(df$repetition, 5)
   )
-  if (num_rep > 1) {
-    p <- ggplot() +
-      geom_boxplot(
-        data = data,
-        aes(
-          y = y, fill = "Entire data", x = factor(0)
-        )
-      ) +
-      geom_boxplot(
-        data = data,
-        aes(
-          x = factor(x), y = y,
-          group = factor(x),
-          fill = factor(x)
-        )
-      ) +
-      facet_wrap(. ~ names,
-        scales = "free_y",
-        strip.position = "left"
-      ) +
-      xlab(NULL) +
-      ylab(NULL) +
-      theme(
-        panel.spacing = unit(2, "lines"),
-        strip.background = element_blank(),
-        strip.placement = "outside"
-      ) +
-      guides(fill = guide_legend(title = "Datasets"))
-  } else {
-    p <- ggplot() +
-      geom_boxplot(
-        data = data,
-        aes(
-          x = factor(x),
-          y = y,
-          group = names
-        )
-      ) +
-      facet_wrap(~names,
-        scales = "free_y",
-        strip.position = "left"
-      ) +
-      xlab(NULL) +
-      ylab(NULL) +
-      theme(
-        panel.spacing = unit(2, "lines"),
-        strip.background = element_blank(),
-        strip.placement = "outside"
+  p <- ggplot() +
+    geom_boxplot(
+      data = data,
+      aes(
+        y = y, fill = "Entire data", x = factor(0)
       )
-  }
+    ) +
+    geom_boxplot(
+      data = data,
+      aes(
+        x = factor(x), y = y,
+        group = factor(x),
+        fill = factor(x)
+      )
+    ) +
+    facet_wrap(. ~ names,
+      scales = "free_y",
+      strip.position = "left"
+    ) +
+    xlab(NULL) +
+    ylab(NULL) +
+    theme(
+      panel.spacing = unit(2, "lines"),
+      strip.background = element_blank(),
+      strip.placement = "outside"
+    ) +
+    guides(fill = guide_legend(title = "Datasets"))
   p <- addTheme(p)
   p <- p + theme(
     plot.background = element_rect(color = "grey", fill = NA, size = 2)

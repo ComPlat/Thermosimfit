@@ -1,4 +1,6 @@
-Running IDA with Host, Dye and KaHD all set to 0 in batch mode results in
-Error: ! Could not evaluate the loss function --> is not shown to user
-
---> The error messages from the callr r_bg have to be catched and reported
+- [x] interrupt partially run batch process (first optimisation not yet finished)
+- [x] interrupt partially run batch process (at least one dataset finished)
+- [x] interrupt batch process within initialisation phase
+- [x] adapt plotting functions
+  * [x] plotly functionality
+  * [x] ggplot functionality

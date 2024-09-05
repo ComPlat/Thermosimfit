@@ -163,6 +163,11 @@ hgUI <- function(id) {
                   "How often should each dataset be analysed (using different seeds)",
                   value = 1
                 ),
+                numericInput(NS(id, "NumCores"),
+                  min = 1, max = 20,
+                  "How many cores should be used for the batch analysis?",
+                  value = 1
+                ),
                 actionButton(NS(id, "Start_Batch"), "Start batch analysis"),
                 actionButton(NS(id, "cancel_Batch"), "Stop optimization"),
                 downloadButton(NS(id, "batch_download"), "Save result of batch analysis"),

@@ -113,15 +113,8 @@ plotHostDyePlotly <- function(df, Dataset) {
   return(p)
 }
 
-plotStatesPlotly <- function(list, num_rep = 1, ncols = 4) {
+plotStatesPlotly <- function(list) {
   list <- list[[1]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
   df <- Reduce(rbind, list)
   groups <- unique(df$dataset)
   plot_list <- lapply(groups, function(x) {
@@ -187,15 +180,8 @@ plotStatesPlotly <- function(list, num_rep = 1, ncols = 4) {
   return(p)
 }
 
-plotParamsPlotly <- function(list, num_rep = 1) {
+plotParamsPlotly <- function(list) {
   list <- list[[2]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
   df <- Reduce(rbind, list)
   data <- data.frame(
     x = rep(df$dataset, 4),
@@ -240,15 +226,8 @@ plotParamsPlotly <- function(list, num_rep = 1) {
   return(p)
 }
 
-plotMetricesPlotly <- function(list, num_rep = 1, base_size = 12) {
+plotMetricesPlotly <- function(list) {
   list <- list[[3]]
-  num_data_sets <- length(list) / num_rep
-  repetitions <- (seq_len(length(list)) - 1) %% num_rep + 1
-  data_sets <- rep(1:num_data_sets, each = num_rep)
-  for (i in seq_along(list)) {
-    list[[i]]$dataset <- data_sets[i]
-    list[[i]]$repetition <- repetitions[i]
-  }
   df <- Reduce(rbind, list)
   data <- data.frame(
     x = rep(df[, 6], 5),
@@ -295,12 +274,12 @@ plotMetricesPlotly <- function(list, num_rep = 1, base_size = 12) {
 
 }
 
-entirePlotPlotly <- function(list, num_rep = 1, ncols = 4) {
-  states <- plotStatesPlotly(list, num_rep, ncols)
-  params <- plotParamsPlotly(list, num_rep)
-  metrices <- plotMetricesPlotly(list, num_rep)
+entirePlotPlotly <- function(list) {
+  states <- plotStatesPlotly(list)
+  params <- plotParamsPlotly(list)
+  metrices <- plotMetricesPlotly(list)
   subplot(states, params, metrices, nrows = 1,
-    shareX = FALSE, titleX = TRUE, titleY = TRUE,
-    widths = c(0.7, 0.15, 0.15),
-  margin = 0.02)
+          shareX = FALSE, titleX = TRUE, titleY = TRUE,
+          widths = c(0.7, 0.15, 0.15),
+          margin = 0.02)
 }

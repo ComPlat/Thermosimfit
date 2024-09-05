@@ -33,6 +33,8 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     cancel_clicked <- reactiveVal(FALSE)
     setup_done <- reactiveVal(FALSE)
 
+    # NOTE: Start of model specific code
+    # ===============================================================================
     check_inputs <- function() {
       rwn(input$H0 != "", "Please enter a value for the Host")
       rwn(input$D0 != "", "Please enter a value for the Dye")
@@ -145,6 +147,8 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     get_update_field_batch <- function() {
       "IDAupdateFieldBatch"
     }
+    # NOTE: End of model specific code
+    # ===============================================================================
 
     get_opti_result <- function() {
       opti_result()$parameter
@@ -494,11 +498,12 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     # Batch analysis
     # ===============================================================================
     setup_batch_done <- reactiveVal(FALSE)
-    result_val_batch <- reactiveValues(result = NULL, result_splitted = NULL)
     batch_results_created <- reactiveVal(FALSE)
     cancel_batch_clicked <- reactiveVal(FALSE)
     num_rep_batch <- reactiveVal()
     stdout <- reactiveVal(NULL)
+    task_queue <- reactiveVal(NULL)
+    result_batch <- reactiveVal()
 
     batch_message <-function(message) {
       session$sendCustomMessage(
@@ -563,6 +568,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       }
       # clear everything
       stdout(NULL)
+      result_batch(NULL)
       invalid_time(1100)
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
@@ -584,7 +590,6 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       stdout(character(num_cores))
       request_cores(num_cores, session$token)
       nclicks(nclicks() + 1)
-      process_list <- vector("list", size)
       seeds <- numeric(size)
       seeds_from <- 1:1e6
       session$sendCustomMessage(
@@ -613,12 +618,13 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       counter_messages <- 1
       for (i in seq_len(length(df_list()))) {
         for (j in seq_len(num_rep)) {
-          messages[counter_messages] <- paste0("Dataset = ", i, "; Replicate = ", j)
+          messages[counter_messages] <-
+            paste0("Dataset = ", i, "; Replicate = ", j)
           counter_messages <- counter_messages + 1
         }
       }
 
-      # 3. split df_list, seed_list and messages by number of cores
+      # 3. Fill task queue
       groups <- ceiling(1:size / (size / num_cores))
       dfs <- df_list()
       if (length(groups) > length(dfs)) {
@@ -628,32 +634,31 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
           counter <- counter + 1
         }
       }
-      dfs <- split(dfs, groups)
-      seeds <- split(seeds, groups)
-      messages <- split(messages, groups)
+      task_queue(TaskQueue$new(
+        get_Model(),
+        lb, ub, dfs,
+        additionalParameters, seeds,
+        npop, ngen, topo, et,
+        messages, num_cores
+      ))
 
-      # 4. create process list by calling call_several_opti_in_bg
-      process_list <- lapply(seq_len(length(dfs)), function(x) {
-        temp_dfs <- dfs[[x]]
-        temp_seeds <- seeds[[x]]
-        temp_messages <- messages[[x]]
-        call_several_opti_in_bg(
-          get_Model(), lb, ub, temp_dfs, additionalParameters,
-          temp_seeds, npop, ngen, topo, et, temp_messages
-        )
-      })
+      # 4. assign tasks
+      task_queue()$assign()
 
-      result_val_batch$result <- process_list
       setup_batch_done(TRUE)
       NULL
     })
 
     batch_process_done <- function() {
       req(setup_batch_done())
-      req(length(result_val_batch$result) > 0)
-      lapply(result_val_batch$result, function(x) {
-        if (x$is_alive()) req(x$get_status() != "running")
-      })
+      req(!is.null(task_queue()))
+      if (task_queue()$check() &&
+            !task_queue()$queue_empty()) {
+        task_queue()$assign()
+      }
+      if (!task_queue()$queue_empty()) {
+        return(FALSE)
+      }
       invalid_time(invalid_time() + 1000)
       nclicks(0)
       return(TRUE)
@@ -664,7 +669,6 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         cancel_clicked_batch = TRUE
       )
       req(nclicks() != 0)
-      req(!is.null(result_val_batch$result))
       cancel_batch_clicked(TRUE)
     })
 
@@ -672,39 +676,20 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     observe({
       invalidateLater(invalid_time())
       req(nclicks() != 0)
-      req(!is.null(result_val_batch$result))
+      req(!is.null(task_queue()))
+      req(task_queue()$filled)
       # is cancel_batch_clicked
       if (cancel_batch_clicked()) {
-        lapply(result_val_batch$result, function(process) {
-          process$interrupt()
-          process$wait()
-        })
-
-        # FIX: press cancel in init phase --> crash
-        # FIX: press cancel like a morron --> crash
-        # FIX: press cancel in two following runs --> crash
-
+        task_queue()$interrupt()
         setup_batch_done(TRUE)
         cancel_batch_clicked(FALSE)
         nclicks(0)
-        session$sendCustomMessage(
-          type = get_update_field_batch(),
-          list(message = "Shutdown process") # TODO: clean up
-        )
         send_and_read_info(paste0("release: ", session$token))
         return(NULL)
       }
-      # check status
-      # NOTE: errors are not printed otherwise screen is full of errors
-      temp_status <- character(length(result_val_batch$result))
-      for (i in seq_along(temp_status)) {
-        # TODO: add core and add progress of core
-        temp_status[i] <- print_status(
-          result_val_batch$result[[i]]$read_output(),
-          get_Model()
-        )
-      }
-      stdout(format_batch_status(stdout(), temp_status))
+      # NOTE: check status
+      # (errors are not printed otherwise screen is full of errors)
+      stdout(task_queue()$get_status(stdout()))
       bind <- function(a, b) {
         if (is.null(a) && is.null(b)) {
           return("Initialisation")
@@ -728,63 +713,33 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       )
     })
 
-    plot_data <- reactive({
+    get_data <- reactive({
       values <- try({
-        res <- list()
-        counter <- 1
-        for (i in seq_along(result_val_batch$result)) {
-          temp <- result_val_batch$result[[i]]$get_result()
-          if (length(temp) == 1) {
-            res[[counter]] <- temp[[1]]
-            counter <- counter + 1
-          } else {
-            for (j in seq_along(temp)) {
-              res[[counter]] <- temp[[j]]
-              counter <- counter + 1
-            }
-          }
-        }
-        res
+        task_queue()$seperate_results()
       })
-
-      values <- Filter(Negate(is.integer), values)
-
-      if (!all(is.list(values))) {
-        result_val_batch$result_splitted <- NULL
+      if (inherits(values, "try-error")) {
         batch_message("")
         print_error("Error in background process")
-      } else if(length(values) == 0) {
-        result_val_batch$result_splitted <- NULL
-        batch_message("")
-        print_error("Error in background process")
-      } else if (inherits(values, "try-error")) {
-        result_val_batch$result_splitted <- NULL
-        batch_message("")
-        print_error("Error in background process")
-      } else {
-        result_val_batch$result_splitted <- seperate_batch_results(values)
       }
-      lapply(result_val_batch$result, function(process) {
-        process$kill()
-      })
+      task_queue()$kill()
       send_and_read_info(paste0("release: ", session$token))
-      result_val_batch$result <- NULL
     })
 
     # observe results
     observe({
       invalidateLater(invalid_time())
       if (batch_process_done() && !batch_results_created()) {
-        plot_data()
+        get_data()
         batch_results_created(TRUE)
         stdout(NULL)
-        req(is.list(result_val_batch$result_splitted))
+        values <- task_queue()$results
+        result_batch(values)
         output$batch_data_plot <- renderPlotly({
           entirePlotPlotly(
-            result_val_batch$result_splitted,
-            num_rep_batch(), ncols = 4
+            values
           )
         })
+        task_queue(NULL)
       }
     })
 
@@ -794,13 +749,12 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       },
       content = function(file) {
         req(batch_results_created())
-        req(length(result_val_batch$result_splitted) > 0)
-
+        req(!is.null(result_batch()))
+        values <- result_batch()
         download_batch_file(
           get_Model_capital(),
           file,
-          result_val_batch$result_splitted,
-          num_rep_batch()
+          values
         )
       }
     )
