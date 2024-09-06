@@ -35,7 +35,7 @@ plotSignalPlotly <- function(df, Dataset) {
       mode = "markers",
       marker = list(size = dotSizePlotly()),
       color = ~factor(repetitions),
-      name = ~paste0("Repetition signal simulated", factor(repetitions)),
+      name = ~paste0("signal simulated Rep.", factor(repetitions)),
       legendgroup = legend_group[i]
     ) %>% layout(margin = 0.015)
   }
@@ -80,7 +80,7 @@ plotFreeDyePlotly <- function(df, Dataset) {
         type = "scatter",
         mode = "markers",
         marker = list(size = dotSizePlotly()),
-        name = ~paste0("Repetition (Dye)", factor(repetitions)),
+        name = ~paste0("Dye Rep.", factor(repetitions)),
         legendgroup = legend_group[i]
       ) %>% layout(margin = 0.015)
   }
@@ -106,7 +106,7 @@ plotHostDyePlotly <- function(df, Dataset) {
       type = "scatter",
       marker = list(size = dotSizePlotly()),
       mode = "markers",
-      name = ~paste0("Repetition (Host-Dye)", factor(repetitions)),
+      name = ~paste0("Host-Dye Rep.", factor(repetitions)),
       legendgroup = legend_group[i]
     ) %>% layout(margin = 0.015)
   }
