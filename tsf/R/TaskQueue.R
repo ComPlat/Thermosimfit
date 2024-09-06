@@ -70,6 +70,7 @@ TaskQueue <- R6::R6Class(
     filled = FALSE,
     interrupted_at = NULL,
     current_opti = 0,
+    progress = 0,
 
     initialize = function(case, lb, ub, dfs,
                           ap, seeds, npop, ngen,
@@ -108,6 +109,7 @@ TaskQueue <- R6::R6Class(
       self$results[[idx_res]]$parameter$dataset <- self$df_reps[[idx]]$df
       self$results[[idx_res]]$metrices$repetition <- self$df_reps[[idx]]$rep
       self$results[[idx_res]]$metrices$dataset <- self$df_reps[[idx]]$df
+      self$progress <- self$progress + 1
     },
 
     assign_task = function() {
@@ -119,10 +121,10 @@ TaskQueue <- R6::R6Class(
       process <- callr::r_bg(
         function(case, lb, ub, df, ap,
                  seed, npop,
-                 ngen, Topology, errorThreshold, messages) {
+                 ngen, topology, error_threshold, messages) {
           res <- tsf::opti(
             case, lb, ub, df, ap, seed,
-            npop, ngen, Topology, errorThreshold, messages
+            npop, ngen, topology, error_threshold, messages
           )
           return(res)
         },
@@ -136,12 +138,19 @@ TaskQueue <- R6::R6Class(
       return(Process$new(process, self$current_opti))
     },
 
+    # TODO: RAM usge is high
+    # TODO: if a process is finished a new task
+    # is first assigned after all processes are finished
     assign = function() {
       if (any(!self$assigned)) {
-        for (i in seq_len(self$num_cores)) {
+        size <- ifelse(self$num_cores > length(which(!self$assigned)),
+                       length(which(!self$assigned)), self$num_cores)
+        for (i in seq_len(size)) {
           if (inherits(self$processes[[i]], "Process")) {
             self$set_results(self$processes[[i]])
-            if (self$processes[[i]]$is_alive()) self$processes[[i]]$kill()
+            if (self$processes[[i]]$is_alive()) {
+              self$processes[[i]]$kill()
+            }
           }
           if (self$queue_empty()) {
             next
@@ -187,12 +196,12 @@ TaskQueue <- R6::R6Class(
     },
 
     get_status = function(stdout) {
-      status <- character(self$num_cores)
+      status <- character(length(self$processes))
       for (i in seq_len(length(self$processes))) {
-        if (self$processes[[i]]$is_alive()) {
+        # if (self$processes[[i]]$is_alive()) {
           status[i] <-
             print_status(self$processes[[i]]$read_output(), self$case)
-        }
+        # }
       }
       return(format_batch_status(stdout, status))
     },
@@ -215,6 +224,25 @@ TaskQueue <- R6::R6Class(
     queue_empty = function() {
       all(self$assigned) &&
         all(sapply(self$processes, function(p) !p$is_alive()))
+    },
+
+    rep_own = function(elem, num) {
+      if (num <= 0) return("")
+      rep(elem, num)
+    },
+
+    get_progress_bar = function() {
+      size <- length(self$assigned)
+      if (self$progress == 0) {
+        pb <- Reduce(paste0, self$rep_own(" ", size))
+        return(paste0("[", pb, "]"))
+      }
+      done <- self$rep_own("=", self$progress)
+      if (length(done) == size) {
+        return(paste0("[", done, "]"))
+      }
+      todo <- self$rep_own(" ", size - length(done))
+      paste0("[", paste0(c(done, todo), collapse = ""), "]")
     }
   )
 )
