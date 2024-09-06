@@ -625,15 +625,8 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       }
 
       # 3. Fill task queue
-      groups <- ceiling(1:size / (size / num_cores))
-      dfs <- df_list()
-      if (length(groups) > length(dfs)) {
-        counter <- 1
-        while (length(groups) > length(dfs)) {
-          dfs <- c(dfs, dfs[counter])
-          counter <- counter + 1
-        }
-      }
+      # TODO: add df idx and num rep info directly and not via messages
+      dfs <- rep(df_list(), each = num_rep)
       task_queue(TaskQueue$new(
         get_Model(),
         lb, ub, dfs,
@@ -672,21 +665,7 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
       cancel_batch_clicked(TRUE)
     })
 
-    # observe status
-    observe({
-      invalidateLater(invalid_time())
-      req(nclicks() != 0)
-      req(!is.null(task_queue()))
-      req(task_queue()$filled)
-      # is cancel_batch_clicked
-      if (cancel_batch_clicked()) {
-        task_queue()$interrupt()
-        setup_batch_done(TRUE)
-        cancel_batch_clicked(FALSE)
-        nclicks(0)
-        send_and_read_info(paste0("release: ", session$token))
-        return(NULL)
-      }
+    update_status <- function() {
       # NOTE: check status
       # (errors are not printed otherwise screen is full of errors)
       stdout(task_queue()$get_status(stdout()))
@@ -707,10 +686,31 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         return("Error")
       })
       req(is.character(m))
+      progress_bar <- task_queue()$get_progress_bar()
+      m <- paste(m, "\n", progress_bar)
       session$sendCustomMessage(
         type = get_update_field_batch(),
         list(message = m)
       )
+    }
+
+
+    # observe status
+    observe({
+      invalidateLater(invalid_time())
+      req(nclicks() != 0)
+      req(!is.null(task_queue()))
+      req(task_queue()$filled)
+      # is cancel_batch_clicked
+      if (cancel_batch_clicked()) {
+        task_queue()$interrupt()
+        setup_batch_done(TRUE)
+        cancel_batch_clicked(FALSE)
+        nclicks(0)
+        send_and_read_info(paste0("release: ", session$token))
+        return(NULL)
+      }
+      update_status()
     })
 
     get_data <- reactive({
@@ -732,6 +732,11 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         get_data()
         batch_results_created(TRUE)
         stdout(NULL)
+        # NOTE: clear status
+        session$sendCustomMessage(
+          type = get_update_field_batch(),
+          list(message = "")
+        )
         values <- task_queue()$results
         result_batch(values)
         output$batch_data_plot <- renderPlotly({

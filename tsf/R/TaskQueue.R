@@ -46,6 +46,7 @@ Process <- R6::R6Class(
   )
 )
 
+# TODO: test edge cases so that no indxe error occur anymore
 TaskQueue <- R6::R6Class(
   "TaskQueue",
   public = list(
@@ -198,10 +199,10 @@ TaskQueue <- R6::R6Class(
     get_status = function(stdout) {
       status <- character(length(self$processes))
       for (i in seq_len(length(self$processes))) {
-        # if (self$processes[[i]]$is_alive()) {
+        if (self$processes[[i]]$is_alive()) { # TODO: can be removed. But maybe slows down code?
           status[i] <-
             print_status(self$processes[[i]]$read_output(), self$case)
-        # }
+        }
       }
       return(format_batch_status(stdout, status))
     },
