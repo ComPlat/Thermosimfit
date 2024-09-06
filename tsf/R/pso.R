@@ -24,8 +24,8 @@
 #'        a neighberhood which contains K neighbours where K is between 0 and 3. From the swarm K neighbours are
 #'        drawn randomly. From the neighberhood the best particle is used for comparison. The neighberhood is
 #'        calculated for each generation.
-#' @param saveSwarm is a logical value defining whether the entire optimization should be saved.
-#' @param runAsShiny is an internal parameter which is used when running the shiny app interface.
+#' @param save_swarm is a logical value defining whether the entire optimization should be saved.
+#' @param run_as_shiny is an internal parameter which is used when running the shiny app interface.
 #' @param add_message is an optional character argument which is printed during optimization
 #' @examples
 #' rosenbrock <- function(parameter, env, Ignore) {
@@ -44,7 +44,7 @@
 #'   0.00001, TRUE, FALSE
 #' )
 pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
-                saveSwarm = FALSE, runAsShiny = FALSE, add_message = "") {
+                save_swarm = FALSE, run_as_shiny = FALSE, add_message = "") {
   stopifnot(length(lb) == length(ub))
   if (length(lb) != length(ub)) {
     stop("length of lb and ub differ")
@@ -97,11 +97,11 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   if (length(global) != 1) {
     stop("global has to be a scalar")
   }
-  if (!is.logical(saveSwarm)) {
-    stop("saveSwarm has to be of type logical")
+  if (!is.logical(save_swarm)) {
+    stop("save_swarm has to be of type logical")
   }
-  if (length(saveSwarm) != 1) {
-    stop("saveSwarm has to be a scalar")
+  if (length(save_swarm) != 1) {
+    stop("save_swarm has to be a scalar")
   }
   if (any(lb > ub)) {
     w <- which(lb > ub)
@@ -151,29 +151,29 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   global_best_vec <- swarm[global_best, ]
   global_best_error <- swarm_bests[global_best]
   swarm_best_params <- swarm
-  K <- 3
+  k <- 3
 
-  correctBelowLB <- function(target, threshold) {
-    for (i in 1:length(target)) {
+  correct_below_lb <- function(target, threshold) {
+    for (i in seq_len(length(target))) {
       if (target[i] < threshold[i]) target[i] <- threshold[i]
     }
     return(target)
   }
 
-  correctAboveUB <- function(target, threshold) {
-    for (i in 1:length(target)) {
+  correct_above_ub <- function(target, threshold) {
+    for (i in seq_len(length(target))) {
       if (target[i] > threshold[i]) target[i] <- threshold[i]
     }
     return(target)
   }
 
   calc_neighberhood <- function() {
-    neighberhood <- matrix(0L, ncol = K, nrow = npop)
+    neighberhood <- matrix(0L, ncol = k, nrow = npop)
     for (i in seq(npop)) {
-      nneighbour <- sample(1:K, 1)
+      nneighbour <- sample(1:k, 1)
       neighbours <- sample(1:npop, nneighbour)
-      if (length(neighbours) < K) {
-        diff <- K - length(neighbours)
+      if (length(neighbours) < k) {
+        diff <- k - length(neighbours)
         neighbours <- c(neighbours, rep(NA, diff))
       }
       neighberhood[i, ] <- neighbours
@@ -182,6 +182,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   }
   neighberhood <- calc_neighberhood()
   convergence_check <- 0
+  no_improvement <- 0
 
   iter <- 1
   while (iter < ngen) {
@@ -189,7 +190,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
       neighberhood <- calc_neighberhood()
     }
 
-    if (saveSwarm) memory[((iter * npop) + 1):((iter + 1) * npop), ] <- swarm
+    if (save_swarm) memory[((iter * npop) + 1):((iter + 1) * npop), ] <- swarm
 
     w <- w_max - iter * (w_max - w_min) / ngen
     cog <- initial_cog - (initial_cog - final_cog) * (iter + 1) / ngen
@@ -211,24 +212,26 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
         soc * runif(1) * (local_best_vec - swarm[i, ])
       swarm[i, ] <- swarm[i, ] + v[i, ]
 
-      swarm[i, ] <- correctBelowLB(swarm[i, ], lb)
-      swarm[i, ] <- correctAboveUB(swarm[i, ], ub)
+      swarm[i, ] <- correct_below_lb(swarm[i, ], lb)
+      swarm[i, ] <- correct_above_ub(swarm[i, ], ub)
 
       error <- loss_fct(swarm[i, ], env)
 
-      if (saveSwarm) error_memory[((iter * npop) + i)] <- error
+      if (save_swarm) error_memory[((iter * npop) + i)] <- error
 
-      if (!is.infinite(error) & !is.na(error) &
-        error < swarm_bests[i]) {
+      if (!is.infinite(error) && !is.na(error) &&
+            error < swarm_bests[i]) {
         swarm_bests[i] <- error
         swarm_best_params[i, ] <- swarm[i, ]
       }
-      if (!is.infinite(error) & !is.na(error) &
-        error < global_best_error) {
+      if (!is.infinite(error) && !is.na(error) &&
+            error < global_best_error) {
         global_best <- i
         global_best_vec <- swarm[i, ]
         global_best_error <- error
-        # convergence_check <- 0
+        no_improvement <- 0
+      } else {
+        no_improvement <- no_improvement + 1
       }
       convergence_check <- convergence_check + 1
     }
@@ -239,20 +242,23 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
     print(iter)
     print(format_scientific(global_best_vec))
     print(format_scientific(global_best_error))
-    if (is.environment(runAsShiny)) {
-      runAsShiny$insilico <- list(
+    if (is.environment(run_as_shiny)) {
+      run_as_shiny$insilico <- list(
         loss_fct(global_best_vec, env, TRUE),
         c(global_best_vec)
       )
     }
 
     if (global_best_error < error_threshold) {
+      if (no_improvement > 1000) {
+        break
+      }
       break
     }
   }
 
   insilico <- loss_fct(global_best_vec, env, TRUE)
-  if (saveSwarm) {
+  if (save_swarm) {
     return(list(
       insilico, c(global_best_vec),
       memory, error_memory
