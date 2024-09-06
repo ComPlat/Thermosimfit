@@ -20,7 +20,7 @@ app$set_inputs(`IDA-ngen` = ngen)
 app$set_inputs(`IDA-Seed` = 1234)
 
 app$click("IDA-Start_Opti")
-for(i in 1:30) {
+for (i in 1:30) {
   Sys.sleep(1)
   app$get_html("#IDA-output") |> cat()
   cat("\n")
@@ -75,7 +75,8 @@ app$upload_file(
 app$set_inputs(`IDA-NumRepDataset` = 3)
 app$click("IDA-Start_Batch")
 app$set_inputs(`IDA-ResultPanel` = "Batch processing")
-for(i in 1:30) {
+app$set_inputs(`IDA-NumCores` = 2)
+for(i in 1:200) {
   Sys.sleep(1)
   app$get_html("#IDA-output_Batch") |> cat()
   cat("\n")
@@ -85,23 +86,38 @@ app$click("IDA-cancel_Batch")
 Sys.sleep(5)
 res <- app$get_values()$export
 app$get_screenshot()
+file <- app$get_download("IDA-batch_download")
+file.copy(file, "./resultIDA.xlsx", overwrite = TRUE)
 dev.off()
-
-
-
-# test press cancel sensitivity
-pdf("SensitivityPressCancel.pdf")
-app$click("IDA-Start_Sensi")
-app$set_inputs(`IDA-ResultPanel` = "Sensitivity analysis")
-Sys.sleep(5)
-app$click("IDA-cancel_sense")
-for(i in 1:10) {
-  app$get_screenshot()
-  Sys.sleep(1)
-}
-dev.off()
+# clean up
+app$stop()
 
 # test sensitivity
+
+app <- tsf::runApp(4001)
+app <- AppDriver$new(app)
+app$set_inputs(`Sidebar` = "IDA")
+app$upload_file(
+  upload =
+  "/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/IDA/forKonrad-conc-vs-signal.csv"
+)
+app$set_window_size(2000, 1000)
+app$set_inputs(`IDA-H0` = 1e-6)
+app$set_inputs(`IDA-D0` = 1e-6)
+app$set_inputs(`IDA-kHD` = 3e6)
+ngen <- 10000
+app$set_inputs(`IDA-ngen` = ngen)
+app$set_inputs(`IDA-Seed` = 1234)
+
+app$click("IDA-Start_Opti")
+for (i in 1:30) {
+  Sys.sleep(1)
+  app$get_html("#IDA-output") |> cat()
+  cat("\n")
+}
+app$click("IDA-cancel")
+Sys.sleep(5)
+
 pdf("Sensitivity.pdf")
 app$click("IDA-Start_Sensi")
 app$set_inputs(`IDA-ResultPanel` = "Sensitivity analysis")
@@ -119,8 +135,18 @@ res <- app$get_values()$export
 file <- app$get_download("IDA-sensi_download")
 file.copy(file, "./resultSensitivityIDA.xlsx", overwrite = TRUE)
 dev.off()
+
+# test press cancel sensitivity
+pdf("SensitivityPressCancel.pdf")
+app$click("IDA-Start_Sensi")
+app$set_inputs(`IDA-ResultPanel` = "Sensitivity analysis")
+Sys.sleep(5)
+app$click("IDA-cancel_sense")
+for(i in 1:10) {
+  app$get_screenshot()
+  Sys.sleep(1)
+}
+dev.off()
+
 # clean up
 app$stop()
-
-
-
