@@ -4,4 +4,5 @@
 - [x] adapt plotting functions
   * [x] plotly functionality
   * [x] ggplot functionality
-- [ ] fix error 3 datasets; 5 repetitions; --> params plot shows datasets and metrices plot shows repetitions
+- [x] fix error 3 datasets; 5 repetitions; --> params plot shows datasets and metrices plot shows repetitions
+- [ ] sensitivy is broken FIX: gda
