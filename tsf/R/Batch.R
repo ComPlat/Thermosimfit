@@ -156,9 +156,9 @@ batch <- function(case,
   list <- seperate_batch_results(result)
   list(
     list,
-    plotStates(list, num_rep),
-    plotParams(list, num_rep),
-    plotMetrices(list, num_rep)
+    plotStates(list),
+    plotParams(list),
+    plotMetrices(list)
   )
 }
 

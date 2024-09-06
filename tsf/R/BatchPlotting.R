@@ -148,7 +148,7 @@ plotParams <- function(list) {
   list <- list[[2]]
   df <- Reduce(rbind, list)
   data <- data.frame(
-    x = rep(df[, 5], 4),
+    x = rep(df$dataset, 4),
     y = c(df[, 1], df[, 2], df[, 3], df[, 4]),
     names = c(
       rep(names(df)[1], nrow(df)),
@@ -196,7 +196,7 @@ plotMetrices <- function(list) {
   list <- list[[3]]
   df <- Reduce(rbind, list)
   data <- data.frame(
-    x = rep(df[, 6], 5),
+    x = rep(df$dataset, 5),
     y = c(df[, 1], df[, 2], df[, 3], df[, 4], df[, 5]),
     names = c(
       rep(names(df)[1], nrow(df)),
