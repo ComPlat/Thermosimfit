@@ -5,12 +5,12 @@
 #' @param port is a number defining the port to use.
 #' @rawNamespace import(shiny, except=c(dataTableOutput, renderDataTable, runExample))
 #' @rawNamespace import(shinyWidgets, except=c(alert))
+#' @rawNamespace import(plotly, except=c(last_plot))
 #' @import shinydashboard
 #' @import shinyjs
 #' @import openxlsx
-#' @import future
-#' @import promises
 #' @import DT
+#' @import callr
 #' @examples
 #' \donttest{
 #' tsf::runApp()

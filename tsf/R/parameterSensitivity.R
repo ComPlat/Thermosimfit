@@ -45,7 +45,7 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
 #' @export
 #' @import rootSolve
 #' @import ggplot2
-#' @import sensitivity
+#' @rawNamespace import(sensitivity, except=c(print.src))
 #' @param case is a character describing which system should be investigated. Either:
 #' "dba_host_const", "dba_dye_const", "ida" or "gda".
 #' @param parameters is a numeric vector containing already optimized parameter.

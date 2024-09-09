@@ -8,8 +8,6 @@
 #' @import shinydashboard
 #' @import shinyjs
 #' @import openxlsx
-#' @import future
-#' @import promises
 #' @import DT
 #' @param env is something that is passed to the loss function in addition to the parameters which get optimized
 #' @param lb is a numeric vector defining the lower boundaries of the parameter
@@ -132,21 +130,28 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   memory <- matrix(0, nrow = ngen * npop, ncol = npar)
   error_memory <- numeric(ngen * npop)
 
-  lb <- ifelse(lb == 0, 10^-15, lb)
-  ub <- ifelse(ub == 0, 10^-15, ub)
-  lb <- log(lb)
-  ub <- log(ub)
+  if (any(lb <= 0) || any(ub <= 0)) {
+    for (i in seq(npop)) {
+      swarm[i, ] <- runif(npar, min = lb, max = ub)
+      swarm_errors[i] <- loss_fct(swarm[i, ], env)
+      swarm_bests[i] <- swarm_errors[i]
+    }
+  } else {
+    lb <- ifelse(lb <= 0, 10^-15, lb)
+    ub <- ifelse(ub <= 0, 10^-15, ub)
+    lb <- log(lb)
+    ub <- log(ub)
 
-  for (i in seq(npop)) {
-    swarm[i, ] <- runif(npar, min = lb, max = ub)
-    swarm_errors[i] <- loss_fct(exp(swarm[i, ]), env)
-    swarm_bests[i] <- swarm_errors[i]
+    for (i in seq(npop)) {
+      swarm[i, ] <- runif(npar, min = lb, max = ub)
+      swarm_errors[i] <- loss_fct(exp(swarm[i, ]), env)
+      swarm_bests[i] <- swarm_errors[i]
+    }
+
+    swarm <- exp(swarm)
+    lb <- exp(lb)
+    ub <- exp(ub)
   }
-
-  swarm <- exp(swarm)
-  lb <- exp(lb)
-  ub <- exp(ub)
-
   global_best <- which.min(swarm_bests)
   global_best_vec <- swarm[global_best, ]
   global_best_error <- swarm_bests[global_best]
@@ -220,12 +225,12 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
       if (save_swarm) error_memory[((iter * npop) + i)] <- error
 
       if (!is.infinite(error) && !is.na(error) &&
-            error < swarm_bests[i]) {
+        error < swarm_bests[i]) {
         swarm_bests[i] <- error
         swarm_best_params[i, ] <- swarm[i, ]
       }
       if (!is.infinite(error) && !is.na(error) &&
-            error < global_best_error) {
+        error < global_best_error) {
         global_best <- i
         global_best_vec <- swarm[i, ]
         global_best_error <- error

@@ -100,72 +100,10 @@ seperate_batch_results <- function(list) {
   )
 }
 
-batch <- function(case,
-                  lowerBounds, upperBounds,
-                  path,
-                  additionalParameters,
-                  seed = NULL, npop = 40, ngen = 200, Topology = "random",
-                  errorThreshold = -Inf, num_rep = 1) {
-  # import data
-  list_df <- importDataBatch(path)
-  if (!is.list(list_df)) {
-    return(ErrorClass$new("Could not import data"))
-  }
-  for (i in seq_along(list_df)) {
-    if (!is.data.frame(list_df[[i]])) {
-      return(list_df[[i]])
-    }
-  }
-  # seed case
-  seed_original <- seed
-  seed_from <- 1:1e6
-  # size calculations
-  num_data_sets <- length(list_df)
-  result <- vector("list", length = num_data_sets * num_rep)
-  seeds <- numeric(length = num_data_sets * num_rep)
-  counter <- 1
-
-  # run optimization
-  for (i in seq_len(num_data_sets)) {
-    if (is.null(seed)) {
-      seed <- sample(seed_from, 1)
-    } else {
-      seed <- seed_original
-    }
-    # seeds[counter] <- seed
-    result[[counter]] <- opti(
-      case = case, lowerBounds = lowerBounds, upperBounds = upperBounds,
-      list_df[[i]], additionalParameters, seed = seed, npop = npop, ngen = ngen,
-      Topology = Topology, errorThreshold = errorThreshold
-    )
-    counter <- counter + 1
-    if (num_rep > 1) {
-      for (j in seq_len(num_rep - 1)) {
-        seed <- sample(seed_from, 1)
-        # seeds[counter] <- seed
-        result[[counter]] <- opti(
-          case = case, lowerBounds = lowerBounds, upperBounds = upperBounds,
-          list_df[[i]], additionalParameters, seed = seed, npop = npop, ngen = ngen,
-          Topology = Topology, errorThreshold = errorThreshold
-        )
-        counter <- counter + 1
-      }
-    }
-  }
-
-  list <- seperate_batch_results(result)
-  list(
-    list,
-    plotStates(list),
-    plotParams(list),
-    plotMetrices(list)
-  )
-}
-
 call_several_opti <- function(case, lb, ub,
-                                    df_list, ap, seed_list,
-                                    npop, ngen, topo,
-                                    et, messages, env) {
+                              df_list, ap, seed_list,
+                              npop, ngen, topo,
+                              et, messages, env) {
   env <- new.env()
   env$intermediate_results <- vector("list", length(df_list))
   tryCatch(
@@ -199,8 +137,10 @@ call_several_opti_in_bg <- function(case, lb, ub, df_list, ap,
              seed_list, npop, ngen, topo,
              et, messages) {
       env <- new.env()
-      env$intermediate_results <- lapply(seq_len(length((df_list))),
-        function(x) x)
+      env$intermediate_results <- lapply(
+        seq_len(length((df_list))),
+        function(x) x
+      )
 
       for (i in seq_len(length(df_list))) {
         tryCatch(

@@ -13,8 +13,8 @@ pso(
   npop,
   error_threshold,
   global = FALSE,
-  saveSwarm = FALSE,
-  runAsShiny = FALSE,
+  save_swarm = FALSE,
+  run_as_shiny = FALSE,
   add_message = ""
 )
 }
@@ -40,9 +40,9 @@ a neighberhood which contains K neighbours where K is between 0 and 3. From the 
 drawn randomly. From the neighberhood the best particle is used for comparison. The neighberhood is
 calculated for each generation.}
 
-\item{saveSwarm}{is a logical value defining whether the entire optimization should be saved.}
+\item{save_swarm}{is a logical value defining whether the entire optimization should be saved.}
 
-\item{runAsShiny}{is an internal parameter which is used when running the shiny app interface.}
+\item{run_as_shiny}{is an internal parameter which is used when running the shiny app interface.}
 
 \item{add_message}{is an optional character argument which is printed during optimization}
 }

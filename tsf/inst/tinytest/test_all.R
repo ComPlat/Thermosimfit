@@ -1,5 +1,7 @@
 library(tinytest)
 library(tsf)
+
+# Expect errors
 getError <- function(error) {
   error$message
 }
@@ -10,28 +12,31 @@ f <- function(a, b, c) {
   }
 }
 b <- body(f)[[2]]
-expect_equal( getError(tsf:::getAST(b)), paste0("Error: function ", "for" ," not allowed") )
+expect_equal(getError(tsf:::getAST(b)), paste0("Error: function ", "for", " not allowed"))
 
 path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
-expect_equal( is.data.frame(tsf:::importData(path)), TRUE)
+expect_equal(is.data.frame(tsf:::importData(path)), TRUE)
 path <- paste0(system.file("examples", package = "tsf"), "/ImportFailsHere.txt")
 expect_equal(getError(tsf:::importData(path)), "Could not identify seperator in file")
 
 
 
+# test pso
 rosenbrock <- function(parameter, env, Ignore) {
   value <- 0
   for (i in 1:(length(parameter) - 1)) {
-    value <- value + 
-      100*(parameter[i + 1] - parameter[i]^2)^2 +
+    value <- value +
+      100 * (parameter[i + 1] - parameter[i]^2)^2 +
       (1 - parameter[i])^2
   }
   return(value)
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-10, 3), rep(10, 3), rosenbrock, 1000, 40,
-                 0.00001, TRUE, FALSE)
-expect_equal( sum(res[[2]] - rep(1, 3)) < 1e-9, TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-10, 3), rep(10, 3), rosenbrock, 1000, 40,
+  0.00001, TRUE, FALSE
+)
+expect_equal(sum(res[[2]] - rep(1, 3)) < 1e-9, TRUE)
 
 rastrigin <- function(x, env, Ignore) {
   A <- 10
@@ -40,75 +45,91 @@ rastrigin <- function(x, env, Ignore) {
   return(A * n + sum_val)
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-10, 3), rep(10, 3), rastrigin, 1000, 120,
-                 10^-14, TRUE, FALSE)
-expect_equal( sum(res[[2]]) < 1e-9, TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-10, 3), rep(10, 3), rastrigin, 1000, 120,
+  10^-14, TRUE, FALSE
+)
+expect_equal(sum(res[[2]]) < 1e-9, TRUE)
 
 
 sphere <- function(x, env, Ignore) { # x = (0, 0, ... 0)
   return(sum(x^2))
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-10, 3), rep(10, 3), sphere, 1000, 120,
-                 10^-14, TRUE, FALSE)
-expect_equal( sum(res[[2]]) < 1e-9, TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-10, 3), rep(10, 3), sphere, 1000, 120,
+  10^-14, TRUE, FALSE
+)
+expect_equal(sum(res[[2]]) < 1e-9, TRUE)
 
 ackley <- function(x, env, Ignore) { # x = (0, 0, ... 0)
   n <- length(x)
   sum1 <- sum(x^2)
   sum2 <- sum(cos(2 * pi * x))
-  return(-20 * exp(-0.2 * sqrt(sum1/n)) - exp(sum2/n) + 20 + exp(1))
+  return(-20 * exp(-0.2 * sqrt(sum1 / n)) - exp(sum2 / n) + 20 + exp(1))
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-10, 3), rep(10, 3), ackley, 6500, 120,
-                 10^-14, TRUE, FALSE) # here the random topology is worse than star but far better than for sphere, rastrigin or rosenbrock
-expect_equal( sum(res[[2]]) < 1e-9, TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-10, 3), rep(10, 3), ackley, 6500, 120,
+  10^-14, TRUE, FALSE
+) # here the random topology is worse than star but far better than for sphere, rastrigin or rosenbrock
+expect_equal(sum(res[[2]]) < 1e-9, TRUE)
 
-michalewicz <- function(xx, env, Ignore) { 
+michalewicz <- function(xx, env, Ignore) {
   # 2D global min = -1.8013 at x(2.2, 1.57)
-  m = 10
+  m <- 10
   ii <- c(1:length(xx))
-  sum <- sum(sin(xx) * (sin(ii*xx^2/pi))^(2*m))
+  sum <- sum(sin(xx) * (sin(ii * xx^2 / pi))^(2 * m))
   y <- -sum
   return(y)
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(0, 2), rep(5, 2), michalewicz, 1200, 120,
-                 -Inf, TRUE, FALSE) 
-expect_equal( sum(res[[2]] - c(2.2, 1.57)) < 1e-2 , TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(0, 2), rep(5, 2), michalewicz, 1200, 120,
+  -Inf, TRUE, FALSE
+)
+expect_equal(sum(res[[2]] - c(2.2, 1.57)) < 1e-2, TRUE)
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(0, 2), rep(5, 2), michalewicz, 1200, 120,
-                 -Inf, FALSE, FALSE) 
-expect_equal( sum(res[[2]] - c(2.2, 1.57)) < 1e-2 , TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(0, 2), rep(5, 2), michalewicz, 1200, 120,
+  -Inf, FALSE, FALSE
+)
+expect_equal(sum(res[[2]] - c(2.2, 1.57)) < 1e-2, TRUE)
 
 schwefel_222 <- function(x, env, Ignore) { # x = (0, 0, ... 0)
   return(max(abs(x)))
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-10, 2), rep(10, 2), schwefel_222, 2200, 80,
-                 1e-14, TRUE, FALSE) 
-expect_equal( sum(abs(res[[2]])) < 1e-12 , TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-10, 2), rep(10, 2), schwefel_222, 2200, 80,
+  1e-14, TRUE, FALSE
+)
+expect_equal(sum(abs(res[[2]])) < 1e-12, TRUE)
 
 griewank <- function(x, env, Ignore) { # x = (0, 0, ... 0)
   n <- length(x)
-  sum1 <- sum(x^2)/4000
-  prod1 <- prod(cos(x/sqrt(1:n)))
+  sum1 <- sum(x^2) / 4000
+  prod1 <- prod(cos(x / sqrt(1:n)))
   return(sum1 - prod1 + 1)
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-10, 2), rep(10, 2), griewank, 2800, 120,
-                 1e-32, TRUE, FALSE) 
-expect_equal( sum(abs(res[[1]])) < 1e-12 , TRUE) 
-expect_equal( sum(abs(res[[2]])) < 1e-6 , TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-10, 2), rep(10, 2), griewank, 2800, 120,
+  1e-32, TRUE, FALSE
+)
+expect_equal(sum(abs(res[[1]])) < 1e-12, TRUE)
+expect_equal(sum(abs(res[[2]])) < 1e-6, TRUE)
 
 easom <- function(x, env, Ignore) { # global min -1 with x at pi, pi
   return(-cos(x[1]) * cos(x[2]) * exp(-((x[1] - pi)^2 + (x[2] - pi)^2)))
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-10, 2), rep(10, 2), easom, 2800, 120,
-                 -1, TRUE, FALSE) 
-expect_equal( sum(res[[1]] + 1) < 1e-12 , TRUE) 
-expect_equal( sum(abs(res[[2]]) - c(pi, pi)) < 1e-6 , TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-10, 2), rep(10, 2), easom, 2800, 120,
+  -1, TRUE, FALSE
+)
+expect_equal(sum(res[[1]] + 1) < 1e-12, TRUE)
+expect_equal(sum(abs(res[[2]]) - c(pi, pi)) < 1e-6, TRUE)
 
 egg_holder <- function(xx, env, Ignore) {
   # Global Minimum: f(x)≈−959.6407f(x)≈−959.6407 at x=(512,404.2319)x=(512,404.2319)
@@ -120,17 +141,22 @@ egg_holder <- function(xx, env, Ignore) {
   return(y)
 }
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-512, 2), rep(512, 2), egg_holder, 2800, 120,
-                 -959, FALSE, FALSE) 
-expect_equal( sum(res[[1]] + 1) < 1e-12 , TRUE) 
-expect_equal( sum(abs(res[[2]]) - c(512.404, 404.2319)) < 1e-6 , TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-512, 2), rep(512, 2), egg_holder, 2800, 120,
+  -959, FALSE, FALSE
+)
+expect_equal(sum(res[[1]] + 1) < 1e-12, TRUE)
+expect_equal(sum(abs(res[[2]]) - c(512.404, 404.2319)) < 1e-6, TRUE)
 set.seed(1234)
-res <- tsf:::pso(new.env(), rep(-512, 2), rep(512, 2), egg_holder, 2800, 120,
-                 -959, TRUE, FALSE) 
-expect_equal( sum(res[[1]] + 1) < 1e-12 , TRUE) 
-expect_equal( sum(abs(res[[2]]) - c(512.404, 404.2319)) < 1e-6 , TRUE) 
+res <- tsf:::pso(
+  new.env(), rep(-512, 2), rep(512, 2), egg_holder, 2800, 120,
+  -959, TRUE, FALSE
+)
+expect_equal(sum(res[[1]] + 1) < 1e-12, TRUE)
+expect_equal(sum(abs(res[[2]]) - c(512.404, 404.2319)) < 1e-6, TRUE)
 
 
+# test sensitivity
 test_sensitivity_valid_input <- function() {
   path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
   optimP <- data.frame(80699337.884, 0.000, 1251.928, 0.000)
@@ -148,11 +174,12 @@ test_sensitivity_invalid_case <- function() {
 }
 test_sensitivity_invalid_case()
 
+# test create polynom
 test_createPolynom_valid_input <- function() {
   f <- function() {
-    h + hd + -h0 = 0
-    d + hd -d0 = 0   
-    hd / (h*d) -kd = 0
+    h + hd + -h0 <- 0
+    d + hd - d0 <- 0
+    hd / (h * d) - kd <- 0
   }
   elimVars <- c("h", "d")
   result <- createPolynom(f, elimVars)
@@ -173,9 +200,9 @@ test_createPolynom_invalid_function()
 
 test_createPolynom_invalid_elimVars <- function() {
   f <- function() {
-    h + hd + -h0 = 0
-    d + hd - d0 = 0   
-    hd / (h*d) - kd = 0
+    h + hd + -h0 <- 0
+    d + hd - d0 <- 0
+    hd / (h * d) - kd <- 0
   }
   elimVars <- "not_a_character_vector"
   result <- createPolynom(f, elimVars)
@@ -185,8 +212,8 @@ test_createPolynom_invalid_elimVars()
 
 test_createPolynom_another_valid_input <- function() {
   f <- function() { # x = 0 and y = 2
-    3*y + 2*x - 6 = 0
-    5 * y - 2*x - 10 = 0
+    3 * y + 2 * x - 6 <- 0
+    5 * y - 2 * x - 10 <- 0
   }
   elimVars <- c("y", "x")
   resultX <- createPolynom(f, elimVars)
@@ -196,6 +223,7 @@ test_createPolynom_another_valid_input <- function() {
 }
 test_createPolynom_another_valid_input()
 
+# test loss functions
 test_lossFctHG_valid_input <- function() {
   parameter <- c(0.5, 1, 2, 3)
   env <- new.env()
@@ -233,6 +261,7 @@ test_lossFctGDA_valid_input <- function() {
 }
 test_lossFctGDA_valid_input()
 
+# test opti
 test_hg <- function() {
   path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
   df <- read.csv(path, header = FALSE, sep = "\t")
@@ -246,10 +275,12 @@ test_hg <- function() {
   file <- tempfile(fileext = ".txt")
   write.csv(df, file, quote = FALSE, row.names = FALSE)
   set.seed(1234)
-  res <- tsf::opti("hg", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, env$h0,
-                   40, 100)
-  expect_true(res[[4]]$r2 > 0.99)
-  expect_true( (res[[2]]$IHD - 1000) < 1)
+  res <- tsf::opti(
+    "dba_host_const", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, env$h0,
+    40, 100
+  )
+  expect_true(res[[4]]$R2 > 0.99)
+  expect_true((res[[2]][3] - 1000) < 1)
 }
 test_hg()
 
@@ -268,19 +299,21 @@ test_ida <- function() {
   file <- tempfile(fileext = ".txt")
   write.csv(df, file, quote = FALSE, row.names = FALSE)
   set.seed(1234)
-  res <- tsf::opti("ida", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, c(env$h0, env$d0, env$kd),
-                   40, 150)
-  expect_true(res[[4]]$r2 > 0.99)
-  expect_true( (res[[2]]$IHD - 1000) < 10)
+  res <- tsf::opti(
+    "ida", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, c(env$h0, env$d0, env$kd),
+    40, 150
+  )
+  expect_true(res[[4]]$R2 > 0.99)
+  expect_true((res[[2]][3] - 1000) < 10)
 }
 test_ida()
 
 test_gda <- function() {
   env <- new.env()
   env$h0 <- 1.65
-  env$kd <- 1.7*10^7
+  env$kd <- 1.7 * 10^7
   env$ga0 <- 1.8
-  parameter <- c(1857463,  0, 3456.443,  0)
+  parameter <- c(1857463, 0, 3456.443, 0)
   path <- paste0(system.file("examples", package = "tsf"), "/GDA.txt")
   df <- read.csv(path, header = TRUE, sep = ",")
   env$dye <- df[, 1]
@@ -290,10 +323,43 @@ test_gda <- function() {
   file <- tempfile(fileext = ".txt")
   write.csv(df, file, quote = FALSE, row.names = FALSE)
   set.seed(1234)
-  res <- tsf::opti("gda", c(1, 0, 0, 0), c(10^9, 1, rep(10^6, 2)), file, 
-                   additionalParameters = c(env$h0, env$ga0, env$kd),
-                   40, 175)
-  expect_true(res[[4]]$r2 > 0.99)
-  expect_true( abs(res[[2]]$IHD - 3456) < 100)
+  res <- tsf::opti("gda", c(1, 0, 0, 0), c(10^9, 1, rep(10^6, 2)), file,
+    additionalParameters = c(env$h0, env$ga0, env$kd),
+    40, 175
+  )
+  expect_true(res[[4]]$R2 > 0.99)
+  expect_true(abs(res[[2]][3] - 3456) < 100)
 }
 test_gda()
+
+# tests batch
+test_batch <- function() {
+  path <- paste0(system.file("examples", package = "tsf"), "/IDABatch.csv")
+  lowerBounds <- c(
+    kG = 1000,
+    I0 = 0,
+    IHD = 0,
+    ID = 0
+  )
+  upperBounds <- c(
+    kG = 10^8,
+    I0 = 100,
+    IHD = 10^7,
+    ID = 10^7
+  )
+  additionalParameters <- c(
+    host = 1e-6,
+    dye = 1e-6,
+    kHD = 3e6
+  )
+  res <- tsf::batch(
+    "ida",
+    lowerBounds, upperBounds,
+    path, additionalParameters,
+    ngen = 20,
+    num_cores = 2
+  )
+  lapply(res[[1]], function(x) {
+    expect_true(x[[4]]$R2 > 0.99)
+  })
+}
