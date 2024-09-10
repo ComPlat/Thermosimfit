@@ -68,7 +68,7 @@ print_status <- function(stdcout, model) {
     if (length(temp) == 6) {
       if (model == "ida" || model == "gda") {
         names(temp) <- c("Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
-      } else if (model == "hg" || model == "dba") {
+      } else if (model == "dba_host_const" || model == "dba_dye_const") {
         names(temp) <- c("Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
       }
       temp <- paste(paste0(names(temp), " = ", temp), collapse = "; ")
@@ -76,10 +76,10 @@ print_status <- function(stdcout, model) {
     if (length(temp) == 7) {
       if (model == "ida" || model == "gda") {
         names(temp) <- c("", "Generation", "Ka(HG)", "I(0)", "I(HD)", "I(D)", "Error")
-      } else if (model == "hg" || model == "dba") {
+      } else if (model == "dba_host_const" || model == "dba_dye_const") {
         names(temp) <- c("", "Generation", "Ka(HD)", "I(0)", "I(HD)", "I(D)", "Error")
       }
-      temp <- ifelse(names(temp) != "", paste0(names(temp), " = ",temp), temp)
+      temp <- ifelse(names(temp) != "", paste0(names(temp), " = ", temp), temp)
       temp <- paste(temp, collapse = "; ")
     }
     return(temp)
@@ -135,11 +135,11 @@ format_error <- function(e) {
     return()
   }
   e <- strsplit(e, "\n")[[1]]
-  if(length(e) == 1) {
+  if (length(e) == 1) {
     return(e)
   }
   e_rest <- lapply(e[2:length(e)], function(x) {
-    paste("<br>", x, "</br>") 
+    paste("<br>", x, "</br>")
   })
   e_rest <- Reduce(paste0, e_rest)
   HTML(c(e[[1]], e_rest))
@@ -154,7 +154,8 @@ print_error <- function(e) {
     return()
   }
   showNotification(format_error(e),
-    type = "error", duration = 20)
+    type = "error", duration = 20
+  )
 }
 
 # helper
@@ -476,7 +477,8 @@ download_batch_file <- function(model, file, result_val) {
   for (i in seq_len(length(p1))) {
     p <- p1[[i]]
     f <- temp_files_p1[[i]]
-    ggsave(f, plot = p,
+    ggsave(f,
+      plot = p,
       dpi = 600
     )
     insertImage(wb, "Results", f,
