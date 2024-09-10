@@ -1,3 +1,58 @@
+create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
+                              additionalParameters, seed, npop, ngen,
+                              Topology, errorThreshold, num_rep, num_cores) {
+  # num cores calculation
+  size <- length(list_df) * num_rep
+  if (num_cores > size) {
+    num_cores <- size
+  }
+
+  # seed case and generation of seeds
+  seed_case <- determine_seed_case(seed, num_rep)
+  seed_origin <- NULL
+  if (seed_case == 3) {
+    seed_origin <- seed
+  }
+  seeds <- numeric(size)
+  seeds_from <- 1:1e6
+  for (i in seq_len(size)) {
+    if (seed_case == 1) {
+      seed <- sample(seeds_from, 1)
+    } else if (seed_case == 3) {
+      if (i %in% seq(1, size, num_rep)) {
+        seed <- seed_origin
+      } else {
+        seed <- sample(seeds_from, 1)
+      }
+    } else if (seed_case == 2) {
+      seed <- seed # TODO: check is this correct
+    }
+    seeds[i] <- seed
+  }
+
+  # create message for each optimization
+  messages <- character(size)
+  counter_messages <- 1
+  for (i in seq_len(length(list_df))) {
+    for (j in seq_len(num_rep)) {
+      messages[counter_messages] <-
+        paste0("Dataset = ", i, "; Replicate = ", j)
+      counter_messages <- counter_messages + 1
+    }
+  }
+
+  # 3. Fill task queue
+  dfs <- rep(list_df, each = num_rep)
+  TaskQueue$new(
+    case,
+    lowerBounds, upperBounds, dfs,
+    additionalParameters, seeds,
+    npop, ngen, Topology, errorThreshold,
+    messages, num_cores
+  )
+}
+
+
 #' Runs a batch of optimization tasks
 #'
 #' @export
@@ -58,59 +113,15 @@ batch <- function(case,
     }
   }
 
-  # num cores calculation
-  size <- length(list_df) * num_rep
-  if (num_cores > size) {
-    num_cores <- size
-  }
-
-  # seed case and generation of seeds
-  seed_case <- determine_seed_case(seed, num_rep)
-  seed_origin <- NULL
-  if (seed_case == 3) {
-    seed_origin <- seed
-  }
-  seeds <- numeric(size)
-  seeds_from <- 1:1e6
-  for (i in seq_len(size)) {
-    if (seed_case == 1) {
-      seed <- sample(seeds_from, 1)
-    } else if (seed_case == 3) {
-      if (i %in% seq(1, size, num_rep)) {
-        seed <- seed_origin
-      } else {
-        seed <- sample(seeds_from, 1)
-      }
-    } else if (seed_case == 2) {
-      seed <- seed # TODO: check is this correct
-    }
-    seeds[i] <- seed
-  }
-
-  # create message for each optimization
-  messages <- character(size)
-  counter_messages <- 1
-  for (i in seq_len(length(list_df))) {
-    for (j in seq_len(num_rep)) {
-      messages[counter_messages] <-
-        paste0("Dataset = ", i, "; Replicate = ", j)
-      counter_messages <- counter_messages + 1
-    }
-  }
-
-  # 3. Fill task queue
-  dfs <- rep(list_df, each = num_rep)
-  tq <- TaskQueue$new(
-    case,
-    lowerBounds, upperBounds, dfs,
-    additionalParameters, seeds,
-    npop, ngen, Topology, errorThreshold,
-    messages, num_cores
-  )
+tq <- create_task_queue(
+    case, lowerBounds, upperBounds, list_df,
+    additionalParameters, seed, npop, ngen,
+    Topology, errorThreshold, num_rep, num_cores
+)
 
   # 4. assign tasks
   tq$assign()
-  old_status <- ""
+  old_status <- character(num_cores)
 
   while (TRUE) {
     new_status <- tq$get_status(old_status)

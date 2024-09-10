@@ -597,6 +597,8 @@ idaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         list(message = "Initializing...")
       )
 
+      # TODO: use function create_task_queue
+
       # 1. create seeds in loop
       for (i in seq_len(size)) {
         if (seed_case == 1) {
