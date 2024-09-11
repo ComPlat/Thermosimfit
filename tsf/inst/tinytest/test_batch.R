@@ -28,9 +28,24 @@ test_batch <- function() {
     num_cores = 2,
     num_rep = 3 # NOTE: thus 6 runs in total
   )
-  lapply(res[[1]], function(x) {
-    expect_true(x[[3]]$R2 > 0.99)
+  metrices <- Reduce(rbind, res[[1]][[3]])
+  trash <- sapply(metrices$R2, function(x) {
+    expect_true(x > 0.99)
   })
+  return()
 }
 
 test_batch()
+
+# test batch gda
+
+# test batch dba host const
+
+# test batch dba dye const
+
+# test batch with invalid:
+#   - path
+#   - model
+#   - additionalParameters
+#   - num_cores
+#   - num_rep

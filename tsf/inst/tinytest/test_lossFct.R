@@ -38,3 +38,4 @@ test_lossFctGDA_valid_input <- function() {
 }
 test_lossFctGDA_valid_input()
 
+# add test for DBA const dye (not hg)

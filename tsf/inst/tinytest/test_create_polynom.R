@@ -20,8 +20,8 @@ test_createPolynom_valid_input()
 test_createPolynom_invalid_function <- function() {
   f <- "not_a_function"
   elimVars <- c("h", "d")
-  result <- createPolynom(f, elimVars)
-  expect_true(inherits(result, "ErrorClass"))
+  result <- try(createPolynom(f, elimVars))
+  expect_true(inherits(result, "try-error"))
 }
 test_createPolynom_invalid_function()
 
@@ -32,8 +32,8 @@ test_createPolynom_invalid_elimVars <- function() {
     hd / (h * d) - kd <- 0
   }
   elimVars <- "not_a_character_vector"
-  result <- createPolynom(f, elimVars)
-  expect_true(inherits(result, "ErrorClass"))
+  result <- try(createPolynom(f, elimVars))
+  expect_true(inherits(result, "try-error"))
 }
 test_createPolynom_invalid_elimVars()
 

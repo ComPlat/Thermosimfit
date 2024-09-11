@@ -142,5 +142,5 @@ server <- function(input, output, session) {
   hgServer("HG", data, data_batch, nclicks)
   dbaServer("DBA", data, data_batch, nclicks)
   idaServer("IDA", data, data_batch, nclicks)
-  gdaServer("GDA", data, data_batch, nclicks)
+  idaServer("GDA", data, data_batch, nclicks)
 }

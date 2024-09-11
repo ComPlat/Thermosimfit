@@ -69,3 +69,10 @@ test_gda <- function() {
 }
 test_gda()
 
+# test opti for DBA const dye (not hg)
+
+# create for each model a test. First create random parameter.
+# Use these parameters in the loss function to create trajectories.
+# Use these trajectories to create a file. Use this file to run opti.
+# Check if the R2 value is greater than 0.99 and the parameter is close to the
+# original parameter.

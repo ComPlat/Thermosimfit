@@ -59,7 +59,7 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
 #'        In case of *gda* a numeric vector of length 3 is expected which contains the concentration of the host, guest and the *khd* parameter.
 #' @param runAsShiny is internally used when running the algorithm from shiny.
-#' @return either an instance of ErrorClass if something went wrong. Otherwise plots showing the sensitivity are returned.
+#' @return a plot showing the sensitivity
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
 #' res <- opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458))
@@ -67,41 +67,41 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
 sensitivity <- function(case, parameters, path, additionalParameters,
                         percentage = NULL, OffsetBoundaries = NULL, runAsShiny = FALSE) {
   if (!is.character(case)) {
-    return(ErrorClass$new("case has to be of type character"))
+    stop("case has to be of type character")
   }
   if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
-    return(ErrorClass$new("case is neither dba_dye_const, dba_host_const, ida or gda"))
+    stop("case is neither dba_dye_const, dba_host_const, ida or gda")
   }
   if (!is.data.frame(parameters)) {
-    return(ErrorClass$new("optimizedParameters have to be of type data.frame"))
+    stop("optimizedParameters have to be of type data.frame")
   }
   if (length(parameters) == 0) {
-    return(ErrorClass$new("optimizedParameters vector seems to be empty"))
+    stop("optimizedParameters vector seems to be empty")
   }
   if (length(parameters) > 4) {
-    return(ErrorClass$new("optimizedParameters vector has more than 4 entries"))
+    stop("optimizedParameters vector has more than 4 entries")
   }
   if (case == "hg" && length(additionalParameters) != 1) {
-    return(ErrorClass$new("additionalParameters have to be of length 1"))
+    stop("additionalParameters have to be of length 1")
   }
   if (case == "ida" && length(additionalParameters) != 3) {
-    return(ErrorClass$new("additionalParameters have to be of length 3"))
+    stop("additionalParameters have to be of length 3")
   }
   if (case == "gda" && length(additionalParameters) != 3) {
-    return(ErrorClass$new("additionalParameters have to be of length 3"))
+    stop("additionalParameters have to be of length 3")
   }
 
   lowerBounds <- NULL
   upperBounds <- NULL
   if (!is.null(percentage) && !is.null(OffsetBoundaries)) {
-    return(ErrorClass$new("percentage and OffserBoundaries cannot be used together"))
+    stop("percentage and OffserBoundaries cannot be used together")
   }
   if (!is.null(percentage)) {
     if (!is.numeric(percentage)) {
-      return(ErrorClass$new("Percentage has to be numeric"))
+      stop("Percentage has to be numeric")
     }
     if (percentage < 0.01) {
-      return(ErrorClass$new("Percentage has to be at least 0.1"))
+      stop("Percentage has to be at least 0.1")
     }
     perturbationFactor <- percentage / 100
     lowerBounds <- parameters - (parameters) * perturbationFactor
@@ -110,17 +110,17 @@ sensitivity <- function(case, parameters, path, additionalParameters,
     lowerBounds <- parameters - OffsetBoundaries
     upperBounds <- parameters + OffsetBoundaries
   } else {
-    return(ErrorClass$new("Neither percentage nor OffsetBoundaries were defined"))
+    stop("Neither percentage nor OffsetBoundaries were defined")
   }
 
   if (!is.character(path) && !is.data.frame(path)) {
-    return(ErrorClass$new("path has to be of type character or a data.frame"))
+    stop("path has to be of type character or a data.frame")
   }
   df <- NULL
   if (!is.data.frame(path)) {
     df <- try(importData(path))
     if (class(df) == "try-error") {
-      return(ErrorClass$new("Could not read file"))
+      stop("Could not read file")
     }
   } else {
     df <- path
@@ -165,9 +165,9 @@ sensitivity <- function(case, parameters, path, additionalParameters,
   tryCatch(expr = {
     sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames, runAsShiny)
   }, interrupt = function(e) {
-    return(ErrorClass$new("Interrputed the calculation of the Sobol indices"))
+    stop("Interrputed the calculation of the Sobol indices")
   }, error = function(e) {
     em <- conditionMessage(e)
-    return(ErrorClass$new(em))
+    return(em)
   })
 }

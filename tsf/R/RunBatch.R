@@ -113,11 +113,11 @@ batch <- function(case,
     }
   }
 
-tq <- create_task_queue(
+  tq <- create_task_queue(
     case, lowerBounds, upperBounds, list_df,
     additionalParameters, seed, npop, ngen,
     Topology, errorThreshold, num_rep, num_cores
-)
+  )
 
   # 4. assign tasks
   tq$assign()
