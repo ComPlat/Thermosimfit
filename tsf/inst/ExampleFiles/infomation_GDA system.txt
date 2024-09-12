@@ -1,0 +1,7 @@
+conc_host: 103 µM
+conc_guest: 1050 µM
+
+I(0) = 341
+I(D) = 1.26E+07
+
+Ka(HD) = 1.81E+02

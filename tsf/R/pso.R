@@ -130,7 +130,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
   memory <- matrix(0, nrow = ngen * npop, ncol = npar)
   error_memory <- numeric(ngen * npop)
 
-  if (any(lb <= 0) || any(ub <= 0)) {
+  if (any(lb < 0) || any(ub < 0)) {
     for (i in seq(npop)) {
       swarm[i, ] <- runif(npar, min = lb, max = ub)
       swarm_errors[i] <- loss_fct(swarm[i, ], env)

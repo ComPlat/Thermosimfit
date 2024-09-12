@@ -36,7 +36,7 @@ In case of \emph{gda} a numeric vector of length 3 is expected which contains th
 \item{runAsShiny}{is internally used when running the algorithm from shiny.}
 }
 \value{
-either an instance of ErrorClass if something went wrong. Otherwise plots showing the sensitivity are returned.
+a plot showing the sensitivity
 }
 \description{
 Optimize algebraic systems which describe thermodynamic binding systems

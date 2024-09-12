@@ -23,7 +23,7 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
     }
     lossFct(p, env, FALSE)
   }
-  x <- sobol(model = sobolFun, X1 = X1, X2 = X2, order = 2, nboot = 100)
+  x <- sensitivity::sobol(model = sobolFun, X1 = X1, X2 = X2, order = 2, nboot = 100)
   pl <- ggplot(x)
   xBreaks <- layer_scales(pl)$x$break_positions()
   xLabels <- layer_scales(pl)$x$limits

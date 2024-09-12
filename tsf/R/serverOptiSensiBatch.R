@@ -1,5 +1,4 @@
-
-dbaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
+server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) {
   df <- reactive({df_reactive$df})
   df_list <- reactive({df_list_reactive$data_frames})
   moduleServer(id, function(input, output, session) {
@@ -35,66 +34,223 @@ dbaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     # NOTE: Start of model specific code
     # ===============================================================================
     check_inputs <- function() {
-      rwn(input$D0 != "", "Please enter a value for the Dye")
-      rwn(!is.na(input$npop),
-        "Please enter a value for number of particles")
-      rwn(!is.na(input$ngen),
-        "Please enter a value for the number of generations")
-      rwn(!is.na(input$threshold),
-        "Please enter a value for the error threshold")
-      rwn(input$kHD_lb != "",
-        "Please enter a value for the lower boundary of KaHD")
-      rwn(input$kHD_ub != "",
-        "Please enter a value for the upper boundary of KaHD")
-      rwn(input$IHD_lb != "",
-        "Please enter a value for the lower boundary of I(HD)")
-      rwn(input$IHD_ub != "",
-        "Please enter a value for the upper boundary of I(HD)")
-      rwn(input$ID_lb != "",
-        "Please enter a value for the lower boundary of I(D)")
-      rwn(input$ID_ub != "",
-        "Please enter a value for the upper boundary of I(D)")
-      rwn(input$I0_lb != "",
-        "Please enter a value for the lower boundary of I(0)")
-      rwn(input$I0_ub != "",
-        "Please enter a value for the upper boundary of I(0)")
-      rwn(!is_integer(input$npop),
-        "Please enter an integer value for number of particles")
-      rwn(!is_integer(input$ngen),
-        "Please enter an integer value for number of generations")
+      if (id == "HG") {
+        rwn(input$H0 != "", "Please enter a value for the Host")
+        rwn(!is.na(input$npop),
+          "Please enter a value for number of particles")
+        rwn(!is.na(input$ngen),
+          "Please enter a value for the number of generations")
+        rwn(!is.na(input$threshold),
+          "Please enter a value for the error threshold")
+        rwn(input$kHD_lb != "",
+          "Please enter a value for the lower boundary of KaHD")
+        rwn(input$kHD_ub != "",
+          "Please enter a value for the upper boundary of KaHD")
+        rwn(input$IHD_lb != "",
+          "Please enter a value for the lower boundary of I(HD)")
+        rwn(input$IHD_ub != "",
+          "Please enter a value for the upper boundary of I(HD)")
+        rwn(input$ID_lb != "",
+          "Please enter a value for the lower boundary of I(D)")
+        rwn(input$ID_ub != "",
+          "Please enter a value for the upper boundary of I(D)")
+        rwn(input$I0_lb != "",
+          "Please enter a value for the lower boundary of I(0)")
+        rwn(input$I0_ub != "",
+          "Please enter a value for the upper boundary of I(0)")
+        rwn(!is_integer(input$npop),
+          "Please enter an integer value for number of particles")
+        rwn(!is_integer(input$ngen),
+          "Please enter an integer value for number of generations")
+      } else if (id == "DBA") {
+        rwn(input$D0 != "", "Please enter a value for the Dye")
+        rwn(!is.na(input$npop),
+          "Please enter a value for number of particles")
+        rwn(!is.na(input$ngen),
+          "Please enter a value for the number of generations")
+        rwn(!is.na(input$threshold),
+          "Please enter a value for the error threshold")
+        rwn(input$kHD_lb != "",
+          "Please enter a value for the lower boundary of KaHD")
+        rwn(input$kHD_ub != "",
+          "Please enter a value for the upper boundary of KaHD")
+        rwn(input$IHD_lb != "",
+          "Please enter a value for the lower boundary of I(HD)")
+        rwn(input$IHD_ub != "",
+          "Please enter a value for the upper boundary of I(HD)")
+        rwn(input$ID_lb != "",
+          "Please enter a value for the lower boundary of I(D)")
+        rwn(input$ID_ub != "",
+          "Please enter a value for the upper boundary of I(D)")
+        rwn(input$I0_lb != "",
+          "Please enter a value for the lower boundary of I(0)")
+        rwn(input$I0_ub != "",
+          "Please enter a value for the upper boundary of I(0)")
+        rwn(!is_integer(input$npop),
+          "Please enter an integer value for number of particles")
+        rwn(!is_integer(input$ngen),
+          "Please enter an integer value for number of generations")
+      } else if (id == "IDA") {
+        rwn(input$H0 != "", "Please enter a value for the Host")
+        rwn(input$D0 != "", "Please enter a value for the Dye")
+        rwn(input$kHD != "", "Please enter a value for KaHD")
+        rwn(!is.na(input$npop),
+          "Please enter a value for number of particles")
+        rwn(!is.na(input$ngen),
+          "Please enter a value for the number of generations")
+        rwn(!is.na(input$threshold),
+          "Please enter a value for the error threshold")
+        rwn(input$kHG_lb != "",
+          "Please enter a value for the lower boundary of KaHG")
+        rwn(input$kHG_ub != "",
+          "Please enter a value for the upper boundary of KaHG")
+        rwn(input$IHD_lb != "",
+          "Please enter a value for the lower boundary of I(HD)")
+        rwn(input$IHD_ub != "",
+          "Please enter a value for the upper boundary of I(HD)")
+        rwn(input$ID_lb != "",
+          "Please enter a value for the lower boundary of I(D)")
+        rwn(input$ID_ub != "",
+          "Please enter a value for the upper boundary of I(D)")
+        rwn(input$I0_lb != "",
+          "Please enter a value for the lower boundary of I(0)")
+        rwn(input$I0_ub != "",
+          "Please enter a value for the upper boundary of I(0)")
+        rwn(!is_integer(input$npop),
+          "Please enter an integer value for number of particles")
+        rwn(!is_integer(input$ngen),
+          "Please enter an integer value for number of generations")
+      } else if(id == "GDA") {
+        rwn(input$H0 != "", "Please enter a value for the Host")
+        rwn(input$G0 != "", "Please enter a value for the Guest")
+        rwn(input$kHD != "", "Please enter a value for KaHD")
+        rwn(!is.na(input$npop),
+          "Please enter a value for number of particles")
+        rwn(!is.na(input$ngen),
+          "Please enter a value for the number of generations")
+        rwn(!is.na(input$threshold),
+          "Please enter a value for the error threshold")
+        rwn(input$kHG_lb != "",
+          "Please enter a value for the lower boundary of KaHG")
+        rwn(input$kHG_ub != "",
+          "Please enter a value for the upper boundary of KaHG")
+        rwn(input$IHD_lb != "",
+          "Please enter a value for the lower boundary of I(HD)")
+        rwn(input$IHD_ub != "",
+          "Please enter a value for the upper boundary of I(HD)")
+        rwn(input$ID_lb != "",
+          "Please enter a value for the lower boundary of I(D)")
+        rwn(input$ID_ub != "",
+          "Please enter a value for the upper boundary of I(D)")
+        rwn(input$I0_lb != "",
+          "Please enter a value for the lower boundary of I(0)")
+        rwn(input$I0_ub != "",
+          "Please enter a value for the upper boundary of I(0)")
+        rwn(!is_integer(input$npop),
+          "Please enter an integer value for number of particles")
+        rwn(!is_integer(input$ngen),
+          "Please enter an integer value for number of generations")
+      }
     }
 
     check_inputs_sensi <- function() { 
-      rwn(input$D0 != "",
-        "Please enter a value for the Dye")
-      rwn(!is_integer(input$sens_bounds),
-        "Please enter an integer value for the sensitivity boundary")
-      rwn(opti_result_created(),
-        "Please run first an optimization") 
+      if (id == "HG") {
+        rwn(input$H0 != "",
+          "Please enter a value for the Host")
+        rwn(!is_integer(input$sens_bounds),
+          "Please enter an integer value for the sensitivity boundary")
+        rwn(opti_result_created(),
+          "Please run first an optimization") 
+      } else if (id == "DBA") {
+        rwn(input$D0 != "",
+          "Please enter a value for the Dye")
+        rwn(!is_integer(input$sens_bounds),
+          "Please enter an integer value for the sensitivity boundary")
+        rwn(opti_result_created(),
+          "Please run first an optimization") 
+      } else if (id == "IDA") {
+        rwn(input$H0 != "",
+          "Please enter a value for the Host")
+        rwn(input$D0 != "",
+          "Please enter a value for the Dye")
+        rwn(input$kHD != "",
+          "Please enter a value for KaHD")
+        rwn(!is_integer(input$sens_bounds),
+          "Please enter an integer value for the sensitivity boundary")
+        rwn(opti_result_created(),
+          "Please run first an optimization") 
+      } else if (id == "GDA") {
+        rwn(input$H0 != "",
+          "Please enter a value for the Host")
+        rwn(input$G0 != "",
+          "Please enter a value for the Guest")
+        rwn(input$kHD != "",
+          "Please enter a value for KaHD")
+        rwn(!is_integer(input$sens_bounds),
+          "Please enter an integer value for the sensitivity boundary")
+        rwn(opti_result_created(),
+          "Please run first an optimization") 
+      }
     }
 
     create_lb <- function() {
-      lb <- convert_all_to_num(
-      "lower boundaries",
-      input$kHD_lb, input$I0_lb, input$IHD_lb, input$ID_lb
-      )
+      lb <- ""
+      if (id == "HG" || id == "DBA") {
+        lb <- convert_all_to_num(
+          "lower boundaries",
+          input$kHD_lb, input$I0_lb, input$IHD_lb, input$ID_lb
+        )
+      } else if (id == "IDA" || id == "GDA") {
+        lb <- convert_all_to_num(
+          "lower boundaries",
+          input$kHG_lb, input$I0_lb, input$IHD_lb, input$ID_lb
+        )
+      }
       return(lb)
     }
 
     create_ub <- function() {
-      ub <- convert_all_to_num(
-      "upper boundaries",
-      input$kHD_ub, input$I0_ub, input$IHD_ub, input$ID_ub
-      )
+      ub <- ""
+      if (id == "HG" || id == "DBA") {
+        ub <- convert_all_to_num(
+          "upper boundaries",
+          input$kHD_ub, input$I0_ub, input$IHD_ub, input$ID_ub
+        )
+      } else if (id == "IDA" || id == "GDA") {
+        ub <- convert_all_to_num(
+          "upper boundaries",
+          input$kHG_ub, input$I0_ub, input$IHD_ub, input$ID_ub
+        )
+      }
       return(ub)
     }
 
     create_additional_parameters <- function() {
-      additionalParameters <- convert_all_to_num(
-      "Additional Parameters",
-      input$D0 
-      )
-      return(additionalParameters)
+      if (id == "HG") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0 
+        )
+        return(additionalParameters)
+      } else if (id == "DBA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$D0 
+        )
+        return(additionalParameters)
+      } else if (id == "IDA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0, input$D0, input$kHD
+        )
+        return(additionalParameters)
+      } else if(id == "GDA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0, input$G0, input$kHD
+        )
+        return(additionalParameters)
+      }
     }
 
     create_npop <- function() {
@@ -118,32 +274,74 @@ dbaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
     }
 
     get_Model <- function() {
-      "dba_dye_const"
+      if (id == "HG") {
+        return("dba_host_const")
+      } else if (id == "DBA") {
+        return("dba_dye_const")
+      } else if (id == "IDA") {
+        return("ida")
+      } else if (id == "GDA") {
+        return("gda")
+      }
     }
 
     get_Model_capital <- function() {
-      "DBA (Dye constant)"
+      if (id == "HG") {
+        return("DBA (Host constant")
+      } else if (id == "DBA") {
+        return("DBA (Dye constant)")
+      } else if (id == "IDA") {
+        return("IDA")
+      } else if (id == "GDA") {
+        return("GDA")
+      }
     }
 
     get_K_param <- function() {
-      "K<sub>a</sub>(HD) [M]"
+      if (id == "HG" || id == "DBA") {
+        return("K<sub>a</sub>(HD) [M]")
+      } else if (id == "IDA" || id == "GDA") {
+        return("K<sub>a</sub>(HG) [M]")
+      }
     }
 
     get_update_field <- function() {
-      "DBAupdateField"
+      if (id == "HG") {
+        return("HGupdateField")
+      } else if (id == "DBA") {
+        return("DBAupdateField")
+      } else if (id == "IDA") {
+        return("IDAupdateField")
+      } else if (id == "GDA") {
+        return("GDAupdateField")
+      }
     }
     
     get_update_field_sense <- function() {
-      "DBAupdateFieldSense"
+      if (id == "HG") {
+        return("HGupdateFieldSense")
+      } else if (id == "DBA") {
+        return("DBAupdateFieldSense")
+      } else if (id == "IDA") {
+        return("IDAupdateFieldSense")
+      } else if (id == "GDA") {
+        return("GDAupdateFieldSense")
+      }
     }
 
     get_update_field_batch <- function() {
-      "DBAupdateFieldBatch"
+      if (id == "HG") {
+        return("HGupdateFieldBatch")
+      } else if (id == "DBA") {
+        return("DBAupdateFieldBatch")
+      } else if (id == "IDA") {
+        return("IDAupdateFieldBatch")
+      } else if (id == "GDA") {
+        return("GDAupdateFieldBatch")
+      }
     }
-
     # NOTE: End of model specific code
     # ===============================================================================
-
 
     get_opti_result <- function() {
       opti_result()$parameter
@@ -591,6 +789,8 @@ dbaServer <- function(id, df_reactive, df_list_reactive, nclicks) {
         type = get_update_field_batch(),
         list(message = "Initializing...")
       )
+
+      # TODO: use function create_task_queue
 
       # 1. create seeds in loop
       for (i in seq_len(size)) {

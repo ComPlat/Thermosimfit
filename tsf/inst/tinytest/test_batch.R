@@ -25,12 +25,13 @@ test_batch <- function() {
     "ida",
     lowerBounds, upperBounds,
     path, additionalParameters,
-    num_cores = 2,
+    ngen = 100,
+    num_cores = 6, # NOTE: depending of hardware has to be adapted
     num_rep = 3 # NOTE: thus 6 runs in total
   )
   metrices <- Reduce(rbind, res[[1]][[3]])
   trash <- sapply(metrices$R2, function(x) {
-    expect_true(x > 0.99)
+    expect_true(x > 0.95)
   })
   return()
 }

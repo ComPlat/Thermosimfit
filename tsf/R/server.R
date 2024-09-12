@@ -139,8 +139,8 @@ server <- function(input, output, session) {
 
   nclicks <- reactiveVal(0)
 
-  hgServer("HG", data, data_batch, nclicks)
-  dbaServer("DBA", data, data_batch, nclicks)
-  idaServer("IDA", data, data_batch, nclicks)
-  idaServer("GDA", data, data_batch, nclicks)
+  server_opti_sensi_batch("HG", data, data_batch, nclicks)
+  server_opti_sensi_batch("DBA", data, data_batch, nclicks)
+  server_opti_sensi_batch("IDA", data, data_batch, nclicks)
+  server_opti_sensi_batch("GDA", data, data_batch, nclicks)
 }

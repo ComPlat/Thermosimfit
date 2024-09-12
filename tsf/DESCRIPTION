@@ -25,7 +25,7 @@ Imports:
   cowplot,
   RColorBrewer,
   plotly
-Suggests: knitr, rmarkdown, tinytest
+Suggests: knitr, rmarkdown, tinytest, shinytest2
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
 Encoding: UTF-8

@@ -1,3 +1,5 @@
+# TODO: replace HG with DBA_CONST_HOST and DBA with DBA_CONST_DYE
+
 # DBA is case DBA with const dye and increasing host
 lossFctDBA <- function(parameter, env, eval = FALSE) {
   hdFct <- function(hd) {
