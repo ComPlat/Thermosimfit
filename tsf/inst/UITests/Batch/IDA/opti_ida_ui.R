@@ -7,7 +7,7 @@ app <- tsf::runApp(4001)
 app <- AppDriver$new(app)
 app$set_inputs(`Sidebar` = "IDA")
 app$upload_file(
-  upload_batch = "./IDA.txt"
+  upload_batch = "/home/konrad/Documents/Thermosimfit/tsf/inst/UITests/Batch/IDA/IDA.txt"
 )
 app$set_window_size(2000, 1000)
 app$set_inputs(`IDA-H0` = 4.3 * 10^-6)
