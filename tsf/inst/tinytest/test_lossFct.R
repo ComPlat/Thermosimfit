@@ -39,3 +39,13 @@ test_lossFctGDA_valid_input <- function() {
 test_lossFctGDA_valid_input()
 
 # add test for DBA const dye (not hg)
+test_lossFctDBA_valid_input <- function() {
+  parameter <- c(0.5, 1, 2, 3)
+  env <- new.env()
+  env$h0 <- 5
+  env$dye <- c(0, 0.2, 0.3)
+  env$signal <- c(1, 2, 3)
+  result <- tsf:::lossFctDBA(parameter, env)
+  expect_true(is.numeric(result))
+}
+test_lossFctDBA_valid_input()

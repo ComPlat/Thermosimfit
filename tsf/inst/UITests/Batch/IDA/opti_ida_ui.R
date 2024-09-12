@@ -2,27 +2,28 @@ library(shinytest2)
 library(tsf)
 
 # run optimization
-pdf("Optimization.pdf")
+pdf("Batch.pdf")
 app <- tsf::runApp(4001)
 app <- AppDriver$new(app)
 app$set_inputs(`Sidebar` = "IDA")
 app$upload_file(
-  upload_batch = "/home/konrad/Documents/Thermosimfit/tsf/inst/UITests/Batch/IDA/IDA.txt"
+  upload_batch =
+    "/home/konrad/Documents/Thermosimfit/tsf/inst/UITests/Batch/IDA/idaBatch.csv"
 )
 app$set_window_size(2000, 1000)
-app$set_inputs(`IDA-H0` = 4.3 * 10^-6)
-app$set_inputs(`IDA-D0` = 6e-6)
-app$set_inputs(`IDA-kHD` = 2.43e08)
+app$set_inputs(`IDA-H0` = 1e-6)
+app$set_inputs(`IDA-D0` = 1e-6)
+app$set_inputs(`IDA-kHD` = 3e6)
 ngen <- 1000
 app$set_inputs(`IDA-ngen` = ngen)
 app$set_inputs(`IDA-kHG_lb` = 10)
-app$set_inputs(`IDA-kHG_ub` = 10^10)
+app$set_inputs(`IDA-kHG_ub` = 10^8)
 app$set_inputs(`IDA-I0_lb` = 0)
-app$set_inputs(`IDA-I0_ub` = 10^10)
+app$set_inputs(`IDA-I0_ub` = 10^8)
 app$set_inputs(`IDA-IHD_lb` = 0)
-app$set_inputs(`IDA-IHD_ub` = 10^10)
+app$set_inputs(`IDA-IHD_ub` = 10^8)
 app$set_inputs(`IDA-ID_lb` = 0)
-app$set_inputs(`IDA-ID_ub` = 10^10)
+app$set_inputs(`IDA-ID_ub` = 10^8)
 app$set_inputs(`IDA-NumRepDataset` = 1)
 app$set_inputs(`IDA-NumCores` = 3)
 
@@ -37,13 +38,8 @@ for (i in 1:30) {
   app$get_screenshot()
 }
 app$click("IDA-cancel_Batch")
-Sys.sleep(30)
-res <- app$get_values()$export
-print(res)
+Sys.sleep(10)
 app$get_screenshot()
-
-print(res)
-
 file <- app$get_download("IDA-batch_download")
 file.copy(file, "./resultIDA.xlsx", overwrite = TRUE)
 

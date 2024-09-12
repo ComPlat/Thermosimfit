@@ -78,7 +78,9 @@ plot_ly(
 
 # Visualize the parameter variance
 # ===============================
+pdf("Variability.pdf")
 boxplot(df$kG)
 boxplot(df$I0)
 boxplot(df$ID)
 boxplot(df$IHD)
+dev.off()

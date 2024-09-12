@@ -1,7 +1,0 @@
-conc_host: 4.3 µM
-conc_dye: 6.0 µM
-
-I(0) = 1329
-I(D) = 1.47E+08
-
-Ka(HD) = 2.43E+08
