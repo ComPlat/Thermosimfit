@@ -6,7 +6,6 @@
 # Signal-0	0.0408218
 # Signal-HD	602000
 # Signal-Dye	0
-setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/GDA")
 library(tsf)
 df <- read.csv("data_GDA-Estradiol-CB7-BE.txt",
   sep = "\t",

@@ -1,8 +1,15 @@
 create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
                               additionalParameters, seed, npop, ngen,
                               Topology, errorThreshold, num_rep, num_cores) {
+  if (num_cores <= 0) {
+    stop("num_cores has to be >= 1")
+  }
   # num cores calculation
   size <- length(list_df) * num_rep
+  if (size <= 0) {
+    stop("Size is <= 0;
+      Is number of datasets or number of replicates <= 0?")
+  }
   if (num_cores > size) {
     num_cores <- size
   }
@@ -102,6 +109,9 @@ batch <- function(case,
                   additionalParameters,
                   seed = NA, npop = 40, ngen = 200, Topology = "random",
                   errorThreshold = -Inf, num_rep = 1, num_cores = 1) {
+  if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
+    stop("case is neither dba_dye_const, dba_host_const, ida or gda")
+  }
   # import data
   list_df <- importDataBatch(path)
   if (!is.list(list_df)) {

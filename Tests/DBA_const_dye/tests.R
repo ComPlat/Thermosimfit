@@ -30,7 +30,8 @@ res <- opti(
   errorThreshold = 0.7
 )
 
-res
+res[[3]]
+stop()
 
 tsf::sensitivity(
   case = "dba_dye_const", parameter = res[[2]],
