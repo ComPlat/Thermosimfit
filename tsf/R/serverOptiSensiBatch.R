@@ -361,7 +361,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
 
     observeEvent(input$Start_Opti, {
       # checks
-      if (nclicks() != 0 ) {
+      if (nclicks() != 0) {
         print_noti("Already running analysis", type = "warning")
         return(NULL)
       }
@@ -376,14 +376,13 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       et <- create_error_threshold()
       seed <- input$Seed
       if (is.na(seed)) seed <- as.numeric(Sys.time())
-     
       # clear everything
       setup_done(FALSE)
       opti_result_created(FALSE)
       process(NULL)
       invalid_time(1100)
       nclicks(nclicks() + 1)
-      opti_message("Initializing...") 
+      opti_message("Initializing...")
 
       # start process
       result <- call_opti_in_bg( get_Model(), lb, ub, df(),
@@ -393,7 +392,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       setup_done(TRUE)
       NULL
     })
-    
+
     process_done <- function() {
       req(setup_done())
       req(length(process()) > 0)
@@ -626,7 +625,12 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       if(class(sensi_process())[[1]] == "r_process") {
         req(!sensi_process()$is_alive())
       }
-      sensi_result(sensi_process()$get_result())
+      # TODO: wrap in try
+      e <- try(sensi_result(sensi_process()$get_result()))
+      if (inherits(e, "try-error")) {
+        sensi_result(NULL)
+        sensi_result_created(FALSE)
+      }
     })
     
     # observe results

@@ -279,3 +279,35 @@ invalid_num_cores <- function() {
   return()
 }
 invalid_num_cores()
+
+# TODO: test need better error message
+invalid_ap <- function() {
+  path <- paste0(system.file("examples", package = "tsf"), "/IDABatch.csv")
+  lowerBounds <- c(
+    kG = 1000,
+    I0 = 0,
+    IHD = 0,
+    ID = 0
+  )
+  upperBounds <- c(
+    kG = 10^8,
+    I0 = 100,
+    IHD = 10^7,
+    ID = 10^7
+  )
+  additionalParameters <- c(
+    host = 1e-6
+  )
+  res <- try(tsf::batch(
+    "ida",
+    lowerBounds, upperBounds,
+    path,
+    additionalParameters,
+    ngen = 100,
+    num_cores = 3,
+    num_rep = 3
+  ))
+  expect_true(class(res) == "try-error")
+  return()
+}
+invalid_ap()
