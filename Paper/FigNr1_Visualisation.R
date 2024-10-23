@@ -1,0 +1,172 @@
+library(ggplot2)
+library(cowplot)
+dotsize <- 0.5
+boxplot_size <- 0.5
+outlier_size <- 0.5
+
+sig_plot <- function(case, path, legend = FALSE) {
+  load(path)
+  seeds <- lapply(result, function(x) x$seed)
+  df <- lapply(seq_len(length(result)), function(idx) {
+    res <- result[[idx]][[1]]
+    res$seed <- seeds[[idx]]
+    return(res)
+  })
+  df <- Reduce(rbind, df)
+
+  df_forward_sim <- lapply(seq_len(length(result)), function(idx) {
+    res <- result[[idx]][[1]]
+    params <- result[[idx]][[2]]
+    ap <- result[[idx]]$additionalParameters
+    res <- tsf:::forward_simulation(
+      case = case,
+      df = res,
+      additionalParameters = ap,
+      parameter = params,
+      n = 100
+    )
+    res$seed <- seeds[[idx]]
+    return(res)
+  })
+  df_forward_sim <- Reduce(rbind, df_forward_sim)
+
+  p_signal <- ggplot() +
+    geom_smooth(
+      data = df_forward_sim,
+      aes(
+        x = df_forward_sim[, 1],
+        y = `Signal simulated`,
+        group = `seed`,
+        colour = "Signal forward sim."
+      ),
+      linewidth = dotsize * 0.4
+    ) +
+    geom_point(
+      data = df,
+      aes(
+        x = df[, 1],
+        y = `Signal measured`,
+        colour = "Signal measured"
+      ),
+      size = dotsize
+    ) +
+    labs(x = names(df)[1]) +
+    scale_colour_manual(values = c("grey", "black", "darkred")) +
+    theme(
+      legend.title = element_blank(),
+      axis.text = element_text(size = 5),
+      axis.title = element_text(size = 8),
+      legend.text = element_text(size = 5),
+      legend.position = "bottom",
+      legend.key.size = unit(0.4, "cm"),
+      legend.key = element_rect(fill = "white")
+    ) +
+    guides(
+      colour = guide_legend(override.aes = list(fill = NA))
+    )
+
+  if (!legend) {
+    p_signal <- p_signal + theme(legend.position = "none")
+  }
+  return(p_signal)
+}
+
+param_plot <- function(path) {
+  load(path)
+  seeds <- lapply(result, function(x) x$seed)
+  parameter <- lapply(seq_len(length(result)), function(idx) {
+    res <- result[[idx]][[2]]
+    res$seed <- seeds[[idx]]
+    return(res)
+  })
+  parameter <- Reduce(rbind, parameter)
+  parameter <- data.frame(
+    seeds = rep(parameter$seed, 4),
+    names = stack(parameter[, 1:4])[, 2],
+    values = stack(parameter[, 1:4])[, 1]
+  )
+  p_parameter <- ggplot(
+    data = parameter,
+    aes(
+      x = "",
+      y = values
+    )
+  ) +
+    geom_boxplot(
+      size = boxplot_size,
+      outlier.size = outlier_size
+    ) +
+    geom_point(size = dotsize) +
+    labs(x = NULL) +
+    labs(y = "Values [1/M] or a.u.") +
+    facet_wrap(. ~ names, scales = "free") +
+    theme(
+      axis.text = element_text(size = 5),
+      axis.title = element_text(size = 8),
+      legend.text = element_text(size = 5),
+      strip.text = element_text(size = 6)
+    )
+}
+empty_plot <- ggplot() +
+  theme_void()
+size_dashes <- 0.25
+
+p_ida <- sig_plot("ida", "IDA_10_different_seeds.RData")
+p_gda <- sig_plot("gda", "GDA_10_different_seeds.RData")
+p_dba <- sig_plot("dba_dye_const", "DBA_10_different_seeds.RData", legend = TRUE)
+legend <- ggpubr::get_legend(p_dba)
+p_dba <- p_dba + theme(legend.position = "none")
+p <- plot_grid(
+  p_dba, empty_plot, p_ida, empty_plot, p_gda,
+  ncol = 5,
+  labels = c("a", "", "b", "", "c"),
+  rel_widths = c(1, 0.05, 1, 0.05, 1)
+)
+p_signal <- plot_grid(p, legend, ncol = 1, rel_heights = c(1, 0.1))
+
+p_signal <- ggdraw(p_signal) +
+  draw_line(
+    x = c(0.33, 0.33), y = c(0, 1),
+    color = "black",
+    linetype = "dashed",
+    size = size_dashes
+  ) +
+  draw_line(
+    x = c(0.66, 0.66),
+    y = c(0, 1),
+    color = "black",
+    linetype = "dashed",
+    size = size_dashes
+  )
+
+p_ida <- param_plot("IDA_10_different_seeds.RData")
+p_gda <- param_plot("GDA_10_different_seeds.RData")
+p_dba <- param_plot("DBA_10_different_seeds.RData")
+p_param <- plot_grid(
+  p_dba, empty_plot, p_ida, empty_plot, p_gda,
+  ncol = 5,
+  rel_widths = c(1, 0.05, 1, 0.05, 1)
+)
+p_param <- ggdraw(p_param) +
+  draw_line(
+    x = c(0.33, 0.33), y = c(0, 1),
+    color = "black",
+    linetype = "dashed",
+    size = size_dashes
+  ) +
+  draw_line(
+    x = c(0.66, 0.66),
+    y = c(0, 1),
+    color = "black",
+    linetype = "dashed",
+    size = 0.25
+  )
+
+p <- plot_grid(p_signal, p_param, nrow = 2)
+ggsave("FigNr1.pdf", p,
+  width = 8, height = 8 * 2 / 3
+)
+ggsave("FigNr1.png", p,
+  width = 8, height = 8 * 2 / 3,
+  bg = "white", dpi = 800
+)

@@ -28,7 +28,8 @@ lossFctDBA <- function(parameter, env, eval = FALSE) {
     if (length(hdRoot) == 0) {
       return(.Machine$double.xmax)
     }
-    if (length(hdRoot) > 1) hdRoot <- hdRoot[length(hdRoot)]
+    # TODO: add check that hd + d = h0 or d0 dependent on case
+    if (length(hdRoot) > 1) hdRoot <- hdRoot[length(hdRoot)] # TODO: check if this is correct
     if (hdRoot > h0) {
       hdRoot <- h0
     } else if (hdRoot > d0) {

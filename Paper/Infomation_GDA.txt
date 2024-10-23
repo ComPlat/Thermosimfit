@@ -1,0 +1,3 @@
+conc_host (Beta_Cyclodexterin): 103 µM
+conc_guest(iso-Propanol): 1050 µM
+Ka(HD) = 2431.14
