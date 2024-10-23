@@ -78,39 +78,5 @@ new_params$errors <- apply(new_params, 1, function(parameter) {
 # ===============================
 df <- new_params[new_params$errors < 0.75, ]
 
-p <- plot_ly(
-  data = df,
-  x = ~kG,
-  y = ~ID,
-  z = ~errors,
-  type = "scatter3d",
-  mode = "markers",
-  marker = list(size = 2)
-) %>%
-  layout(
-    scene = list(
-      xaxis = list(title = list(text = "Ka(HG) [1/M]")),
-      yaxis = list(title = list(text = "I(D) [1/M]")),
-      zaxis = list(title = list(text = "rel. Errors [%]")),
-      camera = list(
-        eye = list(
-          x = 0.6, # rotate around y 0.51
-          y = 2.4, # height of camera 2.4
-          z = 1.2 # depth of campera 1.5
-        )
-      )
-    ),
-    showlegend = FALSE
-  ) %>%
-  add_trace(
-    x = df$kG,
-    y = df$ID,
-    z = df$errors,
-    type = "mesh3d",
-    alphahull = 6,
-    opacity = 0.5,
-    color = "blue"
-  )
-
-save_image(p, file = "IDA.svg")
-save(p, file = "IDA.RData")
+dim(df)
+head(df)

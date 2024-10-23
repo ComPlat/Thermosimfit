@@ -1,4 +1,4 @@
-# NOTE: foreward simulation
+# NOTE: forward simulation
 forward_simulation <- function(case, df, additionalParameters, parameter, n = 100) {
   if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
     stop("case is neither dba_dye_const, dba_host_const, ida or gda")
@@ -30,13 +30,13 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
   lossFct <- tryCatch(
     expr = {
       if (case == "dba_host_const") {
-        lossFctHG
+        forward_dba_host_const
       } else if (case == "dba_dye_const") {
-        lossFctDBA
+        forward_dba_dye_const
       } else if (case == "ida") {
-        lossFctIDA
+        forward_ida
       } else if (case == "gda") {
-        lossFctGDA
+        forward_gda
       }
     },
     error = function(e) {
@@ -47,42 +47,55 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
     }
   )
   var_new <- seq(min(df[, 1]), max(df[, 1]), length.out = n)
-  spline_var <- spline(x = df[, 1], y = df[, 2], xout = var_new)$y
-  df <- data.frame(var = var_new, signal = spline_var)
-  env <- tryCatch(expr = {
-    env <- new.env()
-    if (case == "dba_host_const") {
-      names(df) <- c("dye", "signal")
-      env$dye <- df[, 1]
-      env$signal <- df[, 2]
-      env$h0 <- additionalParameters[1]
-    } else if (case == "dba_dye_const") {
-      names(df) <- c("host", "signal")
-      env$host <- df[, 1]
-      env$signal <- df[, 2]
-      env$d0 <- additionalParameters[1]
-    } else if (case == "ida") {
-      names(df) <- c("guest", "signal")
-      env$ga <- df[, 1]
-      env$signal <- df[, 2]
-      env$h0 <- additionalParameters[1]
-      env$d0 <- additionalParameters[2]
-      env$kd <- additionalParameters[3]
-    } else if (case == "gda") {
-      names(df) <- c("dye", "signal")
-      env$dye <- df[, 1]
-      env$signal <- df[, 2]
-      env$h0 <- additionalParameters[1]
-      env$ga0 <- additionalParameters[2]
-      env$kd <- additionalParameters[3]
-    }
-    env
-  }, error = function(e) {
-    return(NULL)
-  }, interrupt = function(e) {
-    return(NULL)
-  })
+  params <- list()
+  result <- NULL
   parameter <- parameter[1, ] |> as.numeric()
-  res <- lossFct(parameter, env, eval = TRUE)
-  create_data_df(df, list(res), case)
+  if (case == "dba_host_const") {
+    params[[1]] <- parameter[1] # KaHD
+    params[[2]] <- parameter[4] # I(D)
+    params[[3]] <- parameter[3] # I(HD)
+    params[[4]] <- additionalParameters[1] # H0
+    params[[5]] <- var_new # Dye
+    result <- forward_dba_host_const(
+      params[[1]], params[[2]],
+      params[[3]], params[[4]], params[[5]]
+    )
+  } else if (case == "dba_dye_const") {
+    params[[1]] <- parameter[1] # KaHD
+    params[[2]] <- parameter[4] # I(D)
+    params[[3]] <- parameter[3] # I(HD)
+    params[[4]] <- additionalParameters[1] # D0
+    params[[5]] <- var_new # Host
+    result <- forward_dba_dye_const(
+      params[[1]], params[[2]],
+      params[[3]], params[[4]], params[[5]]
+    )
+  } else if (case == "ida") {
+    params[[1]] <- parameter[1] # KaHG
+    params[[2]] <- parameter[4] # I(D)
+    params[[3]] <- parameter[3] # I(HD)
+    params[[4]] <- additionalParameters[1] # H0
+    params[[5]] <- additionalParameters[2] # D0
+    params[[6]] <- additionalParameters[3] # KaHD
+    params[[7]] <- var_new # Guest
+    result <- forward_ida(
+      params[[6]], params[[1]],
+      params[[2]], params[[3]],
+      params[[4]], params[[5]], params[[7]]
+    )
+  } else if (case == "gda") {
+    params[[1]] <- parameter[1] # KaHD
+    params[[2]] <- parameter[4] # I(D)
+    params[[3]] <- parameter[3] # I(HD)
+    params[[4]] <- additionalParameters[1] # H0
+    params[[5]] <- additionalParameters[2] # G0
+    params[[6]] <- additionalParameters[3] # KaHD
+    params[[7]] <- var_new # Dye
+    result <- forward_gda(
+      params[[6]], params[[1]],
+      params[[2]], params[[3]],
+      params[[4]], params[[5]], params[[7]]
+    )
+  }
+  return(result)
 }

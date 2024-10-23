@@ -25,6 +25,7 @@ sig_plot <- function(case, path, legend = FALSE) {
       parameter = params,
       n = 100
     )
+    res$Signal <- res$Signal + params[, 2] # TODO: add I0 not here but in forward_simulation
     res$seed <- seeds[[idx]]
     return(res)
   })
@@ -35,7 +36,7 @@ sig_plot <- function(case, path, legend = FALSE) {
       data = df_forward_sim,
       aes(
         x = df_forward_sim[, 1],
-        y = `Signal simulated`,
+        y = `Signal`,
         group = `seed`,
         colour = "Signal forward sim."
       ),
