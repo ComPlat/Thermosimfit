@@ -1,3 +1,4 @@
+# TODO: write tests
 forward_dba_dye_const <- function(Kd, Id, Ihd, d0, h0_values) {
   valid_h0 <- c()
   Signal_values <- c()

@@ -29,7 +29,7 @@ gda <- function() {
   )
 
   # NOTE: data var column [M]
-  data <- readLines("GDA.txt")
+  data <- readLines("../GDA.txt")
   var <- lapply(data, function(x) {
     strsplit(x, split = "\t")[[1]][1]
   }) |> unlist()
@@ -77,7 +77,7 @@ dba <- function() {
   )
 
   # NOTE: data var column [M]
-  data <- readLines("DBA.txt")
+  data <- readLines("../DBA.txt")
   var <- lapply(data, function(x) {
     strsplit(x, split = "\t")[[1]][1]
   }) |> unlist()
@@ -128,7 +128,7 @@ ida <- function() {
   )
 
   # NOTE: data var column [M]
-  data <- readLines("IDA.txt")
+  data <- readLines("../IDA.txt")
   var <- lapply(data, function(x) {
     strsplit(x, split = "\t")[[1]][1]
   }) |> unlist()

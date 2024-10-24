@@ -59,6 +59,10 @@ create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
   )
 }
 
+# FIX: does not work in local mode
+# For instance if seed is set thatn the warning is
+# created using print_noti which can only be used
+# within a shiny app
 
 #' Runs a batch of optimization tasks
 #'

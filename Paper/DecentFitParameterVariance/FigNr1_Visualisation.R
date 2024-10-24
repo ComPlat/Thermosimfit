@@ -164,10 +164,10 @@ p_param <- ggdraw(p_param) +
   )
 
 p <- plot_grid(p_signal, p_param, nrow = 2)
-ggsave("FigNr1.pdf", p,
+ggsave("../FigNr1.pdf", p,
   width = 8, height = 8 * 2 / 3
 )
-ggsave("FigNr1.png", p,
+ggsave("../FigNr1.png", p,
   width = 8, height = 8 * 2 / 3,
   bg = "white", dpi = 800
 )
