@@ -1,5 +1,4 @@
-library(ggplot2)
-library(cowplot)
+library(parallel)
 
 get_data <- function(path) {
   load(path)
@@ -23,7 +22,7 @@ get_data <- function(path) {
   )
 }
 
-create_single_param_plots <- function(case, params, env, lb, ub) {
+create_df <- function(case, params, env) {
   lossFct <- tryCatch(
     expr = {
       if (case == "dba_host_const") {
@@ -49,26 +48,21 @@ create_single_param_plots <- function(case, params, env, lb, ub) {
     names <- c("Ka(HG) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
   }
 
-  plots <- lapply(1:4, function(idx) {
-    disturbed_param <- seq(
-      params[idx] * 0.5,
-      params[idx] * 2,
-      length.out = 100
-    )
-    errors <- sapply(disturbed_param, function(dp) {
-      parameter <- params
-      parameter[idx] <- dp
-      lossFct(parameter, env, FALSE)
-    })
-    df <- data.frame(disturbed_param = disturbed_param, errors = errors)
-    ggplot(data = df, aes(x = disturbed_param, y = errors)) +
-      geom_point() +
-      labs(x = names[idx], y = "rel. Error")
+  lb <- params * 0.1 # 0.5
+  ub <- params * 3 # 2
+  parameter <- lapply(1:4, function(x) {
+    seq(lb[x], ub[x], length.out = 20) # 15
   })
-  plot_grid(plotlist = plots)
+  grid <- expand.grid(parameter)
+  names(grid) <- names
+  grid$errors <- unlist(mclapply(1:nrow(grid), function(i) {
+    row <- grid[i, ]
+    lossFct(as.numeric(row), env, FALSE)
+  }, mc.cores = detectCores() - 1))
+  return(grid)
 }
 
-plot_dba <- function(path) {
+df_dba <- function(path) {
   data <- get_data(path)
   df <- data$data
   parameter <- data$parameter
@@ -77,14 +71,13 @@ plot_dba <- function(path) {
   env$host <- df[, 1]
   env$signal <- df[, 2]
   env$d0 <- ap[1]
-  create_single_param_plots(
+  create_df(
     "dba_dye_const",
-    parameter, env,
-    data$lb, data$ub
+    parameter, env
   )
 }
 
-plot_ida <- function(path) {
+df_ida <- function(path) {
   data <- get_data(path)
   df <- data$data
   parameter <- data$parameter
@@ -95,14 +88,13 @@ plot_ida <- function(path) {
   env$h0 <- ap[1]
   env$d0 <- ap[2]
   env$kd <- ap[3]
-  create_single_param_plots(
+  create_df(
     "ida",
-    parameter, env,
-    data$lb, data$ub
+    parameter, env
   )
 }
 
-plot_gda <- function(path) {
+df_gda <- function(path) {
   data <- get_data(path)
   df <- data$data
   parameter <- data$parameter
@@ -113,14 +105,20 @@ plot_gda <- function(path) {
   env$h0 <- ap[1]
   env$ga0 <- ap[2]
   env$kd <- ap[3]
-  create_single_param_plots(
+  create_df(
     "gda",
-    parameter, env,
-    data$lb, data$ub
+    parameter, env
   )
 }
 
-p_dba_ip <- plot_dba("../DecentFitParameterVariance/DBA_10_different_seeds.RData")
-p_ida_ip <- plot_ida("../DecentFitParameterVariance/IDA_10_different_seeds.RData")
-p_gda_ip <- plot_gda("../DecentFitParameterVariance/GDA_10_different_seeds.RData")
-save(p_dba_ip, p_ida_ip, p_gda_ip, file = "ErrorsVsImportantParams.RData")
+dba <- df_dba("../DecentFitParameterVariance/DBA_10_different_seeds.RData")
+names(dba) <- c("KaHD", "I0", "IHD", "ID", "errors")
+print("dba done")
+ida <- df_ida("../DecentFitParameterVariance/IDA_10_different_seeds.RData")
+names(ida) <- c("KaHG", "I0", "IHD", "ID", "errors")
+print("ida done")
+gda <- df_gda("../DecentFitParameterVariance/GDA_10_different_seeds.RData")
+names(gda) <- c("KaHG", "I0", "IHD", "ID", "errors")
+print("gda done")
+
+save(dba, ida, gda, file = "DenseGrid.RData")

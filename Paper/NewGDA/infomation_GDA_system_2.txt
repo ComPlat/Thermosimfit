@@ -1,0 +1,6 @@
+conc_host (Beta_Cyclodexterin): 100 µM
+conc_guest(nButanol): 884 µM
+I(0) = 35
+I(D) = 2.65E+06
+Ka(HD) = 2431.14
+Dye (TNS)

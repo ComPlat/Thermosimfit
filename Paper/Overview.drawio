@@ -1,0 +1,113 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.17 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.17">
+  <diagram name="Page-1" id="HnJ3nRGEBLMsVnPNde7O">
+    <mxGraphModel dx="2074" dy="1198" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-27" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="620" width="600" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-21" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="465" width="600" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;fontStyle=1" edge="1" parent="1" source="0JIacsvV9MGdMcNl1dDF-1" target="0JIacsvV9MGdMcNl1dDF-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-1" value="States (Host, Guest or Dye) &amp;amp; Signal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="120" y="290" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontStyle=1" edge="1" parent="1" source="0JIacsvV9MGdMcNl1dDF-2" target="0JIacsvV9MGdMcNl1dDF-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-2" value="Additional Parameters e.g. parameter boundaries" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="280" y="290" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-3" value="Particle swarm optimization" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="280" y="390" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontStyle=1" edge="1" parent="1" source="0JIacsvV9MGdMcNl1dDF-6" target="0JIacsvV9MGdMcNl1dDF-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-6" value="Loss function" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="440" y="290" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-8" value="&lt;span&gt;Initialisation&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="530" y="497" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-13" value="$$&lt;br&gt;\begin{bmatrix}&lt;br&gt;x_{11} &amp;amp; x_{12} &amp;amp; x_{13} &amp;amp; x_{14} \\&lt;br&gt;x_{21} &amp;amp; x_{22} &amp;amp; x_{23} &amp;amp; x_{24} \\&lt;br&gt;\vdots &amp;amp; \vdots &amp;amp; \vdots &amp;amp; \vdots \\&lt;br&gt;x_{40,1} &amp;amp; x_{40,2} &amp;amp; x_{40,3} &amp;amp; x_{40,4}&lt;br&gt;\end{bmatrix}$$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="400" y="497" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="0JIacsvV9MGdMcNl1dDF-14">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="330" y="512" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-14" value="\begin{bmatrix}&lt;br/&gt;u_1 \\&lt;br/&gt;u_2 \\&lt;br/&gt;u_3 \\&lt;br/&gt;u_4&lt;br/&gt;\end{bmatrix}" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="497" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-15" value="\begin{bmatrix}&lt;br/&gt;l_1 \\&lt;br/&gt;l_2 \\&lt;br/&gt;l_3 \\&lt;br/&gt;l_4&lt;br/&gt;\end{bmatrix}" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="497" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-18" value="&lt;b&gt;Boundaries&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="557" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-19" value="&lt;b&gt;Swarm&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="395" y="557" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-22" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="870" y="600" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-26" value="\begin{bmatrix}&lt;br&gt;Row_{10} &amp;amp; Row_{21} &amp;amp; Row_{24}&amp;nbsp; \\&lt;br&gt;Row_{3} &amp;amp; Row_{11} \\&lt;br&gt;\vdots \\&amp;nbsp;&lt;br&gt;Row_{1}&lt;br&gt;\end{bmatrix}" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="225" y="757" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-28" value="&lt;span&gt;Optimization&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="480" y="680" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-29" value="&lt;b&gt;While&lt;/b&gt;&lt;div&gt;&lt;b&gt;&amp;nbsp;Generation &amp;lt; ngen&lt;/b&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="640" width="100" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-30" value="$$&lt;br&gt;\begin{bmatrix}&lt;br&gt;x_{11} &amp;amp; x_{12} &amp;amp; x_{13} &amp;amp; x_{14} \\&lt;br&gt;x_{21} &amp;amp; x_{22} &amp;amp; x_{23} &amp;amp; x_{24} \\&lt;br&gt;\vdots &amp;amp; \vdots &amp;amp; \vdots &amp;amp; \vdots \\&lt;br&gt;x_{40,1} &amp;amp; x_{40,2} &amp;amp; x_{40,3} &amp;amp; x_{40,4}&lt;br&gt;\end{bmatrix}$$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="295" y="947" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-33" value="&lt;span&gt;Calculate neighberhood&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="480" y="797" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-34" value="&lt;b&gt;Update Swarm&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="480" y="937" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="0JIacsvV9MGdMcNl1dDF-35" target="0JIacsvV9MGdMcNl1dDF-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-35" value="Loss function" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="280" y="1062" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-36" value="$$&lt;br&gt;\begin{bmatrix}&lt;br&gt;x_{11} &amp;amp; x_{12} &amp;amp; x_{13} &amp;amp; x_{14} \\&lt;br&gt;x_{21} &amp;amp; x_{22} &amp;amp; x_{23} &amp;amp; x_{24} \\&lt;br&gt;\vdots &amp;amp; \vdots &amp;amp; \vdots &amp;amp; \vdots \\&lt;br&gt;x_{40,1} &amp;amp; x_{40,2} &amp;amp; x_{40,3} &amp;amp; x_{40,4}&lt;br&gt;\end{bmatrix}$$" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="140" y="1077" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-39" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" target="0JIacsvV9MGdMcNl1dDF-35">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="250" y="1092.9302325581393" as="sourcePoint" />
+            <mxPoint x="380" y="1037" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-40" value="\begin{bmatrix}&lt;br&gt;E_1 \\&lt;br&gt;E_2 \\&lt;br&gt;\vdots \\&lt;br&gt;E_{40}&lt;br&gt;\end{bmatrix}" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1077" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-44" value="&lt;b&gt;Evaluate Swarm&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="480" y="1062" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="0JIacsvV9MGdMcNl1dDF-45" target="0JIacsvV9MGdMcNl1dDF-29">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="70" y="1190" />
+              <mxPoint x="70" y="695" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0JIacsvV9MGdMcNl1dDF-45" value="&lt;b&gt;If&amp;nbsp;&lt;/b&gt;&lt;div&gt;&lt;b&gt;best particle error &amp;gt;threshold&lt;/b&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="1130" width="120" height="120" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

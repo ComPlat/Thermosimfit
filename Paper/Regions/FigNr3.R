@@ -3,11 +3,11 @@ library(cowplot)
 load("ContourPlots.RData")
 
 p1 <- plot_grid(
-  p_dba_cp, p_ida_cp,
+  p_dba_cp$plot, p_ida_cp$plot,
   labels = c("a", "b"),
   nrow = 2
 )
-p2 <- plot_grid(p_gda_cp, labels = "c")
+p2 <- plot_grid(p_gda_cp$plot, labels = "c")
 
 ggsave(p1,
   width = 10,

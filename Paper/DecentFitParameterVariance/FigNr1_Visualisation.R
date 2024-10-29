@@ -4,6 +4,15 @@ dotsize <- 0.5
 boxplot_size <- 0.5
 outlier_size <- 0.5
 
+calc_errors <- function(df) {
+  df <- split(df, df$seed)
+  lapply(df, function(x) {
+    signal <- x[, 2]
+    signalInsilico <- x[, 3]
+    return(sum(abs(signal - signalInsilico) / signal))
+  }) |> unlist()
+}
+
 sig_plot <- function(case, path, legend = FALSE) {
   load(path)
   seeds <- lapply(result, function(x) x$seed)
@@ -13,6 +22,20 @@ sig_plot <- function(case, path, legend = FALSE) {
     return(res)
   })
   df <- Reduce(rbind, df)
+
+  errors <- calc_errors(df)
+  errors_df <- data.frame(errors = errors)
+  p_errors <- ggplot() +
+    geom_boxplot(
+      data = errors_df,
+      aes(x = "", y = errors)
+    ) +
+    labs(x = "", y = "rel. Error") +
+    theme(
+      axis.text = element_text(size = 5),
+      axis.title = element_text(size = 5),
+    ) +
+    coord_flip()
 
   df_forward_sim <- lapply(seq_len(length(result)), function(idx) {
     res <- result[[idx]][[1]]
@@ -66,6 +89,12 @@ sig_plot <- function(case, path, legend = FALSE) {
       colour = guide_legend(override.aes = list(fill = NA))
     )
 
+  p_signal <- plot_grid(
+    p_signal, p_errors,
+    nrow = 2,
+    rel_heights = c(1, 0.3)
+  )
+
   if (!legend) {
     p_signal <- p_signal + theme(legend.position = "none")
   }
@@ -108,6 +137,7 @@ param_plot <- function(path) {
       strip.text = element_text(size = 6)
     )
 }
+
 empty_plot <- ggplot() +
   theme_void()
 size_dashes <- 0.25
@@ -164,10 +194,10 @@ p_param <- ggdraw(p_param) +
   )
 
 p <- plot_grid(p_signal, p_param, nrow = 2)
-ggsave("../FigNr1.pdf", p,
+ggsave("FigNr1.pdf", p,
   width = 8, height = 8 * 2 / 3
 )
-ggsave("../FigNr1.png", p,
+ggsave("FigNr1.png", p,
   width = 8, height = 8 * 2 / 3,
   bg = "white", dpi = 800
 )
