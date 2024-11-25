@@ -30,7 +30,7 @@ sig_plot <- function(case, path, legend = FALSE) {
       data = errors_df,
       aes(x = "", y = errors)
     ) +
-    labs(x = "", y = "rel. Error") +
+    labs(x = "", y = "MANE") +
     theme(
       axis.text = element_text(size = 5),
       axis.title = element_text(size = 5),
@@ -75,7 +75,7 @@ sig_plot <- function(case, path, legend = FALSE) {
       size = dotsize
     ) +
     labs(x = names(df)[1]) +
-    scale_colour_manual(values = c("grey", "black", "darkred")) +
+    scale_colour_manual(values = c("grey", "#76acb0", "darkred")) +
     theme(
       legend.title = element_blank(),
       axis.text = element_text(size = 5),

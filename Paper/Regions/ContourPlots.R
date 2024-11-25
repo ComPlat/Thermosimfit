@@ -86,7 +86,7 @@ create_contour_plot <- function(case, params, env, pi) {
     geom_contour_filled(binwidth = 0.5) +
     labs(
       x = names[pi[1]],
-      y = names[pi[2]], fill = "rel. Error interval"
+      y = names[pi[2]], fill = "MANE"
     ) +
     theme(
       legend.position = "bottom",

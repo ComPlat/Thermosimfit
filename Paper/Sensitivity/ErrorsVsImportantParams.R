@@ -63,7 +63,7 @@ create_single_param_plots <- function(case, params, env, lb, ub) {
     df <- data.frame(disturbed_param = disturbed_param, errors = errors)
     ggplot(data = df, aes(x = disturbed_param, y = errors)) +
       geom_point() +
-      labs(x = names[idx], y = "rel. Error")
+      labs(x = names[idx], y = "MANE")
   })
   plot_grid(plotlist = plots)
 }
