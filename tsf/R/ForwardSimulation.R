@@ -18,7 +18,7 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
   if (n > 10000) {
     stop("n has to be smaller than 10000")
   }
-  if (case == "hg" && length(additionalParameters) != 1) {
+  if (case == "hg" && length(additionalParameters) != 1) { # TODO: add check for dba
     stop("additionalParameters have to be of length 1")
   }
   if (case == "ida" && length(additionalParameters) != 3) {
@@ -60,6 +60,7 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
       params[[1]], params[[2]],
       params[[3]], params[[4]], params[[5]]
     )
+    result[, 2] <- result[, 2] + parameter[2]
   } else if (case == "dba_dye_const") {
     params[[1]] <- parameter[1] # KaHD
     params[[2]] <- parameter[4] # I(D)
@@ -70,6 +71,7 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
       params[[1]], params[[2]],
       params[[3]], params[[4]], params[[5]]
     )
+    result[, 2] <- result[, 2] + parameter[2]
   } else if (case == "ida") {
     params[[1]] <- parameter[1] # KaHG
     params[[2]] <- parameter[4] # I(D)
@@ -83,6 +85,7 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
       params[[2]], params[[3]],
       params[[4]], params[[5]], params[[7]]
     )
+    result[, 2] <- result[, 2] + parameter[2]
   } else if (case == "gda") {
     params[[1]] <- parameter[1] # KaHD
     params[[2]] <- parameter[4] # I(D)
@@ -96,6 +99,7 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
       params[[2]], params[[3]],
       params[[4]], params[[5]], params[[7]]
     )
+    result[, 2] <- result[, 2] + parameter[2]
   }
   return(result)
 }

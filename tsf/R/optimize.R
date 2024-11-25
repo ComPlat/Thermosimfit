@@ -215,8 +215,17 @@ opti <- function(case, lowerBounds, upperBounds,
         env, lowerBounds, upperBounds, lossFct, ngen, npop,
         errorThreshold, Topo, FALSE, runAsShiny, add_info
       )
-      df <- create_data_df(df, res, case)
       params <- create_params_df(res, case)
+      forwardResult <- forward_simulation(
+        case, df,
+        additionalParameters, params
+      )
+      df <- create_data_df(df, res, case)
+      df[["Signal simulated"]] <- spline(
+        x = forwardResult[, 1],
+        y = forwardResult[, 2],
+        xout = df[, 1]
+      )$y
       lowerBounds <- correct_names_params(lowerBounds, case)
       upperBounds <- correct_names_params(upperBounds, case)
       additionalParameters <- correct_names_additional_param(
@@ -232,8 +241,17 @@ opti <- function(case, lowerBounds, upperBounds,
     },
     interrupt = function(e) {
       res <- runAsShiny$insilico
-      df <- create_data_df(df, res, case)
       params <- create_params_df(res, case)
+      forwardResult <- forward_simulation(
+        case, df,
+        additionalParameters, params
+      )
+      df <- create_data_df(df, res, case)
+      df[["Signal simulated"]] <- spline(
+        x = forwardResult[, 1],
+        y = forwardResult[, 2],
+        xout = df[, 1]
+      )$y
       lowerBounds <- correct_names_params(lowerBounds, case)
       upperBounds <- correct_names_params(upperBounds, case)
       additionalParameters <- correct_names_additional_param(

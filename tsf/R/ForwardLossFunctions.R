@@ -57,7 +57,6 @@ forward_dba_host_const <- function(Kd, Id, Ihd, h0, d0_values) {
           upper = d0,
           tol = 1e-14,
           Kd = Kd,
-          Kg = Kg,
           h0 = h0,
           d0 = d0
         )$root
@@ -83,9 +82,8 @@ forward_dba_host_const <- function(Kd, Id, Ihd, h0, d0_values) {
       silent = TRUE
     )
   }
-
   results_table <- data.frame(
-    h0 = valid_h0,
+    d0 = valid_d0,
     Signal = Signal_values
   )
 

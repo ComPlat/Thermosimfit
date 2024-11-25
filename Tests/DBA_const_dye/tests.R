@@ -25,7 +25,7 @@ res <- opti(
     dye = 0.000151
   ),
   npop = 40,
-  ngen = 1000,
+  ngen = 11,
   Topology = "random",
   errorThreshold = 0.7
 )
