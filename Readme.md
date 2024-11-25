@@ -1,4 +1,4 @@
-# Optimizing Unknown Parameters in Algebraic Systems for Thermodynamic Bindings
+# Optimizing Thermodynamic Bindings Parameters (in algebraic systems)
 
 This repository contains tools for optimizing unknown parameters in algebraic systems that describe thermodynamic bindings of dyes and guests to a host.
 The package includes a script interface and a Shiny app for convenient usage.
