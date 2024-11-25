@@ -61,5 +61,3 @@ library(remotes)
 remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf", ref = "v1.1") # Stable version
 # remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf") # Development version
 ```
-```
-```
