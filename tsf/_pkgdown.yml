@@ -1,4 +1,5 @@
 url: https://complat.github.io/Thermosimfit/
+destination: ../docs
 template:
   bootstrap: 5
 
