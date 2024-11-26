@@ -3,6 +3,7 @@
 This repository contains tools for optimizing unknown parameters in algebraic systems that describe thermodynamic bindings of dyes and guests to a host.
 The package includes a script interface and a Shiny app for convenient usage.
 
+
 ## Documentation
 
 [Documentation](https://complat.github.io/Thermosimfit/)
