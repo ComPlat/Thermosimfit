@@ -1,7 +1,7 @@
 Package: tsf
 Type: Package
 Title: Fitting algebraic systems describing thermodynamic binding isotherms 
-Version: 0.1
+Version: 0.2
 Date: 2024-02-20
 Author: Krämer Konrad [aut, cre],
 Maintainer: Krämer Konrad <Konrad_kraemer@yahoo.de>
