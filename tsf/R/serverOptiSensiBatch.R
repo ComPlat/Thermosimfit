@@ -769,17 +769,16 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       invalid_time(1100)
       setup_batch_done(FALSE)
       batch_results_created(FALSE)
+      # TODO: check why once renderPlotly is called and other times renderPlot
       output$batch_data_plot <- renderPlotly({
         plot.new()
       })
-
       output$batch_params_plot <- renderPlot({
         plot.new()
       })
       output$batch_metrices_plot <- renderPlot({
         plot.new()
       })
-
       size <- length(df_list()) * num_rep
       if (num_cores > size) {
         num_cores <- size
@@ -892,7 +891,6 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         list(message = m)
       )
     }
-
 
     # observe status
     observe({

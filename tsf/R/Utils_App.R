@@ -160,13 +160,8 @@ print_error <- function(e) {
 
 # helper
 # ========================================================================================
-#' Conversion of expression to numbers
-#' @description converts an expression to a number
-#' @export
-#' @param l is an expression which should be evaluated. If the expression can
-#'        be evaluated to a number the number is returned. Otherwise an error is returned.
-convertToNum <- function(l) {
-  res <- sapply(l, function(x) {
+convertToNum <- function(expr) {
+  res <- sapply(expr, function(x) {
     e <- try(tsf:::getAST(str2lang(x)))
     if (is(e, "ErrorClass")) {
       showNotification(e$message)
@@ -179,7 +174,7 @@ convertToNum <- function(l) {
     }
   })
 
-  res <- sapply(l, function(x) {
+  res <- sapply(expr, function(x) {
     res <- try(eval(parse(text = x)))
     if (inherits(res, "try-error")) {
       showNotification(res)
