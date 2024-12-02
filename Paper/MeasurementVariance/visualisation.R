@@ -15,14 +15,14 @@ extract_best_runs <- function(res) {
   states <- lapply(unique(errors$dataset), function(x) {
     states_subset <- states[states$dataset == x, ]
     errors_subset <- errors[errors$dataset == x, ]
-    errors_subset <- errors_subset[order(errors_subset$MeanSquareError), ][1:50,]
+    errors_subset <- errors_subset[order(errors_subset$MeanSquareError), ][1:50, ]
     states_subset[states_subset$repetition %in% errors_subset$repetition, ]
   })
   states <- Reduce(rbind, states)
   params <- lapply(unique(errors$dataset), function(x) {
     params_subset <- params[params$dataset == x, ]
     errors_subset <- errors[errors$dataset == x, ]
-    errors_subset <- errors_subset[order(errors_subset$MeanSquareError), ][1:50,]
+    errors_subset <- errors_subset[order(errors_subset$MeanSquareError), ][1:50, ]
     params_subset[params_subset$repetition %in% errors_subset$repetition, ]
   })
   params <- Reduce(rbind, params)
@@ -108,19 +108,30 @@ p_ida <- plot_fct("ida_100.RData")
 p_gda <- plot_fct("gda_100.RData")
 p_dba <- p_dba + theme(legend.position = "none")
 p_ida <- p_ida + theme(legend.position = "none")
-p1 <- plot_grid(p_dba, p_ida, p_gda,
+p_gda <- p_gda + theme(
+  legend.position = "inside",
+  legend.position.inside = c(1.15, 0.8)
+)
+p1 <- plot_grid(p_dba, p_ida, p_gda, empty_plot,
   nrow = 1,
+  rel_widths = c(1, 1, 1, 0.3),
   labels = c("a", "b", "c")
 )
+p1
 
 p_dba <- param_plot("dba_100Runs.RData") + theme(legend.position = "none")
 p_ida <- param_plot("ida_100.RData") + theme(legend.position = "none")
 p_gda <- param_plot("gda_100.RData")
-
-p2 <- plot_grid(p_dba, p_ida, p_gda,
+p_gda <- p_gda + theme(
+  legend.position = "inside",
+  legend.position.inside = c(1.17, 0.8)
+)
+p2 <- plot_grid(p_dba, p_ida, p_gda, empty_plot,
   nrow = 1,
+  rel_widths = c(1, 1, 1, 0.3),
   labels = c("d", "e", "f")
 )
+p2
 
 p <- plot_grid(p1, p2, nrow = 2)
 
