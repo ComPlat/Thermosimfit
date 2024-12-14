@@ -40,7 +40,7 @@ transform <- function(data, distri) {
   data <- ifelse(data < 1e-6, 1e-6, data) # Avoid log(0)
   if (distri != "norm" && distri != "exp") {
     if (min(data) < 1e-2) {
-      data <- data + 0.1
+      data <- data + 0.01
     }
   }
   return(data)
@@ -298,6 +298,53 @@ kde4d <- function(df, distris) {
     )
   )
 }
+# NOTE: Using Contour Levels for Significant Model Regions
+# Example call: result <- kde4d_with_smr(df, rep("norm", 4))
+# Significant Model Regions (SMR)
+#
+# Goal:
+# Identify regions of the density that contain a specified proportion
+# of the total probability mass (e.g., 95% for a confidence region).
+#
+# Steps:
+#  Calculate density estimates at all grid points.
+#  the density threshold (res$cont[level])
+#  for the desired cumulative probability (e.g., 0.95).
+#  Include only those grid points where the density is above the threshold.
+#
+# SMR highlights the most probable regions,
+# ignoring the "tails" of the distribution.
+kde4d_with_smr <- function(df, distris, prob = 0.95) {
+  df <- df[, 1:4]
+  df <- mapply(transform, df, distris, SIMPLIFY = FALSE)
+  df <- as.data.frame(df)
+  res <- ks::kde(df)
+  level <- paste0(prob * 100, "%")
+  density_threshold <- res$cont[level]
+  grid_points <- expand.grid(res$eval.points)
+  densities <- as.vector(res$estimate)
+  significant_points <- grid_points[densities >= density_threshold, ]
+  mode_index <- which.max(densities)
+  mode <- grid_points[mode_index, ]
+  mode <- ifelse(mode < 0, 0, mode) |> as.numeric()
+  CIs <- apply(significant_points, 2, range)
+  lc <- CIs[1, ]
+  lc <- ifelse(lc < 0, 0, lc)
+  uc <- CIs[2, ]
+  uc <- ifelse(uc < 0, 0, uc)
+  res <- kde4d_intern(df)
+  res[, 5] <- transform(res[, 5], "norm")
+  df <- lapply(1:4, function(x) {
+    i <- parent.frame()$i[]
+    data.frame(x = res[, i], y = res[, 5])
+  })
+  return(list(
+    mode = mode,
+    lower_ci = lc,
+    upper_ci = uc,
+    df = df
+  ))
+}
 
 # Plotting
 # ========================================
@@ -404,12 +451,13 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
 }
 
 distris <- c("lognorm", "exp", "norm", "weibull")
-kdjoint <- kde4d(p_ida, distris)
+# kdjoint <- kde4d(p_ida, distris)
+kdjoint_smr <- kde4d_with_smr(p_ida, distris)
 plots <- lapply(1:4, function(x) {
-  df <- kdjoint$df[[x]]
-  m <- kdjoint$mode[[x]]
-  l <- kdjoint$lower_ci[[x]]
-  u <- kdjoint$upper_ci[[x]]
+  df <- kdjoint_smr$df[[x]]
+  m <- kdjoint_smr$mode[[x]]
+  l <- kdjoint_smr$lower_ci[[x]]
+  u <- kdjoint_smr$upper_ci[[x]]
   plotting(p_ida, x, distris[x], df, c(m, l, u))
 })
 legend <- get_legend(plots[[1]])
@@ -433,3 +481,42 @@ ggsave(final_plot,
   width = 15,
   height = 8
 )
+
+# Calculate results
+distis <- rep("norm", 4)
+back_transform <- function(transformed_data, distri,
+                           original_min, original_max) {
+  original_data <- transformed_data *
+    (original_max - original_min) + original_min
+  return(original_data)
+}
+calc_values <- function(df, distris) {
+  res <- kde4d_with_smr(df, distris)
+  res$mode
+  res$lower_ci
+  res$upper_ci
+  res <- lapply(1:4, function(idx) {
+    max <- max(df[, idx])
+    min <- min(df[, idx])
+    mode <- back_transform(res$mode[idx], distris[idx], min, max)
+    l <- back_transform(res$lower_ci[idx], distris[idx], min, max)
+    u <- back_transform(res$upper_ci[idx], distris[idx], min, max)
+    df_temp <- data.frame(
+      values = c(mode, l, u),
+      type = c("mode", "lower", "upper")
+    )
+    names(df_temp)[1] <- names(df)[idx]
+    return(df_temp)
+  })
+  res <- lapply(res, function(x) {
+    x[, 1]
+  })
+  res <- Reduce(rbind, res) |> as.data.frame()
+  res <- cbind(names(df)[1:4], res)
+  names(res) <- c("Parameter", "mode", "lower", "upper")
+  row.names(res) <- NULL
+  return(res)
+}
+calc_values(p_dba, distris)
+calc_values(p_ida, distris)
+calc_values(p_gda, distris)

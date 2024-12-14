@@ -1,0 +1,105 @@
+---
+format:
+  html:
+    code-fold: true
+---
+
+```{r}
+#| warning: false
+#| echo: false
+library(broom)
+
+load_params <- function(path) {
+  load(path)
+  res <- res[[1]]
+  params <- res$params
+  errors <- res$metrices
+  errors <- Reduce(rbind, errors)
+  params <- Reduce(rbind, params)
+  params <- lapply(unique(errors$dataset), function(x) {
+    params_subset <- params[params$dataset == x, ]
+    errors_subset <- errors[errors$dataset == x, ]
+    errors_subset <- errors_subset[order(errors_subset$MeanSquareError), ][1:50, ]
+    params_subset[params_subset$repetition %in% errors_subset$repetition, ]
+  })
+  params <- Reduce(rbind, params)
+  results <- lapply(names(params)[1:4], function(idx) {
+    model <- aov(params[, idx] ~ dataset, data = params)
+    tidy_output <- tidy(model)
+    names(tidy_output) <- c("Term", "DegreesOfFreedom", "SumOfSquares", "MeanSquare", "FValue", "PrF")
+    return(tidy_output)
+  })
+return(list(tables = results, params = names(params)[1:4]))
+}
+
+l <- load_params("dba_100Runs.RData")
+knitr::kable(
+  l$tables[[1]],
+  rownames = FALSE,
+caption = paste0("DBA: ", l$params[1])
+)
+knitr::kable(
+  l$tables[[2]],
+  rownames = FALSE,
+  caption = paste0("DBA: ", l$params[2])
+)
+knitr::kable(
+  l$tables[[3]],
+  rownames = FALSE,
+  caption = paste0("DBA: ", l$params[3])
+)
+knitr::kable(
+  l$tables[[4]],
+  rownames = FALSE,
+  caption = paste0("DBA: ", l$params[4])
+)
+
+
+l <- load_params("ida_100.RData")
+knitr::kable(
+  l$tables[[1]],
+  rownames = FALSE,
+caption = paste0("IDA: ", l$params[1])
+)
+knitr::kable(
+  l$tables[[2]],
+  rownames = FALSE,
+  caption = paste0("IDA: ", l$params[2])
+)
+knitr::kable(
+  l$tables[[3]],
+  rownames = FALSE,
+  caption = paste0("IDA: ", l$params[3])
+)
+knitr::kable(
+  l$tables[[4]],
+  rownames = FALSE,
+  caption = paste0("IDA: ", l$params[4])
+)
+
+
+l <- load_params("gda_100.RData")
+knitr::kable(
+  l$tables[[1]],
+  rownames = FALSE,
+caption = paste0("GDA: ", l$params[1])
+)
+knitr::kable(
+  l$tables[[2]],
+  rownames = FALSE,
+  caption = paste0("GDA: ", l$params[2])
+)
+knitr::kable(
+  l$tables[[3]],
+  rownames = FALSE,
+  caption = paste0("GDA: ", l$params[3])
+)
+knitr::kable(
+  l$tables[[4]],
+  rownames = FALSE,
+  caption = paste0("GDA: ", l$params[4])
+)
+```
+
+
+
