@@ -1,6 +1,14 @@
 library(ggplot2)
 library(cowplot)
 
+dotsize <- 0.5
+boxplot_size <- 0.5
+outlier_size <- 0.5
+strip <- element_text(size = 7, face = "bold")
+axis <- element_text(size = 6)
+axis_title <- element_text(size = 8)
+legend_text <- element_text(size = 8)
+
 empty_plot <- ggplot() +
   theme_void()
 size_dashes <- 0.25
@@ -58,10 +66,12 @@ param_plot <- function(path) {
     ) +
     xlab(NULL) +
     ylab(NULL) +
+    scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
     theme(
       panel.spacing = unit(2, "lines"),
       strip.background = element_blank(),
-      strip.placement = "outside"
+      strip.placement = "outside",
+      axis.text.x = element_blank()
     ) +
     guides(fill = guide_legend(title = "Datasets")) +
     scale_fill_brewer(palette = "Dark2")
@@ -96,6 +106,7 @@ plot_fct <- function(path) {
       outlier.size = 0.25
     ) +
     scale_fill_brewer(palette = "Dark2") +
+    scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
     labs(
       fill = "",
       y = "Signal",
@@ -103,33 +114,58 @@ plot_fct <- function(path) {
     )
 }
 
+# Paper plot
+p_ida_signal <- plot_fct("ida_100.RData")
+p_ida_params <- param_plot("ida_100.RData") +
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(1.15, 0.8)
+  )
+p_ida_params <- plot_grid(
+  p_ida_params, empty_plot,
+  nrow = 1,
+  rel_widths = c(1, 0.2)
+)
+
+p <- plot_grid(
+  p_ida_signal, p_ida_params,
+  nrow = 2,
+  rel_widths = c(1, 0.3),
+  labels = c("a", "b")
+)
+p
+ggsave(p,
+  bg = "white",
+  file = "ida_variance_50reps.png",
+  width = 8,
+  height = 8
+)
+
+# Supplementary plot
 p_dba <- plot_fct("dba_100Runs.RData")
-p_ida <- plot_fct("ida_100.RData")
 p_gda <- plot_fct("gda_100.RData")
 p_dba <- p_dba + theme(legend.position = "none")
-p_ida <- p_ida + theme(legend.position = "none")
 p_gda <- p_gda + theme(
   legend.position = "inside",
   legend.position.inside = c(1.15, 0.8)
 )
-p1 <- plot_grid(p_dba, p_ida, p_gda, empty_plot,
+p1 <- plot_grid(p_dba, p_gda, empty_plot,
   nrow = 1,
-  rel_widths = c(1, 1, 1, 0.3),
-  labels = c("a", "b", "c")
+  rel_widths = c(1, 1, 0.3),
+  labels = c("a", "b")
 )
 p1
 
 p_dba <- param_plot("dba_100Runs.RData") + theme(legend.position = "none")
-p_ida <- param_plot("ida_100.RData") + theme(legend.position = "none")
 p_gda <- param_plot("gda_100.RData")
 p_gda <- p_gda + theme(
   legend.position = "inside",
   legend.position.inside = c(1.17, 0.8)
 )
-p2 <- plot_grid(p_dba, p_ida, p_gda, empty_plot,
+p2 <- plot_grid(p_dba, p_gda, empty_plot,
   nrow = 1,
-  rel_widths = c(1, 1, 1, 0.3),
-  labels = c("d", "e", "f")
+  rel_widths = c(1, 1, 0.3),
+  labels = c("c", "d")
 )
 p2
 

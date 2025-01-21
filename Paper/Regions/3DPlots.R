@@ -141,5 +141,3 @@ text3D(
   srt = 295
 )
 dev.off()
-
-
