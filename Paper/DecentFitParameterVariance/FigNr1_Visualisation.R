@@ -3,6 +3,10 @@ library(cowplot)
 dotsize <- 0.5
 boxplot_size <- 0.5
 outlier_size <- 0.5
+strip <- element_text(size = 7, face = "bold")
+axis <- element_text(size = 6)
+axis_title <- element_text(size = 8)
+legend_text <- element_text(size = 8)
 
 calc_errors <- function(df) {
   df <- split(df, df$seed)
@@ -28,12 +32,13 @@ sig_plot <- function(case, path, legend = FALSE) {
   p_errors <- ggplot() +
     geom_boxplot(
       data = errors_df,
-      aes(x = "", y = errors)
+      aes(x = "", y = errors),
+      outlier.size = outlier_size
     ) +
     labs(x = "", y = "MANE") +
     theme(
-      axis.text = element_text(size = 5),
-      axis.title = element_text(size = 5),
+      axis.text = axis,
+      axis.title = axis_title
     ) +
     coord_flip()
 
@@ -61,7 +66,7 @@ sig_plot <- function(case, path, legend = FALSE) {
         x = df_forward_sim[, 1],
         y = `Signal`,
         group = `seed`,
-        colour = "Signal forward sim."
+        colour = "forward sim."
       ),
       linewidth = dotsize * 0.4
     ) +
@@ -70,19 +75,20 @@ sig_plot <- function(case, path, legend = FALSE) {
       aes(
         x = df[, 1],
         y = `Signal measured`,
-        colour = "Signal measured"
+        colour = "measured"
       ),
       size = dotsize
     ) +
     labs(x = names(df)[1]) +
     scale_colour_manual(values = c("grey", "#76acb0", "darkred")) +
+    scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
     theme(
       legend.title = element_blank(),
-      axis.text = element_text(size = 5),
-      axis.title = element_text(size = 8),
-      legend.text = element_text(size = 5),
+      axis.text = axis,
+      axis.title = axis_title,
+      legend.text = legend_text,
       legend.position = "bottom",
-      legend.key.size = unit(0.4, "cm"),
+      legend.key.size = unit(0.6, "cm"),
       legend.key = element_rect(fill = "white")
     ) +
     guides(
@@ -92,7 +98,7 @@ sig_plot <- function(case, path, legend = FALSE) {
   p_signal <- plot_grid(
     p_signal, p_errors,
     nrow = 2,
-    rel_heights = c(1, 0.3)
+    rel_heights = c(1, 0.275)
   )
 
   if (!legend) {
@@ -128,13 +134,15 @@ param_plot <- function(path) {
     ) +
     geom_point(size = dotsize) +
     labs(x = NULL) +
-    labs(y = "Values [1/M] or a.u.") +
+    # labs(y = "Values [1/M] or a.u.") +
+    labs(y = "") +
+    scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
     facet_wrap(. ~ names, scales = "free") +
     theme(
-      axis.text = element_text(size = 5),
-      axis.title = element_text(size = 8),
-      legend.text = element_text(size = 5),
-      strip.text = element_text(size = 6)
+      axis.text = axis,
+      axis.title = axis_title,
+      legend.text = legend_text,
+      strip.text = strip
     )
 }
 
