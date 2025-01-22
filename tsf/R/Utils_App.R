@@ -282,6 +282,74 @@ is_integer <- function(x) {
   return(is.numeric(x) && identical(round(x), x))
 }
 
+# NOTE: Using Contour Levels for Significant Model Regions
+# Significant Model Regions (SMR)
+kde4d_intern <- function(df) {
+  mins <- apply(df, 2, min)
+  maxs <- apply(df, 2, max)
+  res <- ks::kde(df, xmin = mins, xmax = maxs)
+  grid_points <- expand.grid(res$eval.points)
+  joint_densities <- as.vector(res$estimate)
+  density_data <- cbind(grid_points, joint_density = joint_densities)
+  return(density_data)
+}
+
+kde4d_with_smr <- function(df, prob = 0.95) {
+  df <- df[, 1:4]
+  res <- ks::kde(df)
+  level <- paste0(prob * 100, "%")
+  density_threshold <- res$cont[level]
+  grid_points <- expand.grid(res$eval.points)
+  densities <- as.vector(res$estimate)
+  significant_points <- grid_points[densities >= density_threshold, ]
+  mode_index <- which.max(densities)
+  mode <- grid_points[mode_index, ]
+  mode <- ifelse(mode < 0, 0, mode) |> as.numeric()
+  CIs <- apply(significant_points, 2, range)
+  lc <- CIs[1, ]
+  lc <- ifelse(lc < 0, 0, lc)
+  uc <- CIs[2, ]
+  uc <- ifelse(uc < 0, 0, uc)
+  res <- kde4d_intern(df)
+  df <- lapply(1:4, function(x) {
+    i <- parent.frame()$i[]
+    data.frame(x = res[, i], y = res[, 5])
+  })
+  return(list(
+    mode = mode,
+    lower_ci = lc,
+    upper_ci = uc,
+    df = df
+  ))
+}
+
+jkd <- function(df) {
+  res <- kde4d_with_smr(df)
+  res$mode
+  res$lower_ci
+  res$upper_ci
+  res <- lapply(1:4, function(idx) {
+    mode <- res$mode[idx]
+    l <- res$lower_ci[idx]
+    u <- res$upper_ci[idx]
+    df_temp <- data.frame(
+      values = c(mode, l, u),
+      type = c("mode", "lower", "upper")
+    )
+    names(df_temp)[1] <- names(df)[idx]
+    return(df_temp)
+  })
+  res <- lapply(res, function(x) {
+    x[, 1]
+  })
+  res <- Reduce(rbind, res) |> as.data.frame()
+  res <- cbind(names(df)[1:4], res)
+  names(res) <- c("Parameter", "mode", "lower", "upper")
+  row.names(res) <- NULL
+  return(res)
+}
+
+
 # download file
 # ========================================================================================
 download_file <- function(model, file, result_val) {
@@ -451,6 +519,18 @@ download_batch_file <- function(model, file, result_val) {
   parameter <- create_df_for_batch(result_val, "params")
   writeData(wb, "Results", parameter, startRow = curr_row)
   curr_row <- curr_row + dim(parameter)[1] + 5
+
+  tryCatch(
+    expr = {
+      joint_kernel_densi <- jkd(parameter[, 1:4])
+      writeData(wb, "Results", joint_kernel_densi, startRow = curr_row)
+      curr_row <- curr_row + dim(parameter)[1] + 5
+    },
+    error = function(err) {
+      showNotification("Could not calculate the joint kernel densities",
+      duration = 0, type = "error")
+    }
+  )
 
   lb <- as.data.frame(t(result_val$lowerBounds))
   lb$info <- "Lower bounds"
