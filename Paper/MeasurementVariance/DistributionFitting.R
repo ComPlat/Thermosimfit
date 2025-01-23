@@ -1,3 +1,4 @@
+setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Paper/MeasurementVariance/")
 library(ggplot2)
 library(ks)
 library(cowplot)
@@ -187,6 +188,12 @@ fit_distri <- function(data, distri) {
   )
 }
 
+# Median IQR
+# ========================================
+median_iqr <- function(x) {
+  c(median(x), quantile(x, 0.25), quantile(x, 0.75))
+}
+
 # Bootstrap method for calculating CI for the median
 # ========================================
 calc_location_ci_bootstrap <- function(
@@ -352,6 +359,7 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
   data[, idx] <- transform(data[, idx], distri)
   bins <- hist(data[, idx], plot = FALSE)$breaks
   median_ci <- calc_location_ci_bootstrap(median, data[, idx])
+  median_iqr <- median_iqr(data[, idx])
   mean_ci <- calc_location_ci_bootstrap(mean, data[, idx])
   kde_ci <- kde(data[, idx])
   fd <- fit_distri(data[, idx], distri)
@@ -363,18 +371,18 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
   y <- c(3, 3, 1.4, 2.1)[idx]
   location_error <- data.frame(
     x = c(
-      mean_ci$location, median_ci$location, kde_ci$mode, kd4_m_ci[1]
+      mean_ci$location, median_ci$location, kde_ci$mode, kd4_m_ci[1], median_iqr[1]
     ),
     xmin = c(
-      mean_ci$lower_ci, median_ci$lower_ci, kde_ci$lower_ci, kd4_m_ci[2]
+      mean_ci$lower_ci, median_ci$lower_ci, kde_ci$lower_ci, kd4_m_ci[2], median_iqr[2]
     ),
     xmax = c(
-      mean_ci$upper_ci, median_ci$upper_ci, kde_ci$upper_ci, kd4_m_ci[3]
+      mean_ci$upper_ci, median_ci$upper_ci, kde_ci$upper_ci, kd4_m_ci[3], median_iqr[3]
     ),
     type = c(
-      "Mean", "Median", "Mode (Kernel density)", "Mode (joint Kernel density)"
+      "Mean", "Median", "Mode (Kernel density)", "Mode (joint Kernel density)", "Median IQR"
     ),
-    y = c(0.5, 0.6, 0.7, 0.8)
+    y = c(0.5, 0.6, 0.7, 0.8, 0.9)
   )
 
   p <- ggplot() +
@@ -407,7 +415,7 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
     ) +
     labs(x = names(data)[idx], y = "Density")
 
-  colors <- RColorBrewer::brewer.pal(4, "Dark2")
+  colors <- RColorBrewer::brewer.pal(5, "Dark2")
   p <- p +
     geom_errorbarh(
       data = location_error,
@@ -425,7 +433,8 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
         "Mean" = colors[1],
         "Median" = colors[2],
         "Mode (Kernel density)" = colors[3],
-        "Mode (joint Kernel density)" = colors[4]
+        "Mode (joint Kernel density)" = colors[4],
+        "Median IQR" = colors[5]
       )
     ) +
     scale_linetype_manual(
@@ -502,7 +511,7 @@ calc_values <- function(df, distris) {
     l <- back_transform(res$lower_ci[idx], distris[idx], min, max)
     u <- back_transform(res$upper_ci[idx], distris[idx], min, max)
     df_temp <- data.frame(
-      values = c(mode, l, u),
+      values = sprintf("%.3e", c(mode, l, u)),
       type = c("mode", "lower", "upper")
     )
     names(df_temp)[1] <- names(df)[idx]
@@ -517,6 +526,18 @@ calc_values <- function(df, distris) {
   row.names(res) <- NULL
   return(res)
 }
-calc_values(p_dba, distris)
-calc_values(p_ida, distris)
+dba_res <- calc_values(p_dba, distris)
+dba_res
+ida_res <- calc_values(p_ida, distris)
+ida_res
 calc_values(p_gda, distris)
+
+
+# Calc IQR
+calc_iqr <- function(df) {
+  df <- df[, 1:4]
+  lapply(1:4, function(x) {
+    median_iqr(df[, x])
+  })
+}
+calc_iqr(p_dba)

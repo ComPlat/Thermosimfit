@@ -1,0 +1,139 @@
+---
+format:
+  html:
+    code-fold: true
+---
+
+```{r}
+#| warning: false
+#| echo: false
+
+setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Paper/MeasurementVariance/")
+library(ks)
+
+# Load the results
+# ========================================
+extract_best_runs <- function(res) {
+  states <- res$states
+  params <- res$params
+  errors <- res$metrices
+  errors <- Reduce(rbind, errors)
+  states <- Reduce(rbind, states)
+  params <- Reduce(rbind, params)
+  params <- lapply(unique(errors$dataset), function(x) {
+    params_subset <- params[params$dataset == x, ]
+    errors_subset <- errors[errors$dataset == x, ]
+    errors_subset <- errors_subset[order(errors_subset$MeanSquareError), ][1:50, ]
+    res <- params_subset[params_subset$repetition %in% errors_subset$repetition, ]
+    res <- res[, 1:4]
+    res$error <- errors_subset$MeanSquareError
+    return(res)
+  })
+  params <- Reduce(rbind, params)
+  return(params)
+}
+
+load_params <- function(path) {
+  load(path)
+  extract_best_runs(res[[1]])
+}
+
+p_dba <- load_params("dba_100Runs.RData")
+p_ida <- load_params("ida_100.RData")
+p_gda <- load_params("gda_100.RData")
+
+# Transform the data
+# ========================================
+transform <- function(data, distri) {
+  data <- (data - min(data)) / (max(data) - min(data))
+  data <- ifelse(data < 1e-6, 1e-6, data) # Avoid log(0)
+  if (distri != "norm" && distri != "exp") {
+    if (min(data) < 1e-2) {
+      data <- data + 0.01
+    }
+  }
+  return(data)
+}
+
+kde4d_intern <- function(df) {
+  mins <- apply(df, 2, min)
+  maxs <- apply(df, 2, max)
+  res <- ks::kde(df, xmin = mins, xmax = maxs)
+  grid_points <- expand.grid(res$eval.points)
+  joint_densities <- as.vector(res$estimate)
+  density_data <- cbind(grid_points, joint_density = joint_densities)
+  return(density_data)
+}
+kde4d_with_smr <- function(df, distris, prob = 0.95) {
+  df <- df[, 1:4]
+  df <- mapply(transform, df, distris, SIMPLIFY = FALSE)
+  df <- as.data.frame(df)
+  res <- ks::kde(df)
+  level <- paste0(prob * 100, "%")
+  density_threshold <- res$cont[level]
+  grid_points <- expand.grid(res$eval.points)
+  densities <- as.vector(res$estimate)
+  significant_points <- grid_points[densities >= density_threshold, ]
+  mode_index <- which.max(densities)
+  mode <- grid_points[mode_index, ]
+  mode <- ifelse(mode < 0, 0, mode) |> as.numeric()
+  CIs <- apply(significant_points, 2, range)
+  lc <- CIs[1, ]
+  lc <- ifelse(lc < 0, 0, lc)
+  uc <- CIs[2, ]
+  uc <- ifelse(uc < 0, 0, uc)
+  res <- kde4d_intern(df)
+  res[, 5] <- transform(res[, 5], "norm")
+  df <- lapply(1:4, function(x) {
+    i <- parent.frame()$i[]
+    data.frame(x = res[, i], y = res[, 5])
+  })
+  return(list(
+    mode = mode,
+    lower_ci = lc,
+    upper_ci = uc,
+    df = df
+  ))
+}
+
+# Calculate results
+distis <- rep("norm", 4)
+back_transform <- function(transformed_data, distri,
+                           original_min, original_max) {
+  original_data <- transformed_data *
+    (original_max - original_min) + original_min
+  return(original_data)
+}
+calc_values <- function(df, distris) {
+  res <- kde4d_with_smr(df, distris)
+  res$mode
+  res$lower_ci
+  res$upper_ci
+  res <- lapply(1:4, function(idx) {
+    max <- max(df[, idx])
+    min <- min(df[, idx])
+    mode <- back_transform(res$mode[idx], distris[idx], min, max)
+    l <- back_transform(res$lower_ci[idx], distris[idx], min, max)
+    u <- back_transform(res$upper_ci[idx], distris[idx], min, max)
+    df_temp <- data.frame(
+      values = c(mode, l, u),
+      type = c("mode", "lower", "upper")
+    )
+    names(df_temp)[1] <- names(df)[idx]
+    return(df_temp)
+  })
+  res <- lapply(res, function(x) {
+    x[, 1]
+  })
+  res <- Reduce(rbind, res) |> as.data.frame()
+  res <- cbind(names(df)[1:4], res)
+  names(res) <- c("Parameter", "mode", "lower", "upper")
+  row.names(res) <- NULL
+  return(res)
+}
+dba_res <- calc_values(p_dba, distris)
+ida_res <- calc_values(p_ida, distris)
+gda_res <- calc_values(p_gda, distris)
+knitr::kable(dba_res, format = "latex")
+```
+

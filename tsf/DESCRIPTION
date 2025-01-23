@@ -24,7 +24,8 @@ Imports:
   callr,
   cowplot,
   RColorBrewer,
-  plotly
+  plotly,
+  ks
 Suggests: knitr, rmarkdown, tinytest, shinytest2
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
