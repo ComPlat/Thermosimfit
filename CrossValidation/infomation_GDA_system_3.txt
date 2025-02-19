@@ -1,0 +1,6 @@
+conc_host (CB7): 50 µM
+conc_guest(nButanol): 292 µM
+I(0) = 29
+I(D) = 3.52E+06
+Ka(HD) = 33000
+Dye (TNS)

@@ -1,0 +1,3 @@
+conc_host (CB7): 4.3 µM
+conc_dye(TNS): 6 µM
+Ka(HD) = 1.70E+07
