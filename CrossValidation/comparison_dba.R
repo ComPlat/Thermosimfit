@@ -3,6 +3,7 @@
 # The files are named dba_seed_NUMBER.csv
 # The measured value are in DBA.txt
 # Furthermore, 151 µM host
+setwd("./CrossValidation")
 
 read_mathematica_output <- function(path, seed) {
   inp <- readLines(path, n = 53)
@@ -77,3 +78,16 @@ for (i in seq_len(nrow(grid))) {
   grid$error[i] <- nrmse(x, y)
 }
 write.csv(grid, "dba_comparison.csv", row.names = FALSE)
+
+grid
+mean_mathematica <- mean(grid[1:3, 3])
+mean_thermosimfit <- mean(grid[4:6, 3])
+sd_mathematica <- sd(grid[1:3, 3])
+sd_thermosimfit <- sd(grid[4:6, 3])
+res <- data.frame(
+  Mathematica = c(mean_mathematica, sd_mathematica),
+  Thermosimfit = c(mean_thermosimfit, sd_thermosimfit)
+)
+res
+write.csv(res, "dba_comparison_summary.csv", row.names = FALSE)
+

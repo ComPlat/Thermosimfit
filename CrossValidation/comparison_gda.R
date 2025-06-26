@@ -9,6 +9,7 @@
 # I(D) = 3.52E+06
 # Ka(HD) = 33000
 # Dye (TNS)
+setwd("./CrossValidation")
 
 read_mathematica_output <- function(path, seed) {
   inp <- readLines(path, n = 103)
@@ -86,3 +87,16 @@ for (i in seq_len(nrow(grid))) {
   grid$error[i] <- nrmse(x, y)
 }
 write.csv(grid, "gda_comparison.csv", row.names = FALSE)
+
+grid
+mean_mathematica <- mean(grid[1:3, 3])
+mean_thermosimfit <- mean(grid[4:6, 3])
+sd_mathematica <- sd(grid[1:3, 3])
+sd_thermosimfit <- sd(grid[4:6, 3])
+res <- data.frame(
+  Mathematica = c(mean_mathematica, sd_mathematica),
+  Thermosimfit = c(mean_thermosimfit, sd_thermosimfit)
+)
+res
+write.csv(res, "gda_comparison_summary.csv", row.names = FALSE)
+

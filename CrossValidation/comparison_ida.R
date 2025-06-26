@@ -6,6 +6,7 @@
 # conc_host (CB7): 4.3 µM
 # conc_dye(TNS): 6 µM
 # Ka(HD) = 1.70E+07
+setwd("./CrossValidation")
 
 read_mathematica_output <- function(path, seed) {
   inp <- readLines(path, n = 103)
@@ -81,4 +82,16 @@ for (i in seq_len(nrow(grid))) {
   y <- spline(y[, 1], y[, 2], n = 1000)$y
   grid$error[i] <- nrmse(x, y)
 }
+
+grid
 write.csv(grid, "ida_comparison.csv", row.names = FALSE)
+
+mean_mathematica <- mean(grid[1:3, 3])
+mean_thermosimfit <- mean(grid[4:6, 3])
+sd_mathematica <- sd(grid[1:3, 3])
+sd_thermosimfit <- sd(grid[4:6, 3])
+res <- data.frame(
+  Mathematica = c(mean_mathematica, sd_mathematica),
+  Thermosimfit = c(mean_thermosimfit, sd_thermosimfit)
+)
+write.csv(res, "ida_comparison_summary.csv", row.names = FALSE)
