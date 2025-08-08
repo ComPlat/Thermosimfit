@@ -53,7 +53,6 @@ sig_plot <- function(case, path, legend = FALSE) {
       parameter = params,
       n = 100
     )
-    res$Signal <- res$Signal + params[, 2] # TODO: add I0 not here but in forward_simulation
     res$seed <- seeds[[idx]]
     return(res)
   })
@@ -158,7 +157,7 @@ p_dba <- p_dba + theme(legend.position = "none")
 p <- plot_grid(
   p_dba, empty_plot, p_ida, empty_plot, p_gda,
   ncol = 5,
-  labels = c("a", "", "b", "", "c"),
+  labels = c("A", "", "B", "", "C"),
   rel_widths = c(1, 0.05, 1, 0.05, 1)
 )
 p_signal <- plot_grid(p, legend, ncol = 1, rel_heights = c(1, 0.1))

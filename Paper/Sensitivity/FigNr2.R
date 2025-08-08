@@ -1,7 +1,6 @@
 library(ggplot2)
 library(cowplot)
 load("Sensitivity.RData")
-load("ErrorsVsImportantParams.RData")
 dotsize <- 0.5
 boxplot_size <- 0.5
 outlier_size <- 0.5
@@ -62,7 +61,7 @@ size_dashes <- 0.25
 
 sensi_plots <- plot_grid(
   p_dba, empty_plot, p_gda,
-  labels = c("a", "", "b"),
+  labels = c("A", "", "B"),
   ncol = 3,
   rel_widths = c(1, 0.05, 1)
 )

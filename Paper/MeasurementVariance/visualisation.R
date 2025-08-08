@@ -131,7 +131,7 @@ p <- plot_grid(
   p_ida_signal, p_ida_params,
   nrow = 2,
   rel_widths = c(1, 0.3),
-  labels = c("a", "b")
+  labels = c("A", "B")
 )
 p
 ggsave(p,
@@ -152,7 +152,7 @@ p_gda <- p_gda + theme(
 p1 <- plot_grid(p_dba, p_gda, empty_plot,
   nrow = 1,
   rel_widths = c(1, 1, 0.3),
-  labels = c("a", "b")
+  labels = c("A", "B")
 )
 p1
 
@@ -165,7 +165,7 @@ p_gda <- p_gda + theme(
 p2 <- plot_grid(p_dba, p_gda, empty_plot,
   nrow = 1,
   rel_widths = c(1, 1, 0.3),
-  labels = c("c", "d")
+  labels = c("C", "D")
 )
 p2
 

@@ -1,4 +1,4 @@
-setwd("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Paper/MeasurementVariance/")
+setwd("/home/konrad/Documents/Thermosimfit/Paper/MeasurementVariance/")
 library(ggplot2)
 library(ks)
 library(cowplot)
@@ -475,7 +475,7 @@ plots <- lapply(plots, function(x) {
 })
 plot_grid <- plot_grid(
   plotlist = plots, nrow = 2,
-  labels = c("a", "b", "c", "d")
+  labels = c("A", "B", "C", "D")
 )
 final_plot <- plot_grid(
   plot_grid, legend,

@@ -1,0 +1,20 @@
+DeviceName =
+timeStamp =
+Spectra Mode = Single Wavelength/Multiple Wavelength
+Model = IDA
+Host = 10
+Guest = 10
+
+Dye	Signal
+0	1476
+15	1443
+30	1342
+50	1308
+60	1244
+80	1231
+100	1146
+125	1086
+150	1008
+200	965
+255	993
+366	968

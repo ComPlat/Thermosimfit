@@ -59,7 +59,7 @@ res3 <- data.frame(Guest = ida[, 1], Signal = res3[, 1], Group = "Thermosimfit_4
 # Comparison
 df <- rbind(ida, df1, df2, df3, res1, res2, res3)
 library(ggplot2)
-ggplot(data = df, aes(x = Guest, y = Signal, color = Group)) +
+p <- ggplot(data = df, aes(x = Guest, y = Signal, color = Group)) +
   geom_point() +
   theme_minimal() +
   theme(legend.position = "bottom") +
@@ -69,7 +69,7 @@ ggplot(data = df, aes(x = Guest, y = Signal, color = Group)) +
 
 summary(aov(Signal ~ Group, data = df))
 nrmse <- function(x, y) {
-  sqrt(mean((x - y)^2)) / mean(x) / sqrt(length(x))
+  sqrt(mean((x - y)^2)) / mean(x) / length(x)
 }
 grid <- expand.grid(unique(df$Group), unique(df$Group))
 grid <- grid[grid$Var1 != grid$Var2, ]

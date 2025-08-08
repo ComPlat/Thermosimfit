@@ -67,6 +67,9 @@ p <- ggplot(data = com, aes(x = groups, y = values)) +
   geom_boxplot() +
   labs(y = "Ka(HD) [1/µM]", x = "")
 
+mean(com[com$groups == "Thermosimfit", 1])
+mean(com[com$groups == "Bindfit", 1])
+
 ggsave(p,
   file = "/home/konrad/Documents/Thermosimfit/Tests/supramolecular/Comparison_Thermosimfit_Bindifit.png"
 )

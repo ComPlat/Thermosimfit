@@ -28,7 +28,7 @@ read_mathematica_output <- function(path, seed) {
 }
 
 # setwd("./Paper/CrossValgdation")
-gda <- read.table("GDA_system_3.txt", header = FALSE)
+gda <- read.table("GDA.txt", header = FALSE)
 names(gda) <- c("Dye", "Signal")
 gda$Group <- "measured"
 path1 <- "gda_seed_322088.csv"
@@ -63,7 +63,7 @@ res3 <- data.frame(Dye = gda[, 1], Signal = res3[, 1], Group = "Thermosimfit_501
 # Comparison
 df <- rbind(gda, df1, df2, df3, res1, res2, res3)
 library(ggplot2)
-ggplot(data = df, aes(x = Dye, y = Signal, color = Group)) +
+p <- ggplot(data = df, aes(x = Dye, y = Signal, color = Group)) +
   geom_point() +
   theme_minimal() +
   theme(legend.position = "bottom") +
@@ -73,7 +73,7 @@ ggplot(data = df, aes(x = Dye, y = Signal, color = Group)) +
 summary(aov(Signal ~ Group, data = df))
 
 nrmse <- function(x, y) {
-  sqrt(mean((x - y)^2)) / mean(x) / sqrt(length(x))
+  sqrt(mean((x - y)^2)) / mean(x) / length(x)
 }
 grid <- expand.grid(unique(df$Group), unique(df$Group))
 grid <- grid[grid$Var1 != grid$Var2, ]

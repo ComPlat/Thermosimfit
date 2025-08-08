@@ -32,7 +32,7 @@ gda_new <- function() {
   )
 
   # NOTE: data var column [M]
-  data <- readLines("../NewGDA/GDA_system_3.txt")
+  data <- readLines("../GDA.txt")
   var <- lapply(data, function(x) {
     strsplit(x, split = "\t")[[1]][1]
   }) |> unlist()
@@ -64,59 +64,8 @@ gda_new <- function() {
   result <- result[order(m[, 1])[1:10]]
   save(result, file = "GDA_10_different_seeds.RData")
 }
-gda_new()
-stop()
+gda()
 
-# GDA
-# ============================================================
-gda <- function() {
-  lowerBounds <- c(
-    kG = 10,
-    I0 = 0,
-    IHD = 0,
-    ID = 0
-  )
-  upperBounds <- c(
-    kG = 10^9,
-    I0 = 700,
-    IHD = 10^9,
-    ID = 10^9
-  )
-  additionalParameters <- c(
-    host = 103 * 10^-6,
-    guest = 1050 * 10^-6,
-    kHD = 2431.14
-  )
-
-  # NOTE: data var column [M]
-  data <- readLines("../GDA.txt")
-  var <- lapply(data, function(x) {
-    strsplit(x, split = "\t")[[1]][1]
-  }) |> unlist()
-  signal <- lapply(data, function(x) {
-    strsplit(x, split = "\t")[[1]][2]
-  }) |> unlist()
-  # NOTE: Only the first dataset is used
-  df <- data.frame(var = var[2:19], signal = signal[2:19])
-  df$var <- as.numeric(df$var)
-  df$signal <- as.numeric(df$signal)
-  seeds <- sample(1:1e6, 10)
-  result <- lapply(seeds, function(seed) {
-    opti(
-      case = "gda",
-      lowerBounds = lowerBounds,
-      upperBounds = upperBounds,
-      path = df,
-      seed = seed,
-      ngen = 10000,
-      npop = 100,
-      errorThreshold = 0.2,
-      additionalParameters = additionalParameters,
-      add_info = as.character(seed)
-    )
-  })
-  save(seeds, result, file = "GDA_10_different_seeds.RData")
-}
 # DBA
 # ============================================================
 dba <- function() {

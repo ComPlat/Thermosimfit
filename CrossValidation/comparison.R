@@ -9,4 +9,3 @@ df$group <- c("mean", "sd")
 df$model <- rep(c("DBA", "IDA", "GDA"), each = 2)
 df <- tidyr::pivot_longer(df, cols = -c(group, model)) |> as.data.frame()
 df
-getwd()

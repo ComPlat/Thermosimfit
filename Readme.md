@@ -20,6 +20,7 @@ The package includes a script interface and a Shiny app for convenient usage.
 - Roots are calculated for each polynomial at each concentration of the independent variable, defining the concentration of either d or hd to the independent variable.
 - In silico signal calculation based on the formula: SignalInSilico = I0 + IHD[hd] + ID[d].
 - Comparison of the in silico signal to the measured signal, with the error returned by the loss function indicating the match quality.
+- Further details, and example datasets can be found in the folder Paper.
 
 ## Installation
 

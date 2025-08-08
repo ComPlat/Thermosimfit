@@ -51,7 +51,7 @@ gda <- function() {
   )
   tsf::batch("gda",
     lowerBounds, upperBounds,
-    path = "../NewGDA/GDA_system_3.txt",
+    path = "..//GDA.txt",
     additionalParameters,
     ngen = 100,
     num_rep = 100, num_cores = 10,
@@ -122,7 +122,7 @@ gda <- function() {
   )
   tsf::batch("gda",
     lowerBounds, upperBounds,
-    path = "../NewGDA/GDA_system_3.txt",
+    path = "../GDA.txt",
     additionalParameters,
     ngen = 100,
     num_rep = 5, num_cores = 5,
