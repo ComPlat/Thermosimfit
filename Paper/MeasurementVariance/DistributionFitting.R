@@ -449,13 +449,14 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
       values = c("joint Kernel density" = 1)
     ) +
     theme(
-      legend.position = "right"
+      legend.position = "right",
+      legend.title = element_text(size = 14),
+      legend.text  = element_text(size = 12)
     ) +
     guides(
-      linetype = guide_legend(order = 1),
-      color = guide_legend(order = 2)
+      linetype = guide_legend(order = 1, keywidth = 2, keyheight = 1),
+      color    = guide_legend(order = 2, keywidth = 2, keyheight = 1)
     )
-
   return(p)
 }
 
@@ -487,7 +488,7 @@ final_plot
 ggsave(final_plot,
   bg = "white",
   file = "LocationEstimation.png",
-  width = 15,
+  width = 16.5,
   height = 8
 )
 
