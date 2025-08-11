@@ -1,5 +1,7 @@
 # Optimizing Thermodynamic Bindings Parameters (in algebraic systems)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16793268.svg)](https://doi.org/10.5281/zenodo.16793268)
+
 This repository contains tools for optimizing unknown parameters in algebraic systems that describe thermodynamic bindings of dyes and guests to a host.
 The package includes a script interface and a Shiny app for convenient usage.
 
