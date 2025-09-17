@@ -1,5 +1,129 @@
 # TODO: replace HG with DBA_CONST_HOST and DBA with DBA_CONST_DYE
 
+lossFctHG2 <- function(parameter, env, eval = FALSE) {
+  # TODO: add checks for root
+  solve_system <- function(h0,g0,kg,kgg) {
+    gFct <- function(g) {
+      kgg*kg*g^3 +
+        g^2*(kg*(1 + 2*kgg*h0 - kgg*g0)) +
+        g*(1 + kg*h0 - kg*g0) -
+        g0
+    }
+    g_candidates <- uniroot.all(gFct, c(0, g0))
+    sols <- lapply(g_candidates, function(g){
+      D <- 1 + kg*g + kg*kgg*g^2
+      h  <- h0 / D
+      hg <- kg*h*g
+      hgg<- kgg*hg*g
+      list(g = g,h = h,hg = hg,hgg = hgg)
+    })
+    return(sols[[1]])
+  }
+
+  kg <- parameter[1]
+  kgg <- parameter[2]
+  I0 <- parameter[3]
+  IH <- parameter[4]
+  IG <- parameter[5]
+  IHG <- parameter[6]
+  IHGG <- parameter[7]
+
+  h0 <- env$h0
+  guest <- env$guest
+  signal <- env$signal
+  signal <- ifelse(signal == 0, 10^-15, signal)
+  guest <- ifelse(guest == 0, 10^-15, guest)
+  h <- numeric(length(guest))
+  g <- numeric(length(guest))
+  hg <- numeric(length(guest))
+  hgg <- numeric(length(guest))
+
+  for (i in seq_along(guest)) {
+    g0 <- guest[i]
+    res <- try(solve_system(h0,g0,kg,kgg), silent = TRUE)
+    if (inherits(res, "try-error")) {
+      next
+    }
+    h[i] <- res$h
+    g[i] <- res$g
+    hg[i] <- res$hg
+    hgg[i] <- res$hgg
+  }
+  signalInsilico <- I0 + IH*h + IG*g + IHG*hg + IHGG*hgg
+  if (eval) {
+    return(data.frame(insilico = signalInsilico, g = g, hg = hg))
+  }
+  return(sum(abs(signal - signalInsilico) / signal))
+}
+
+# TODO: finish. But this could reduce the parameter number drastically
+lossFctHG2WithQR <- function(parameter, env, eval = FALSE) {
+  # TODO: add checks for root
+  solve_system <- function(h0,g0,kg,kgg) {
+    gFct <- function(g) {
+      kgg*kg*g^3 +
+        g^2*(kg*(1 + 2*kgg*h0 - kgg*g0)) +
+        g*(1 + kg*h0 - kg*g0) -
+        g0
+    }
+    g_candidates <- uniroot.all(gFct, c(0, g0))
+    sols <- lapply(g_candidates, function(g){
+      D <- 1 + kg*g + kg*kgg*g^2
+      h  <- h0 / D
+      hg <- kg*h*g
+      hgg<- kgg*hg*g
+      list(g = g,h = h,hg = hg,hgg = hgg)
+    })
+    return(sols[[1]])
+  }
+
+  kg <- parameter[1]
+  kgg <- parameter[2]
+  I0 <- parameter[3]
+  IH <- parameter[4]
+  IG <- parameter[5]
+  IHG <- parameter[6]
+  IHGG <- parameter[7]
+
+  h0 <- env$h0
+  guest <- env$guest
+  signal <- env$signal
+  signal <- ifelse(signal == 0, 10^-15, signal)
+  guest <- ifelse(guest == 0, 10^-15, guest)
+  h <- numeric(length(guest))
+  g <- numeric(length(guest))
+  hg <- numeric(length(guest))
+  hgg <- numeric(length(guest))
+
+  for (i in seq_along(guest)) {
+    g0 <- guest[i]
+    res <- try(solve_system(h0,g0,kg,kgg), silent = TRUE)
+    if (inherits(res, "try-error")) {
+      next
+    }
+    h[i] <- res$h
+    g[i] <- res$g
+    hg[i] <- res$hg
+    hgg[i] <- res$hgg
+  }
+
+  X <- cbind(1, h, g, hg, hgg)
+  # X*beta = signal
+  beta <- qr.solve(X, signal)
+  # I0 <- beta[1]
+  # IH <- beta[2]
+  # IG <- beta[3]
+  # IHG <- beta[4]
+  # IHGG <- beta[5]
+  # signalInsilico <- I0 + IH*h + IG*g + IHG*hg + IHGG*hgg
+  signalInsilico <- as.vector(X %*% beta)
+  if (eval) {
+    return(data.frame(insilico = signalInsilico, g = g, hg = hg))
+  }
+  return(sum(abs(signal - signalInsilico) / signal))
+}
+
+
 # DBA is case DBA with const dye and increasing host
 lossFctDBA <- function(parameter, env, eval = FALSE) {
   hdFct <- function(hd) {

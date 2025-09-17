@@ -4,6 +4,8 @@ correct_names_additional_param <- function(df, case) {
     names(df) <- c("Host [M]")
   } else if (case == "dba_dye_const") {
     names(df) <- c("Dye [M]")
+  } else if (case == "dba_host_const2") {
+    names(df) <- c("Host [M]")
   } else if (case == "ida") {
     names(df) <- c("Host [M]", "Dye [M]", "Ka(HD) [1/M]")
   } else if (case == "gda") {
@@ -18,6 +20,8 @@ correct_names_params <- function(df, case) {
     names(df) <- c("Ka(HD) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
   } else if (case == "dba_dye_const") {
     names(df) <- c("Ka(HD) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+  } else if (case == "dba_host_const2") {
+    names(df) <- c("Ka(HGG) [1/M]", "Ka(HG) [1/M]", "I(0)", "I(H) [1/M]", "I(G) [1/M]", "I(HG) [1/M]", "I(HGG) [1/M]")
   } else if (case == "ida") {
     names(df) <- c("Ka(HG) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
   } else if (case == "gda") {
@@ -27,6 +31,14 @@ correct_names_params <- function(df, case) {
 }
 
 create_params_df <- function(res, case) {
+  if (case == "dba_host_const2") {
+    df <- data.frame(
+      kg = res[[2]][1], kgg = res[[2]][2],
+      I0 = res[[2]][3], IH = res[[2]][4],
+      IG = res[[2]][5], IHG = res[[2]][6], IHGG = res[[2]][6]
+    ) |> correct_names_params(case)
+    return(df)
+  }
   df <- data.frame(
     khd = res[[2]][1], I0 = res[[2]][2],
     IHD = res[[2]][3], ID = res[[2]][4]
@@ -47,6 +59,12 @@ correct_names_data <- function(df, case) {
       "total Host measured [M]", "Signal measured",
       "Signal simulated",
       "free Dye simulated [M]", "Host-Dye simulated [M]"
+    )
+  } else if (case == "dba_host_const2") {
+    names(df) <- c(
+      "total Guest measured [M]", "Signal measured",
+      "Signal simulated",
+      "free Guest simulated [M]", "Host-Guest simulated [M]"
     )
   } else if (case == "ida") {
     names(df) <- c(
@@ -75,6 +93,7 @@ add_axis_labels <- function(p, case, ylabel) {
   case_df <- data.frame(
     dba_host_const = "total Dye measured [M]",
     dba_dye_const = "total Host measured [M]",
+    dba_host_const2 = "total Guest measured [M]",
     ida = "total Guest measured [M]",
     gda = "total Dye measured [M]"
   )
@@ -86,6 +105,7 @@ plot_results <- function(df, case) {
   case_df <- data.frame(
     dba_host_const = "total Dye measured [M]",
     dba_dye_const = "total Host measured [M]",
+    dba_host_const2 = "total Guest measured [M]",
     ida = "total Guest measured [M]",
     gda = "total Dye measured [M]"
   )
@@ -98,14 +118,29 @@ plot_results <- function(df, case) {
       rep("Predicted", length(df[, x_col]))
     )
   )
-  df_d <- data.frame(
-    x = df[, x_col],
-    y = df[, "free Dye simulated [M]"]
-  )
-  df_hd <- data.frame(
-    x = df[, x_col],
-    y = df[, "Host-Dye simulated [M]"]
-  )
+  df_d <- NULL
+  df_hd <- NULL
+  if (case == "dba_host_const2") {
+    df_d <- data.frame(
+      x = df[, x_col],
+      y = df[, "free Guest simulated [M]"]
+    )
+    df_hd <- data.frame(
+      x = df[, x_col],
+      y = df[, "Host-Guest simulated [M]"]
+    )
+  } else {
+    df_d <- data.frame(
+      x = df[, x_col],
+      y = df[, "free Dye simulated [M]"]
+    )
+    df_hd <- data.frame(
+      x = df[, x_col],
+      y = df[, "Host-Dye simulated [M]"]
+    )
+  }
+
+
   base_size <- 10
 
   p1 <- ggplot() +
@@ -180,6 +215,7 @@ plot_results_plotly <- function(df, case) {
   case_df <- data.frame(
     dba_host_const = "total Dye measured [M]",
     dba_dye_const = "total Host measured [M]",
+    dba_host_const2 = "total Guest measured [M]",
     ida = "total Guest measured [M]",
     gda = "total Dye measured [M]"
   )
@@ -258,6 +294,7 @@ plot_results_plotly <- function(df, case) {
   case_df <- data.frame(
     dba_host_const = "total Dye measured [M]",
     dba_dye_const = "total Host measured [M]",
+    dba_host_const2 = "total Guest measured [M]",
     ida = "total Guest measured [M]",
     gda = "total Dye measured [M]"
   )

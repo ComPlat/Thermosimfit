@@ -5,17 +5,19 @@
 #' @import ggplot2
 #' @import patchwork
 #' @param case is a character describing which system should be investigated. Either:
-#' "dba_host_const",
+#' "dba_host_const", "dba_host_const2",
 #' "dba_dye_const", "ida" or "gda".
 #' @param lowerBounds is a numeric vector defining the lower boundaries of the parameter.
 #'        In case of *dba_dye_const* or *dba_host_const the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
+#'        In case of *dba_host_const2* tje order of the parameters is: *kg*, *kgg*, *I0*, *IH*, *IG*, *IHG*, and *IHGG*
 #'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
 #' @param upperBounds is a numeric vector defining the upper boundaries of the parameter.
 #'        The order is the same as for the lower boundaries.
-#' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.
+#' @param path is a filepath which contains tabular x-y data. The concentration of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.
 #' @param additionalParameters are required parameters which are specific for each case.
 #'        In case of *dba_host_const* a numeric vector of length 1 is expected which contains the concentration of the host.
 #'        In case of *dba_dye_const* a numeric vector of length 1 is expected which contains the concentration of the dye.
+#'        In case of *dba_host_const2* a numeric vector of length 1 is expected which contains the concentration of the host.
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
 #'        In case of *gda* a numeric vector of length 3 is expected which contains the concentration of the host, guest and the *khd* parameter.
 #' @param seed is an optional integer argument defining the seed which is set directly for the optimization. In case the argument is not set the current time is used as seed.
@@ -38,8 +40,8 @@ opti <- function(case, lowerBounds, upperBounds,
     if (!is.character(case)) {
       stop("case has to be of type character")
     }
-    if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
-      stop("case is neither dba_dye_const, dba_host_const, ida or gda")
+    if (!(case %in% c("dba_dye_const", "dba_host_const", "dba_host_const2", "ida", "gda"))) {
+      stop("case is neither dba_dye_const, dba_host_const, dba_host_const2, ida or gda")
     }
     if (!is.numeric(lowerBounds)) {
       return(ErrorClass$new("lowerBounds have to be of type numeric"))
@@ -65,7 +67,7 @@ opti <- function(case, lowerBounds, upperBounds,
     if (!is.numeric(additionalParameters)) {
       stop("additionalParameters have to be of type numeric")
     }
-    if (case == "hg" && length(additionalParameters) != 1) {
+    if (case %in% c("dba_host_const", "dba_dye_const", "dba_host_const2") && length(additionalParameters) != 1) {
       stop("additionalParameters have to be of length 1")
     }
     if (case == "ida" && length(additionalParameters) != 3) {
@@ -149,6 +151,8 @@ opti <- function(case, lowerBounds, upperBounds,
         lossFctHG
       } else if (case == "dba_dye_const") {
         lossFctDBA
+      } else if (case == "dba_host_const2") {
+        lossFctHG2
       } else if (case == "ida") {
         lossFctIDA
       } else if (case == "gda") {
@@ -175,6 +179,11 @@ opti <- function(case, lowerBounds, upperBounds,
       env$host <- df[, 1]
       env$signal <- df[, 2]
       env$d0 <- additionalParameters[1]
+    } else if (case == "dba_host_const2") {
+      names(df) <- c("guest", "signal")
+      env$guest <- df[, 1]
+      env$signal <- df[, 2]
+      env$h0 <- additionalParameters[1]
     } else if (case == "ida") {
       names(df) <- c("guest", "signal")
       env$ga <- df[, 1]
@@ -215,11 +224,21 @@ opti <- function(case, lowerBounds, upperBounds,
         env, lowerBounds, upperBounds, lossFct, ngen, npop,
         errorThreshold, Topo, FALSE, runAsShiny, add_info
       )
+      # TODO: remove the next 2 lines. Only testing
+      res[[1]]$measured <- df[[2]]
+      return(res)
       params <- create_params_df(res, case)
-      forwardResult <- forward_simulation(
-        case, df,
-        additionalParameters, params
-      )
+      forwardResult <- NULL
+      if (case == "dba_host_const2") {
+        # TODO: create forward loss fct
+        forwardResult <- lossFctHG2(res[[2]], env, TRUE)
+      } else {
+        forwardResult <- forward_simulation(
+          case, df,
+          additionalParameters, params
+        )
+      }
+
       df <- create_data_df(df, res, case)
       df[["Signal simulated"]] <- spline(
         x = forwardResult[, 1],
