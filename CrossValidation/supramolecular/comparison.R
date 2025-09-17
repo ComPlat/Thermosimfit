@@ -1,4 +1,4 @@
-load("/home/konrad/Documents/Thermosimfit/Tests/supramolecular/DBA_30Sims.RData")
+load("./CrossValidation/supramolecular/DBA_30Sims.RData")
 parameter <- lapply(res, function(x) {
   x$parameter
 })
@@ -51,8 +51,6 @@ res_supra[[14]] <- 0.0020893781617455
 # Initial: 0.3
 res_supra[[15]] <- 0.00208937816083479
 
-
-
 com <- data.frame(
   values = c(
     parameter[[1]], unlist(res_supra)
@@ -67,9 +65,32 @@ p <- ggplot(data = com, aes(x = groups, y = values)) +
   geom_boxplot() +
   labs(y = "Ka(HD) [1/µM]", x = "")
 
-mean(com[com$groups == "Thermosimfit", 1])
-mean(com[com$groups == "Bindfit", 1])
-
 ggsave(p,
-  file = "/home/konrad/Documents/Thermosimfit/Tests/supramolecular/Comparison_Thermosimfit_Bindifit.png"
+  file = "./CrossValidation/supramolecular/Comparison_Thermosimfit_Bindifit.png"
+)
+
+path <- "./CrossValidation/supramolecular/"
+df1 <- read.csv( paste0(path, "FirstDataset.csv"), sep = ",") # µM
+df2 <- read.csv( paste0(path, "SecondDataSet.csv"), sep = ",") # µM
+df3 <- read.csv( paste0(path, "ThirdDataSet.csv"), sep = ",") # µM
+names(df1) <- c("β-cyclodextrin [µM]", "TNS [µM]", "Signal")
+names(df2) <- c("β-cyclodextrin [µM]", "TNS [µM]", "Signal")
+names(df3) <- c("β-cyclodextrin [µM]", "TNS [µM]", "Signal")
+
+wb <- openxlsx::createWorkbook()
+openxlsx::addWorksheet(wb, "InputData")
+openxlsx::writeData(wb, "InputData", df1, startCol = 1)
+openxlsx::writeData(wb, "InputData", df2, startCol = 5)
+openxlsx::writeData(wb, "InputData", df3, startCol = 9)
+
+names(com) <- c("Ka(HD) [1/µM]", "Software")
+openxlsx::addWorksheet(wb, "Results")
+openxlsx::writeData(wb, "Results", com, startCol = 1)
+openxlsx::insertImage(wb, "Results",
+  "./CrossValidation/supramolecular/Comparison_Thermosimfit_Bindifit.png"
+  , startCol = 7)
+
+openxlsx::saveWorkbook(wb,
+  file = "./CrossValidation/supramolecular/Comparison_Thermosimfit_Bindifit.xlsx",
+  overwrite = TRUE
 )

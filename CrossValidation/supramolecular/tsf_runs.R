@@ -1,15 +1,10 @@
 # Host: β-cyclodextrin
 library(tsf)
 
-df1 <- read.csv(
-  "/home/konrad/Documents/Thermosimfit/Tests/supramolecular/FirstDataSet.csv",
-  sep = ",") # µM
-df2 <- read.csv(
-  "/home/konrad/Documents/Thermosimfit/Tests/supramolecular/SecondDataSet.csv",
-  sep = ",") # µM
-df3 <- read.csv(
-  "/home/konrad/Documents/Thermosimfit/Tests/supramolecular/ThirdDataSet.csv",
-  sep = ",") # µM
+path <- "./CrossValidation/supramolecular/"
+df1 <- read.csv( paste0(path, "FirstDataset.csv"), sep = ",") # µM
+df2 <- read.csv( paste0(path, "SecondDataSet.csv"), sep = ",") # µM
+df3 <- read.csv( paste0(path, "ThirdDataSet.csv"), sep = ",") # µM
 
 run_sims <- function(df) {
   dye <- 151 # TNS [µM]
@@ -37,8 +32,5 @@ res3 <- run_sims(df3[, c(2, 3)])
 res <- c(res1, res2, res3)
 save(
   res,
-  file = "/home/konrad/Documents/Thermosimfit/Tests/supramolecular/DBA_30Sims.RData"
+  file = paste0(path, "DBA_30Sims.RData")
 )
-
-
-

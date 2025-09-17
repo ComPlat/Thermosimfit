@@ -1,4 +1,4 @@
-setwd("./CrossValidation")
+setwd("./CrossValidation/ThermosimfitMathematica")
 
 dba <- read.csv("dba_comparison_summary.csv")
 ida <- read.csv("ida_comparison_summary.csv")

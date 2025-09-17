@@ -3,7 +3,4 @@ conc_guest (Beta-Syclodexterin): 151 µM
 I(0) = 18
 I(D) = 4116792
 
-
 dye(TNS)
-
-
