@@ -49,15 +49,15 @@ param_plot <- function(path) {
     geom_boxplot(
       data = params,
       aes(
-        y = y, fill = "Entire data", x = factor(0)
+        x = factor(dataset), y = y,
+        group = factor(dataset),
+        fill = factor(dataset)
       )
     ) +
     geom_boxplot(
       data = params,
       aes(
-        x = factor(dataset), y = y,
-        group = factor(dataset),
-        fill = factor(dataset)
+        y = y, fill = "Entire data", x = factor(0)
       )
     ) +
     facet_wrap(. ~ names,
@@ -73,7 +73,7 @@ param_plot <- function(path) {
       strip.placement = "outside",
       axis.text.x = element_blank()
     ) +
-    guides(fill = guide_legend(title = "Datasets")) +
+    guides(fill = guide_legend(title = "Measurements")) +
     scale_fill_brewer(palette = "Dark2")
 }
 
@@ -94,7 +94,7 @@ plot_fct <- function(path) {
     ))
   )
 
-  ggplot() +
+ggplot() +
     geom_boxplot(
       data = df,
       aes(
@@ -137,7 +137,7 @@ p
 ggsave(p,
   bg = "white",
   file = "ida_variance_50reps.png",
-  width = 8,
+  width = 10,
   height = 8
 )
 

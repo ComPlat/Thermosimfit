@@ -365,7 +365,7 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
   fd <- fit_distri(data[, idx], distri)
   df <- fd$df
   df$linetype <- "Fitted distribution"
-  kde_ci$kd$linetype <- "Kernel Density"
+  kde_ci$kd$linetype <- "Kernel density"
   df <- rbind(df, kde_ci$kd)
   x <- c(0.75, 0.4, 1, 0.7)[idx] # TODO: change if it is integrated in tsf
   y <- c(3, 3, 1.4, 2.1)[idx]
@@ -380,7 +380,7 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
       mean_ci$upper_ci, median_ci$upper_ci, kde_ci$upper_ci, kd4_m_ci[3], median_iqr[3]
     ),
     type = c(
-      "Mean", "Median", "Mode (Kernel density)", "Mode (joint Kernel density)", "Median IQR"
+      "Mean", "Median", "Mode (kernel density)", "Mode (joint kernel density)", "Median IQR"
     ),
     y = c(0.5, 0.6, 0.7, 0.8, 0.9)
   )
@@ -404,14 +404,14 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
     ) +
     geom_point(
       data = density_data,
-      aes(x = x, y = y, shape = "joint Kernel density")
+      aes(x = x, y = y, shape = "joint kernel density")
     ) +
     geom_label(
       aes(
         x = x,
         y = y,
         label = fd$params
-      )
+      ), size = 6
     ) +
     labs(x = names(data)[idx], y = "Density")
 
@@ -432,8 +432,8 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
       values = c(
         "Mean" = colors[1],
         "Median" = colors[2],
-        "Mode (Kernel density)" = colors[3],
-        "Mode (joint Kernel density)" = colors[4],
+        "Mode (kernel density)" = colors[3],
+        "Mode (joint kernel density)" = colors[4],
         "Median IQR" = colors[5]
       )
     ) +
@@ -441,17 +441,21 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
       name = NULL,
       values = setNames(
         c("solid", "dashed", "dotted"),
-        c("Fitted distribution", "Kernel Density", "Joint Kernel Density")
+        c("Fitted distribution", "Kernel density", "Joint kernel density")
       )
     ) +
     scale_shape_manual(
       name = NULL,
-      values = c("joint Kernel density" = 1)
+      values = c("Joint kernel density" = 1)
     ) +
     theme(
       legend.position = "right",
-      legend.title = element_text(size = 14),
-      legend.text  = element_text(size = 12)
+      legend.title = element_text(size = 18),
+      legend.text  = element_text(size = 18),
+      axis.text.x = element_text(size = 18),
+      axis.text.y = element_text(size = 18),
+      axis.title.x = element_text(size = 18),
+      axis.title.y = element_text(size = 18)
     ) +
     guides(
       linetype = guide_legend(order = 1, keywidth = 2, keyheight = 1),
@@ -475,21 +479,20 @@ plots <- lapply(plots, function(x) {
   x + theme(legend.position = "none")
 })
 plot_grid <- plot_grid(
-  plotlist = plots, nrow = 2,
-  labels = c("A", "B", "C", "D")
+  plotlist = plots, nrow = 4,
+  labels = c("A", "B", "C", "D"), label_size = 18
 )
 final_plot <- plot_grid(
   plot_grid, legend,
   ncol = 2,
   rel_widths = c(1, 0.2)
 )
-final_plot
 
 ggsave(final_plot,
   bg = "white",
   file = "LocationEstimation.png",
-  width = 16.5,
-  height = 8
+  width = 24,
+  height = 16
 )
 
 # Calculate results
