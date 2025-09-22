@@ -15,7 +15,8 @@ opti(
   ngen = 200,
   Topology = "random",
   errorThreshold = -Inf,
-  add_info = ""
+  add_info = "",
+  error_calc_fct = NULL
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ In case of \emph{gda} a numeric vector of length 3 is expected which contains th
 \item{errorThreshold}{is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.}
 
 \item{add_info}{is an optional character argument which is printed during optimization}
+
+\item{error_calc_fct}{is an optional input function which is used to calculate the error. The function should expect two arguments, first the insilico signal followed by the measured signal.}
 }
 \value{
 either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the \emph{insilico} signal values are returned.

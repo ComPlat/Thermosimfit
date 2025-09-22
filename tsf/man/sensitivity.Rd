@@ -11,7 +11,8 @@ sensitivity(
   additionalParameters,
   percentage = NULL,
   OffsetBoundaries = NULL,
-  runAsShiny = FALSE
+  runAsShiny = FALSE,
+  error_calc_fct = NULL
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ In case of \emph{gda} a numeric vector of length 3 is expected which contains th
 \item{OffsetBoundaries}{in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.}
 
 \item{runAsShiny}{is internally used when running the algorithm from shiny.}
+
+\item{error_calc_fct}{is an optional input function which is used to calculate the error. The function should expect two arguments, first the insilico signal followed by the measured signal.}
 }
 \value{
 a plot showing the sensitivity
