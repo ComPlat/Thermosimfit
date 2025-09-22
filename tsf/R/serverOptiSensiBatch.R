@@ -270,7 +270,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
 
     create_error_fct <- function() {
       name_fct <- input$error_calc_fct
-      list("rel. Error" = rel_err, "RMSE" = rmse, "SSE" = sse, "Huber" = huber)[name_fct]
+      list("rel. Error" = rel_err, "RMSE" = rmse, "SSE" = sse, "Huber" = huber)[[name_fct]]
     }
 
     create_error_threshold <- function() {
