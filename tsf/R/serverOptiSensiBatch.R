@@ -268,6 +268,11 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       return(topo)
     }
 
+    create_error_fct <- function() {
+      name_fct <- input$error_calc_fct
+      list("rel. Error" = rel_err, "RMSE" = rmse, "SSE" = sse, "Huber" = huber)[name_fct]
+    }
+
     create_error_threshold <- function() {
       et <- input$threshold
       return(et)
@@ -373,6 +378,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       npop <- create_npop()
       ngen <- create_ngen()
       topo <- create_topology()
+      ecf <- create_error_fct()
       et <- create_error_threshold()
       seed <- input$Seed
       if (is.na(seed)) seed <- as.numeric(Sys.time())
@@ -386,7 +392,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
 
       # start process
       result <- call_opti_in_bg( get_Model(), lb, ub, df(),
-        additionalParameters, seed, npop, ngen, topo, et
+        additionalParameters, seed, npop, ngen, topo, et, ecf
       )
       process(result)
       setup_done(TRUE)
@@ -531,7 +537,6 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
 
     # sensitivity
     # ===============================================================================
-
     sensi_message <-function(message) {
       session$sendCustomMessage(
         type = get_update_field_sense(),
@@ -564,7 +569,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       sensi_message("Initializing...")
       # start process
       result <- call_sensi_in_bg(get_Model(), optim_params, df(),
-        additionalParameters, sense_bounds)
+        additionalParameters, sense_bounds, error_calc_fct = create_error_fct())
       nclicks(nclicks() + 1)
       sensi_process(result)
       sensi_setup_done(TRUE)
@@ -752,6 +757,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       npop <- create_npop()
       ngen <- create_ngen()
       topo <- create_topology()
+      ecf <- create_error_fct()
       et <- create_error_threshold()
       num_cores <- get_num_core()
       # check seed case
@@ -793,8 +799,6 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         list(message = "Initializing...")
       )
 
-      # TODO: use function create_task_queue
-
       # 1. create seeds in loop
       for (i in seq_len(size)) {
         if (seed_case == 1) {
@@ -829,7 +833,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         get_Model(),
         lb, ub, dfs,
         additionalParameters, seeds,
-        npop, ngen, topo, et,
+        npop, ngen, topo, ecf, et,
         messages, num_cores
       ))
 

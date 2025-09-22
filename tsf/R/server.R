@@ -34,53 +34,7 @@ server <- function(input, output, session) {
     }
   })
 
-  observeEvent(input$mod, {
-    req(!is.null(data$df))
-    req(is.data.frame(data$df))
-    rwn(nchar(input$op) > 0, "No operation was defined")
-    req(input$new_col)
-    req(nchar(input$new_col) > 0)
-    dt <- data$df
-    op <- input$op
-    new_col <- input$new_col
-    new <- NULL
-    err <- NULL
-    e <- try({
-      ast <- getAST(str2lang(op))
-      ast <- ast[[length(ast)]]
-    })
-    if (is(e, "ErrorClass")) {
-      showNotification(e$message)
-      return()
-    } else if (inherits(e, "try-error")) {
-      showNotification(e)
-      return()
-    }
-    e <- try(
-      new <- with(dt, eval(parse(text = op)))
-    )
-    if (inherits(e, "try-error")) {
-      err <- conditionMessage(attr(e, "condition"))
-    } else {
-      data$df[, new_col] <- new
-    }
-    output$df <- renderDT(data$df)
-    output$mod_error <- renderText(err)
-    return(df)
-  })
-
-
   data_batch <- reactiveValues(data_frames = NULL)
-
-  # TODO: remove
-  # list_dataframes <-
-  #   importDataBatch("/home/konrad/Documents/GitHub/RProjects/Thermosimfit/Tests/IDA/idaBatch.csv")
-  #
-  # observe({ output$active_df <- renderDT(data$df)
-  #   data_batch$data_frames <- list_dataframes
-  #   data$df <- data_batch$data_frames[[1]]
-  #   output$df <- renderDT(data$df)
-  # })
 
   observeEvent(input$upload_batch, {
     req(input$upload_batch)

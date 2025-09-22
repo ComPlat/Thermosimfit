@@ -63,6 +63,7 @@ TaskQueue <- R6::R6Class(
     npop = NULL,
     ngen = NULL,
     topo = NULL,
+    ecf = NULL,
     et = NULL,
     num_cores = NULL,
 
@@ -75,7 +76,7 @@ TaskQueue <- R6::R6Class(
 
     initialize = function(case, lb, ub, dfs,
                           ap, seeds, npop, ngen,
-                          topo, et,
+                          topo, ecf, et,
                           messages, num_cores) {
       self$case <- case
       self$lb <- lb
@@ -86,6 +87,7 @@ TaskQueue <- R6::R6Class(
       self$npop <- npop
       self$ngen <- ngen
       self$topo <- topo
+      self$ecf <- ecf
       self$et <- et
       self$messages <- messages
       self$sz <- length(dfs)
@@ -122,16 +124,16 @@ TaskQueue <- R6::R6Class(
       process <- callr::r_bg(
         function(case, lb, ub, df, ap,
                  seed, npop,
-                 ngen, topology, error_threshold, messages) {
+                 ngen, topology, error_threshold, ecf, messages) {
           res <- tsf::opti(
             case, lb, ub, df, ap, seed,
-            npop, ngen, topology, error_threshold, messages
+            npop, ngen, topology, error_threshold, ecf, messages
           )
           return(res)
         },
         args = list(
           self$case, self$lb, self$ub, df, self$ap,
-          seed, self$npop, self$ngen, self$topo, self$et, m
+          seed, self$npop, self$ngen, self$topo, self$et, self$ecf, m
         )
       )
       self$assigned[idx] <- TRUE

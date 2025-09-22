@@ -25,12 +25,8 @@ uiInterface <- function() {
           tabName = "data",
           box(
             fileInput("upload", "Upload a file"),
-            textInput("op", "Operations", value = "var / 1000"),
-            textInput("new_col", "Name of new variable", value = "var"),
-            actionButton("mod", "Modify"),
-            verbatimTextOutput("mod_error"),
           box(
-              DT::DTOutput("df"),  
+              DT::DTOutput("df"),
               width = 10
           ),
           width = 12

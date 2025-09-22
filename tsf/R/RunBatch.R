@@ -1,6 +1,6 @@
 create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
                               additionalParameters, seed, npop, ngen,
-                              Topology, errorThreshold, num_rep, num_cores) {
+                              Topology, error_calc_fct, errorThreshold, num_rep, num_cores) {
   if (num_cores <= 0) {
     stop("num_cores has to be >= 1")
   }
@@ -54,15 +54,10 @@ create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
     case,
     lowerBounds, upperBounds, dfs,
     additionalParameters, seeds,
-    npop, ngen, Topology, errorThreshold,
+    npop, ngen, Topology, error_calc_fct, errorThreshold,
     messages, num_cores
   )
 }
-
-# FIX: does not work in local mode
-# For instance if seed is set thatn the warning is
-# created using print_noti which can only be used
-# within a shiny app
 
 #' Runs a batch of optimization tasks
 #'
@@ -79,6 +74,7 @@ create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
 #' @param npop is an optional integer argument defining the number of particles during optimization. The default value is set to 40.
 #' @param ngen is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.
 #' @param Topology is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.
+#' @param error_calc_fct is an optional input function which is used to calculate the error. The function should expect two arguments, first the insilico signal followed by the measured signal.
 #' @param errorThreshold is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.
 #' @param num_rep is an optional integer argument defining the number of replicates for each dataset
 #' @param num_cores is an optional integer argument defining the maximum number of cores which should be used for the optimization
@@ -112,6 +108,7 @@ batch <- function(case,
                   path,
                   additionalParameters,
                   seed = NA, npop = 40, ngen = 200, Topology = "random",
+                  error_calc_fct = NULL,
                   errorThreshold = -Inf, num_rep = 1, num_cores = 1) {
   if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
     stop("case is neither dba_dye_const, dba_host_const, ida or gda")
@@ -126,11 +123,14 @@ batch <- function(case,
       return(ErrorClass$new("Found non data.frame entry"))
     }
   }
+  if (is.null(error_calc_fct)) {
+    error_calc_fct <- rel_err
+  }
 
   tq <- create_task_queue(
     case, lowerBounds, upperBounds, list_df,
     additionalParameters, seed, npop, ngen,
-    Topology, errorThreshold, num_rep, num_cores
+    Topology, error_calc_fct, errorThreshold, num_rep, num_cores
   )
 
   # 4. assign tasks

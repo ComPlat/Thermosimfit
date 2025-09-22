@@ -23,6 +23,7 @@
 #' @param ngen is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.
 #' @param Topology is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.
 #' @param errorThreshold is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.
+#' @param error_calc_fct is an optional input function which is used to calculate the error. The function should expect two arguments, first the insilico signal followed by the measured signal.
 #' @param add_info is an optional character argument which is printed during optimization
 #' @return either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the *insilico* signal values are returned.
 #' @examples
@@ -33,7 +34,7 @@ opti <- function(case, lowerBounds, upperBounds,
                  seed = NULL,
                  npop = 40, ngen = 200,
                  Topology = "random",
-                 errorThreshold = -Inf, add_info = "") {
+                 errorThreshold = -Inf, error_calc_fct = NULL, add_info = "") {
   tryCatch(expr = {
     if (!is.character(case)) {
       stop("case has to be of type character")
@@ -105,6 +106,11 @@ opti <- function(case, lowerBounds, upperBounds,
     if (any(check == TRUE)) {
       stop("lowerBounds < upperBounds not fulfilled")
     }
+    error_fct <- rel_err
+    if (!is.null(error_calc_fct)) {
+      check_error_calc_function(error_calc_fct)
+      error_fct <- error_calc_fct
+    }
   }, error = function(e) {
     return(ErrorClass$new(conditionMessage(e)))
   }, interrupt = function(e) {
@@ -165,6 +171,7 @@ opti <- function(case, lowerBounds, upperBounds,
 
   env <- tryCatch(expr = {
     env <- new.env()
+    env$error_calc_fct <- error_fct
     if (case == "dba_host_const") {
       names(df) <- c("dye", "signal")
       env$dye <- df[, 1]

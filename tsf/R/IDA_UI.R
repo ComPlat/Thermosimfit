@@ -45,9 +45,7 @@ idaUI <- function(id) {
           collapsible = TRUE, collapsed = TRUE,
           box(
             numericInput(NS(id, "npop"), "Number of particles", value = 40),
-            numericInput(NS(id, "ngen"), "Number of generations", value = 1000)
-          ),
-          box(
+            numericInput(NS(id, "ngen"), "Number of generations", value = 1000),
             selectInput(NS(id, "topology"), "Topology of particle swarm",
               c(
                 "star" = "star",
@@ -55,10 +53,20 @@ idaUI <- function(id) {
               ),
               selected = "random",
               selectize = FALSE
-            ),
+            )
+          ),
+          box(
             numericInput(NS(id, "threshold"),
               "Threshold of the error",
               value = 0.00001
+            ),
+            selectInput(NS(id, "error_calc_fct"), "Function to calculate the error:",
+              c(
+                "rel. Error" = "rel. Error",
+                "RMSE" = "RMSE",
+                "SSE" = "SSE",
+                "Huber" = "Huber"
+              )
             ),
             numericInput(NS(id, "Seed"), "Seed which should be set", value = NULL)
           ),

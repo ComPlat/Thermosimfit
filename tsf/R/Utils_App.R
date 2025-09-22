@@ -105,11 +105,15 @@ format_batch_status <- function(stdout, temp) {
 # print notification
 # ========================================================================================
 print_noti <- function(message, type = "warning", duration = 15) {
-  showNotification(
-    message,
-    duration = duration,
-    type = type
-  )
+  if (in_batch()) {
+    print(message)
+  } else {
+    showNotification(
+      message,
+      duration = duration,
+      type = type
+    )
+  }
 }
 
 # require with notificiation
@@ -223,31 +227,31 @@ request_cores <- function(n_cores, token) {
 call_opti_in_bg <- function(case, lb, ub,
                             df, ap, seed,
                             npop, ngen, topo,
-                            et) {
+                            et, ecf) {
   callr::r_bg(
     function(case, lb, ub, df, ap,
-             seed, npop, ngen, Topology, errorThreshold) {
+             seed, npop, ngen, Topology, errorThreshold, error_calc_fct) {
       res <- tsf::opti(
-        case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold
+        case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold, error_calc_fct
       )
       return(res)
     },
     args = list(
       case, lb, ub, df,
-      ap, seed, npop, ngen, topo, et
+      ap, seed, npop, ngen, topo, et, ecf
     )
   )
 }
 
-call_sensi_in_bg <- function(case, optim_params, df, ap, sense_bounds) {
+call_sensi_in_bg <- function(case, optim_params, df, ap, sense_bounds, error_calc_fct) {
   callr::r_bg(
     function(case, optim_params, df, ap, sense_bounds) {
       res <- tsf::sensitivity(
-        case, optim_params, df, ap, sense_bounds
+        case, optim_params, df, ap, sense_bounds, error_calc_fct
       )
       return(res)
     },
-    args = list(case, optim_params, df, ap, sense_bounds)
+    args = list(case, optim_params, df, ap, sense_bounds, error_calc_fct)
   )
 }
 

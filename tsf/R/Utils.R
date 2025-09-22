@@ -1,3 +1,37 @@
+in_shiny_app <- function() {
+  requireNamespace("shiny", quietly = TRUE) && shiny::isRunning()
+}
+in_reactive_context <- function() {
+  requireNamespace("shiny", quietly = TRUE) && !is.null(shiny::getDefaultReactiveDomain())
+}
+in_batch <- function() {
+  !in_shiny_app() && !in_reactive_context()
+}
+
+rel_err   <- function(yhat, y) {
+  eps <- 1e-12
+  sum(abs(y - yhat) / pmax(abs(y), eps))
+}
+rmse <- function(yhat, y) {
+  r <- y - yhat
+  sqrt(mean(r^2))
+}
+sse <- function(yhat, y) {
+  r <- y - yhat
+  sum(r^2)
+}
+huber <- function(yhat, y) {
+  delta <- 0.5
+  r <- abs(y - yhat)
+  mean(ifelse(r <= delta, 0.5*r^2, delta*(r - 0.5*delta)))
+}
+
+check_error_calc_function <- function(f) {
+  stopifnot("error calc function has to be a function" = is.function(f))
+  n_args <- formals(f)
+  stopifnot("The error calc function should accept two arguments" = length(n_args) == 2)
+}
+
 # additional parameters utilities
 correct_names_additional_param <- function(df, case) {
   if (case == "dba_host_const") {

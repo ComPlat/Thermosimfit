@@ -51,7 +51,7 @@ lossFctDBA <- function(parameter, env, eval = FALSE) {
   if (eval) {
     return(data.frame(insilico = signalInsilico, d = d, hd = hd))
   }
-  return(sum(abs(signal - signalInsilico) / signal))
+  return(env$error_calc_fct(signalInsilico, signal))
 }
 
 
@@ -107,7 +107,7 @@ lossFctHG <- function(parameter, env, eval = FALSE) {
   if (eval) {
     return(data.frame(insilico = signalInsilico, d = d, hd = hd))
   }
-  return(sum(abs(signal - signalInsilico) / signal))
+  return(env$error_calc_fct(signalInsilico, signal))
 }
 
 lossFctIDA <- function(parameter, env, eval = FALSE) {
@@ -173,7 +173,7 @@ lossFctIDA <- function(parameter, env, eval = FALSE) {
   if (eval) {
     return(data.frame(insilico = signalInsilico, d = d, hd = hd))
   }
-  return(sum(abs(signal - signalInsilico) / signal))
+  return(env$error_calc_fct(signalInsilico, signal))
 }
 
 lossFctGDA <- function(parameter, env, eval = FALSE) {
@@ -240,5 +240,5 @@ lossFctGDA <- function(parameter, env, eval = FALSE) {
   if (eval) {
     return(data.frame(insilico = signalInsilico, d = d, hd = hd))
   }
-  return(sum(abs(signal - signalInsilico) / signal))
+  return(env$error_calc_fct(signalInsilico, signal))
 }
