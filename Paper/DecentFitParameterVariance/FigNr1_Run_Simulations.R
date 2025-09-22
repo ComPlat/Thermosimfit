@@ -11,7 +11,7 @@ num_cores <- detectCores() - 1
 
 # GDA new data set
 # ============================================================
-gda_new <- function() {
+gda <- function() {
   lowerBounds <- c(
     kG = 100,
     I0 = 0,
