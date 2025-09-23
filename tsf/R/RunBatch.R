@@ -54,7 +54,8 @@ create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
     case,
     lowerBounds, upperBounds, dfs,
     additionalParameters, seeds,
-    npop, ngen, Topology, error_calc_fct, errorThreshold,
+    npop, ngen, Topology, error_calc_fct,
+    errorThreshold,
     messages, num_cores
   )
 }
@@ -74,7 +75,9 @@ create_task_queue <- function(case, lowerBounds, upperBounds, list_df,
 #' @param npop is an optional integer argument defining the number of particles during optimization. The default value is set to 40.
 #' @param ngen is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.
 #' @param Topology is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.
-#' @param error_calc_fct is an optional input function which is used to calculate the error. The function should expect two arguments, first the insilico signal followed by the measured signal.
+#' @param error_calc_fct is an optional input defining how the error between the in silico signal and the measured signal is calculated.
+#'        One can use one of the following predefined functions as character vectors: *Rel. Error*, *RMSE*, *SSE*, or *Huber*. The default function is *Rel. Error*.
+#'        Alternatively a function can be passed to opti, which has to expect two arguments, first the insilico signal followed by the measured signal.
 #' @param errorThreshold is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.
 #' @param num_rep is an optional integer argument defining the number of replicates for each dataset
 #' @param num_cores is an optional integer argument defining the maximum number of cores which should be used for the optimization
@@ -108,7 +111,7 @@ batch <- function(case,
                   path,
                   additionalParameters,
                   seed = NA, npop = 40, ngen = 200, Topology = "random",
-                  error_calc_fct = NULL,
+                  error_calc_fct = "Rel. Error",
                   errorThreshold = -Inf, num_rep = 1, num_cores = 1) {
   if (!(case %in% c("dba_dye_const", "dba_host_const", "ida", "gda"))) {
     stop("case is neither dba_dye_const, dba_host_const, ida or gda")
@@ -122,9 +125,6 @@ batch <- function(case,
     if (!is.data.frame(list_df[[i]])) {
       return(ErrorClass$new("Found non data.frame entry"))
     }
-  }
-  if (is.null(error_calc_fct)) {
-    error_calc_fct <- rel_err
   }
 
   tq <- create_task_queue(

@@ -196,16 +196,13 @@ plotMetrices <- function(list) {
   list <- list[[3]]
   df <- Reduce(rbind, list)
   data <- data.frame(
-    x = rep(df$dataset, 5),
-    y = c(df[, 1], df[, 2], df[, 3], df[, 4], df[, 5]),
+    x = rep(df$dataset, 2),
+    y = c(df[, 1], df[, 2]),
     names = c(
       rep(names(df)[1], nrow(df)),
-      rep(names(df)[2], nrow(df)),
-      rep(names(df)[3], nrow(df)),
-      rep(names(df)[4], nrow(df)),
-      rep(names(df)[5], nrow(df))
+      rep(names(df)[2], nrow(df))
     ),
-    repetition = rep(df$repetition, 5)
+    repetition = rep(df$repetition, 2)
   )
   p <- ggplot() +
     geom_boxplot(

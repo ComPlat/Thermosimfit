@@ -245,9 +245,9 @@ call_opti_in_bg <- function(case, lb, ub,
 
 call_sensi_in_bg <- function(case, optim_params, df, ap, sense_bounds, error_calc_fct) {
   callr::r_bg(
-    function(case, optim_params, df, ap, sense_bounds) {
+    function(case, optim_params, df, ap, sense_bounds, error_calc_fct) {
       res <- tsf::sensitivity(
-        case, optim_params, df, ap, sense_bounds, error_calc_fct
+        case, optim_params, df, ap, sense_bounds, error_calc_fct = error_calc_fct
       )
       return(res)
     },

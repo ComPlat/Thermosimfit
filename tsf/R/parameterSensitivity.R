@@ -59,14 +59,16 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
 #'        In case of *ida* a numeric vector of length 3 is expected which contains the concentration of the host, dye and the *khd* parameter.
 #'        In case of *gda* a numeric vector of length 3 is expected which contains the concentration of the host, guest and the *khd* parameter.
 #' @param runAsShiny is internally used when running the algorithm from shiny.
-#' @param error_calc_fct is an optional input function which is used to calculate the error. The function should expect two arguments, first the insilico signal followed by the measured signal.
+#' @param error_calc_fct is an optional input defining how the error between the in silico signal and the measured signal is calculated.
+#'        One can use one of the following predefined functions as character vectors: *Rel. Error*, *RMSE*, *SSE*, or *Huber*. The default function is *Rel. Error*.
+#'        Alternatively a function can be passed to opti, which has to expect two arguments, first the insilico signal followed by the measured signal.
 #' @return a plot showing the sensitivity
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
 #' res <- opti("ida", c(1, 0, 0, 0), c(10^9, 10^6, 10^6, 10^6), path, c(4.3, 6.0, 7079458))
 #' sensitivity("ida", res[[2]], path, c(4.3, 6.0, 7079458), 20)
 sensitivity <- function(case, parameters, path, additionalParameters,
-                        percentage = NULL, OffsetBoundaries = NULL, runAsShiny = FALSE, error_calc_fct = NULL) {
+                        percentage = NULL, OffsetBoundaries = NULL, runAsShiny = FALSE, error_calc_fct = "rel. Error") {
   if (!is.character(case)) {
     stop("case has to be of type character")
   }
@@ -91,8 +93,13 @@ sensitivity <- function(case, parameters, path, additionalParameters,
   if (case == "gda" && length(additionalParameters) != 3) {
     stop("additionalParameters have to be of length 3")
   }
-  error_fct <- rel_err
-  if (!is.null(error_calc_fct)) {
+  error_fct <- NULL
+  error_fct_name <- NULL
+  if (is.character(error_calc_fct)) {
+    error_fct_name <- error_calc_fct
+    error_fct <- get_error_calc_fct(error_calc_fct)
+  } else {
+    error_fct_name <- substitute(error_calc_fct)
     check_error_calc_function(error_calc_fct)
     error_fct <- error_calc_fct
   }

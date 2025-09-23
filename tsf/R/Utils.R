@@ -25,6 +25,9 @@ huber <- function(yhat, y) {
   r <- abs(y - yhat)
   mean(ifelse(r <= delta, 0.5*r^2, delta*(r - 0.5*delta)))
 }
+get_error_calc_fct <- function(name) {
+  list("rel. Error" = rel_err, "Rel. Error" = rel_err, RMSE = rmse, SSE = sse, Huber = huber)[[name]]
+}
 
 check_error_calc_function <- function(f) {
   stopifnot("error calc function has to be a function" = is.function(f))

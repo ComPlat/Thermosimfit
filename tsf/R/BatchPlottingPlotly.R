@@ -230,16 +230,13 @@ plotMetricesPlotly <- function(list) {
   list <- list[[3]]
   df <- Reduce(rbind, list)
   data <- data.frame(
-    x = rep(df$dataset, 5),
-    y = c(df[, 1], df[, 2], df[, 3], df[, 4], df[, 5]),
+    x = rep(df$dataset, 2),
+    y = c(df[, 1], df[, 2]),
     names = c(
       rep(names(df)[1], nrow(df)),
-      rep(names(df)[2], nrow(df)),
-      rep(names(df)[3], nrow(df)),
-      rep(names(df)[4], nrow(df)),
-      rep(names(df)[5], nrow(df))
+      rep(names(df)[2], nrow(df))
     ),
-    repetition = rep(df$repetition, 5)
+    repetition = rep(df$repetition, 2)
   )
   plot_list <- list()
   names <- unique(data$names)
@@ -266,12 +263,10 @@ plotMetricesPlotly <- function(list) {
       )
   }
   p <- subplot(plot_list[[1]], plot_list[[2]],
-    plot_list[[3]], plot_list[[4]], plot_list[[5]],
-    nrows = 5,
+    nrows = 2,
     titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = FALSE,
   margin = 0.015)
   return(p)
-
 }
 
 entirePlotPlotly <- function(list) {

@@ -268,11 +268,6 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       return(topo)
     }
 
-    create_error_fct <- function() {
-      name_fct <- input$error_calc_fct
-      list("rel. Error" = rel_err, "RMSE" = rmse, "SSE" = sse, "Huber" = huber)[[name_fct]]
-    }
-
     create_error_threshold <- function() {
       et <- input$threshold
       return(et)
@@ -378,7 +373,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       npop <- create_npop()
       ngen <- create_ngen()
       topo <- create_topology()
-      ecf <- create_error_fct()
+      ecf <- input$error_calc_fct
       et <- create_error_threshold()
       seed <- input$Seed
       if (is.na(seed)) seed <- as.numeric(Sys.time())
@@ -503,16 +498,15 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
     output$metrices <- renderDT({
       correct_results()
       res <- as.data.frame(opti_result()[[4]])
-      names(res)[4] <- c("R<sup>2</sup>")
-      names(res)[5] <- c("R<sup>2</sup> adjusted")
+      names(res)[1] <- c("R<sup>2</sup>")
+      names(res)[2] <- c("R<sup>2</sup> adjusted")
       exportTestValues(
         df_metrices = res
       )
       datatable(res,
         escape = FALSE,
         caption = "Error Metrics: Comparison of in silico signal and measured signal"
-      ) |>
-        formatSignif(columns = 1:ncol(res), digits = 6)
+      )
     })
 
     output$download <- downloadHandler(
@@ -561,6 +555,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       additionalParameters <- create_additional_parameters()
       optim_params <- get_opti_result()
       sense_bounds <- get_sens_bounds()
+      ecf <- input$error_calc_fct
       # clear everything
       sensi_setup_done(FALSE)
       invalid_time(1100)
@@ -569,7 +564,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       sensi_message("Initializing...")
       # start process
       result <- call_sensi_in_bg(get_Model(), optim_params, df(),
-        additionalParameters, sense_bounds, error_calc_fct = create_error_fct())
+        additionalParameters, sense_bounds, error_calc_fct = input$error_calc_fct)
       nclicks(nclicks() + 1)
       sensi_process(result)
       sensi_setup_done(TRUE)
@@ -757,7 +752,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       npop <- create_npop()
       ngen <- create_ngen()
       topo <- create_topology()
-      ecf <- create_error_fct()
+      ecf <- input$error_calc_fct
       et <- create_error_threshold()
       num_cores <- get_num_core()
       # check seed case
