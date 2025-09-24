@@ -1,7 +1,7 @@
 library(tsf)
 library(parallel)
 
-num_cores <- detectCores() - 1
+num_cores <- detectCores() - 3
 seeds <- c(17287, 31370, 2301, 14163, 40882, 30777,  3513,  8248, 25557, 28574)
 
 # Error functions
@@ -130,7 +130,7 @@ gda <- function(ecf, seeds) {
       path = df,
       seed = seed,
       ngen = 1000,
-      errorThreshold = 0.6,
+      errorThreshold = -Inf,
       additionalParameters = additionalParameters,
       add_info = as.character(seed),
       error_calc_fct = ecf

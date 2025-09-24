@@ -27,6 +27,11 @@ p <- function(case) {
   res <- lapply(names(data), function(name) {
     combine(data[[name]], name)
   })
+  m <- lapply(res, function(sim) {
+    sim$metrices
+  })
+  m <- Reduce(rbind, m)
+  print(m)
 
   plot_parameter <- function(res) {
     df <- lapply(res, function(sim) {
@@ -38,9 +43,14 @@ p <- function(case) {
       seed = rep(df$seed, 4),
       error_fct = rep(df$error_fct, 4)
     )
+    df[df$error_fct == "RelErr", "error_fct"] <- "Rel. Error"
+    df[df$error_fct == "HUBER", "error_fct"] <- "Huber"
+    df[df$error_fct == "weightedSSE", "error_fct"] <- "Weighted SSE"
+    
     ggplot(data = df, aes(x = error_fct, y = values, group = error_fct)) +
       geom_boxplot() +
-      facet_wrap(~ ind, scales = "free")
+      facet_wrap(~ ind, scales = "free") +
+      labs(x = NULL, y = NULL)
   }
   plot_parameter(res)
 }
@@ -49,10 +59,11 @@ p <- function(case) {
 # ============================================================
 load("./Paper/OtherErrors/IDA_10Simulations_4DifferentErrorFcts.RData")
 pl <- p("ida")
-pl
 ggsave("./Paper/OtherErrors/ErrorFctIDA.png", pl)
 
 load("./Paper/OtherErrors/GDA_10Simulations_4DifferentErrorFcts.RData")
 pl <- p("gda")
 pl
 ggsave("./Paper/OtherErrors/ErrorFctGDA.png", pl)
+
+res_weighted_sse_err

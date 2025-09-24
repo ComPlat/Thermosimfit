@@ -1,3 +1,4 @@
+setwd("./Paper/Regions")
 library(plot3D)
 
 png("GDA.png", width = 1200, height = 2000)
@@ -6,7 +7,7 @@ z <- matrix(new_params$errors, nrow = length(KaHG), ncol = length(IHD))
 hist3D(
   x = KaHG, y = IHD, z = z,
   col = viridis::viridis(20),
-  # xlab = "Ka(HG) [1/M]", ylab = "I(HD) [1/M]", zlab = "MANE",
+  # xlab = "Ka(HG) [1/M]", ylab = "I(HD) [1/M]", zlab = "Rel. Error",
   phi = 50,
   cex.lab = 0.000001,
   font.lab = 2,
@@ -42,7 +43,7 @@ text3D(
 text3D(
   x = min(KaHG) - 10000, y = min(IHD) - 10^7, z = max(new_params$errors) * 0.4,
   phi = 50,
-  labels = "MANE", col = "black",
+  labels = "Rel. Error", col = "black",
   add = TRUE, cex = 2.5, font = 2,
   srt = 295
 )
@@ -54,7 +55,7 @@ z <- matrix(new_params$errors, nrow = length(KaHD), ncol = length(IHD))
 hist3D(
   x = KaHD, y = IHD, z = z,
   col = viridis::viridis(30),
-  # xlab = "Ka(HD) [1/M]", ylab = "I(HD) [1/M]", zlab = "MANE",
+  # xlab = "Ka(HD) [1/M]", ylab = "I(HD) [1/M]", zlab = "Rel. Error",
   phi = 50,
   cex.lab = 0.0001,
   font.axis = 2,
@@ -88,7 +89,7 @@ text3D(
 text3D(
   x = min(KaHD) / 2, y = min(IHD) - 5 * 10^7, z = max(new_params$errors) / 2,
   phi = 50,
-  labels = "MANE", col = "black",
+  labels = "Rel. Error", col = "black",
   add = TRUE, cex = 2.5, font = 2,
   srt = 295
 )
@@ -101,7 +102,7 @@ z <- matrix(new_params$errors, nrow = length(KaHG), ncol = length(IHD))
 hist3D(
   x = KaHG, y = IHD, z = z,
   col = viridis::viridis(20),
-  # xlab = "Ka(HG) [1/M]", ylab = "I(HD) [1/M]", zlab = "MANE",
+  # xlab = "Ka(HG) [1/M]", ylab = "I(HD) [1/M]", zlab = "Rel. Error",
   phi = 50,
   cex.lab = 0.00001,
   font.lab = 2,
@@ -136,7 +137,7 @@ text3D(
 text3D(
   x = min(KaHG), y = min(IHD) - 10^8, z = max(new_params$errors) * 0.7,
   phi = 50,
-  labels = "MANE", col = "black",
+  labels = "Rel. Error", col = "black",
   add = TRUE, cex = 2.5, font = 2,
   srt = 295
 )

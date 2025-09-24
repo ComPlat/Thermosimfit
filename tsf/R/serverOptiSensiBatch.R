@@ -498,8 +498,8 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
     output$metrices <- renderDT({
       correct_results()
       res <- as.data.frame(opti_result()[[4]])
-      names(res)[1] <- c("R<sup>2</sup>")
-      names(res)[2] <- c("R<sup>2</sup> adjusted")
+      names(res)[3] <- c("R<sup>2</sup>")
+      names(res)[4] <- c("R<sup>2</sup> adjusted")
       exportTestValues(
         df_metrices = res
       )

@@ -1,3 +1,4 @@
+setwd("./Paper/DecentFitParameterVariance")
 library(ggplot2)
 library(cowplot)
 dotsize <- 0.5
@@ -35,7 +36,7 @@ sig_plot <- function(case, path, legend = FALSE) {
       aes(x = "", y = errors),
       outlier.size = outlier_size
     ) +
-    labs(x = "", y = "MANE") +
+    labs(x = "", y = "Rel. Error") +
     theme(
       axis.text = axis,
       axis.title = axis_title
