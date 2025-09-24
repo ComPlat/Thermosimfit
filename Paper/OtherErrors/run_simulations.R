@@ -10,10 +10,6 @@ rel_err   <- function(yhat, y) {
   eps <- 1e-12
   sum(abs(y - yhat) / pmax(abs(y), eps))
 }
-rmse <- function(yhat, y) {
-  r <- y - yhat
-  sqrt(mean(r^2))
-}
 sse <- function(yhat, y) {
   r <- y - yhat
   sum(r^2)
@@ -22,6 +18,11 @@ huber <- function(yhat, y) {
   delta <- 0.5
   r <- abs(y - yhat)
   mean(ifelse(r <= delta, 0.5*r^2, delta*(r - 0.5*delta)))
+}
+weighted_sse_rel <- function(yhat, y) {
+  eps <- 1e-12
+  r <- (y - yhat) / pmax(abs(y), eps)
+  sum(r^2)
 }
 
 # IDA
@@ -71,20 +72,21 @@ ida <- function(ecf, seeds) {
       add_info = as.character(seed),
       error_calc_fct = ecf
     )
-  }, mc.cores = num_cores, mc.silent = TRUE)
+  }, mc.cores = num_cores, mc.silent = TRUE, mc.preschedule = FALSE)
 }
 
-res_mane <- ida(NULL, seeds)
 res_rel_err <- ida(rel_err, seeds)
-res_rmse <- ida(rmse, seeds)
+res_weighted_sse_err <- ida(weighted_sse_rel, seeds)
 res_sse <- ida(sse, seeds)
 res_huber <- ida(huber, seeds)
 
 ida <- list(
-  MANE = res_mane, RelErr = res_rel_err,
-  RMSE = res_rmse, SSE = res_sse, HUBER = res_huber
+  RelErr = res_rel_err,
+  weightedSSE = res_weighted_sse_err,
+  SSE = res_sse,
+  HUBER = res_huber
 )
-save(ida, file = "./Paper/OtherErrors/IDA_10Simulations_5DifferentErrorFcts.RData")
+save(ida, file = "./Paper/OtherErrors/IDA_10Simulations_4DifferentErrorFcts.RData")
 
 # GDA
 # ============================================================
@@ -136,14 +138,15 @@ gda <- function(ecf, seeds) {
   }, mc.cores = num_cores, mc.silent = TRUE)
 }
 
-res_mane <- gda(NULL, seeds)
 res_rel_err <- gda(rel_err, seeds)
-res_rmse <- gda(rmse, seeds)
+res_weighted_sse_err <- gda(weighted_sse_rel, seeds)
 res_sse <- gda(sse, seeds)
 res_huber <- gda(huber, seeds)
 
 gda <- list(
-  MANE = res_mane, RelErr = res_rel_err,
-  RMSE = res_rmse, SSE = res_sse, HUBER = res_huber
+  RelErr = res_rel_err,
+  weightedSSE = res_weighted_sse_err,
+  SSE = res_sse,
+  HUBER = res_huber
 )
-save(gda, file = "./Paper/OtherErrors/GDA_10Simulations_5DifferentErrorFcts.RData")
+save(gda, file = "./Paper/OtherErrors/GDA_10Simulations_4DifferentErrorFcts.RData")

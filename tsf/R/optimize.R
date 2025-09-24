@@ -114,7 +114,7 @@ opti <- function(case, lowerBounds, upperBounds,
       error_fct_name <- error_calc_fct
       error_fct <- get_error_calc_fct(error_calc_fct)
     } else {
-      error_fct_name <- substitute(error_calc_fct)
+      error_fct_name <- "User defined function"
       check_error_calc_function(error_calc_fct)
       error_fct <- error_calc_fct
     }

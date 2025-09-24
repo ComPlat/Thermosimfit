@@ -47,12 +47,12 @@ p <- function(case) {
 
 # IDA
 # ============================================================
-load("./Paper/OtherErrors/IDA_10Simulations_5DifferentErrorFcts.RData")
+load("./Paper/OtherErrors/IDA_10Simulations_4DifferentErrorFcts.RData")
 pl <- p("ida")
 pl
 ggsave("./Paper/OtherErrors/ErrorFctIDA.png", pl)
 
-load("./Paper/OtherErrors/GDA_10Simulations_5DifferentErrorFcts.RData")
+load("./Paper/OtherErrors/GDA_10Simulations_4DifferentErrorFcts.RData")
 pl <- p("gda")
 pl
 ggsave("./Paper/OtherErrors/ErrorFctGDA.png", pl)
