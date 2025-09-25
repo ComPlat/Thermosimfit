@@ -93,7 +93,7 @@ test_batch_gda <- function() {
     "gda",
     lowerBounds, upperBounds,
     path, additionalParameters,
-    ngen = 100,
+    ngen = 150,
     num_cores = 6,
     num_rep = 3
   )

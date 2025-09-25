@@ -14,7 +14,8 @@ test_sensitivity_invalid_case <- function() {
   additionalParameters <- c(5, 6, 7)
   path <- "invalid_path.txt"
   result <- try(
-    sensitivity("invalid_case", parameters, path, additionalParameters, percentage = 10)
+    sensitivity("invalid_case", parameters, path, additionalParameters, percentage = 10),
+    silent = TRUE
   )
   expect_true("try-error" %in% class(result))
 }
