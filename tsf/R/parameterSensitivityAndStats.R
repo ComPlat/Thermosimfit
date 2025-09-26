@@ -1,3 +1,157 @@
+# TODO: update the plot and the text
+
+`%||%` <- function(a, b) if (!is.null(a)) a else b
+
+kde4d_intern <- function(df, n_samp = 20000) {
+  stopifnot(ncol(df) == 4)
+  colnames(df) <- colnames(df) %||% paste0("V", seq_len(ncol(df)))
+  H   <- ks::Hpi(as.matrix(df))
+  fit <- ks::kde(as.matrix(df), H = H)
+  draws <- as.data.frame(ks::rkde(n = n_samp, fhat = fit))
+  colnames(draws) <- colnames(df)
+  marginals <- lapply(seq_len(ncol(draws)), function(j) {
+    d <- density(draws[[j]], n = 512)
+    data.frame(x = d$x, y = d$y)
+  })
+  names(marginals) <- colnames(draws)
+  list(fit = fit, draws = draws, marginals = marginals)
+}
+kde4d_with_smr <- function(df, prob = 0.95, n_samp = 20000) {
+  stopifnot(ncol(df) == 4)
+  ki   <- kde4d_intern(df, n_samp = n_samp)
+  fit  <- ki$fit
+  Xs   <- ki$draws
+  grid <- expand.grid(fit$eval.points)
+  dens <- as.vector(fit$estimate)
+  mode <- as.numeric(grid[which.max(dens), ])
+  names(mode) <- colnames(df)
+  alpha <- (1 - prob) / 2
+  qs <- t(apply(Xs, 2, quantile, probs = c(alpha, 1 - alpha), na.rm = TRUE))
+  colnames(qs) <- c("lower", "upper")
+  rownames(qs) <- colnames(df)
+  list(
+    mode     = mode,
+    lower_ci = qs[, "lower"],
+    upper_ci = qs[, "upper"],
+    df       = ki$marginals
+  )
+}
+
+# # NOTE: Using Contour Levels for Significant Model Regions
+# # Significant Model Regions (SMR)
+# kde4d_intern <- function(df) {
+#   mins <- apply(df, 2, min)
+#   maxs <- apply(df, 2, max)
+#   res <- ks::kde(df, xmin = mins, xmax = maxs)
+#   grid_points <- expand.grid(res$eval.points)
+#   joint_densities <- as.vector(res$estimate)
+#   density_data <- cbind(grid_points, joint_density = joint_densities)
+#   return(density_data)
+# }
+
+# kde4d_with_smr <- function(df, prob = 0.95) {
+#   df <- df[, 1:4]
+#   res <- ks::kde(df)
+#   level <- paste0(prob * 100, "%")
+#   density_threshold <- res$cont[level]
+#   grid_points <- expand.grid(res$eval.points)
+#   densities <- as.vector(res$estimate)
+#   significant_points <- grid_points[densities >= density_threshold, ]
+#   mode_index <- which.max(densities)
+#   mode <- grid_points[mode_index, ]
+#   mode <- ifelse(mode < 0, 0, mode) |> as.numeric()
+#   CIs <- apply(significant_points, 2, range)
+#   lc <- CIs[1, ]
+#   lc <- ifelse(lc < 0, 0, lc)
+#   uc <- CIs[2, ]
+#   uc <- ifelse(uc < 0, 0, uc)
+#   res <- kde4d_intern(df)
+#   df <- lapply(1:4, function(x) {
+#     i <- parent.frame()$i[]
+#     data.frame(x = res[, i], y = res[, 5])
+#   })
+#   return(list(
+#     mode = mode,
+#     lower_ci = lc,
+#     upper_ci = uc,
+#     df = df
+#   ))
+# }
+
+jkd <- function(df) {
+  res <- kde4d_with_smr(df)
+  res$mode
+  res$lower_ci
+  res$upper_ci
+  res <- lapply(1:4, function(idx) {
+    mode <- res$mode[idx]
+    l <- res$lower_ci[idx]
+    u <- res$upper_ci[idx]
+    df_temp <- data.frame(
+      values = c(mode, l, u),
+      type = c("mode", "lower", "upper")
+    )
+    names(df_temp)[1] <- names(df)[idx]
+    return(df_temp)
+  })
+  res <- lapply(res, function(x) {
+    x[, 1]
+  })
+  res <- Reduce(rbind, res) |> as.data.frame()
+  res <- cbind(names(df)[1:4], res)
+  names(res) <- c("Parameter", "mode", "lower", "upper")
+  row.names(res) <- NULL
+  return(res)
+}
+
+make_joint_sampler_kde <- function(df, lb, ub) {
+  eps <- 1e-6
+  p <- ncol(df)
+  to_unit <- function(X) {
+    U <- sweep(X, 2, lb, "-")
+    U <- sweep(U, 2, (ub - lb), "/")
+    pmin(pmax(U, eps), 1 - eps)
+  }
+  to_param <- function(U) {
+    U <- sweep(U, 2, (ub - lb), "*")
+    sweep(U, 2, lb, "+")
+  }
+  U <- to_unit(as.matrix(df))
+  Z <- qlogis(U)
+  kde_obj <- ks::kde(Z)
+  function(n) {
+    Znew <- ks::rkde(n = n, fhat = kde_obj)
+    Unew <- plogis(Znew)
+    Xnew <- to_param(Unew)
+    Xdf <- as.data.frame(Xnew)
+    colnames(Xdf) <- colnames(df)
+    Xdf
+  }
+}
+sobolVariance_dep <- function(parameter_df, lossFct, env, lb, ub, parameterNames, runAsShiny) {
+  n <- 1000
+  nboot <- 100
+  joint_sampler <- make_joint_sampler_kde(parameter_df, lb, ub)
+  X <- joint_sampler(n)
+  names(X) <- parameterNames
+  sobolFun <- function(X) {
+    p <- NULL
+    if (is.data.frame(X) || is.matrix(X)) {
+      return(sapply(1:nrow(X), function(x) {
+        lossFct(as.numeric(X[x, ]), env, FALSE)
+      }))
+    } else {
+      p <- as.numeric(X)
+    }
+    lossFct(p, env, FALSE)
+  }
+  sh <- shapleysobol_knn(model = sobolFun, X = X, nboot = nboot)
+  ggplot(sh) +
+    theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 1),
+          axis.text.y = element_text(size = 8)) +
+    ylab("Explained fraction of variance (Shapley effects)")
+}
+
 # Monte Carlo Estimation of Sobol’ Indices
 sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
   n <- 1000
@@ -37,8 +191,6 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
     ) +
     ylab("Explained fraction of variance")
 }
-
-
 
 #' Optimize algebraic systems which describe thermodynamic binding systems
 #'
