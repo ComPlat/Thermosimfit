@@ -1,4 +1,4 @@
-setwd("./Paper/MeasurementVariance/")
+setwd("/home/konrad/Documents/Thermosimfit/Paper/MeasurementVariance/")
 library(ggplot2)
 library(ks)
 library(cowplot)
@@ -222,7 +222,7 @@ calc_location_ci_bootstrap <- function(
 
 # Kernel density estimation
 # ========================================
-kde <- function(data) {
+cis <- function(data) {
   res <- density(data)
   mode <- res$x[which.max(res$y)]
 
@@ -248,111 +248,70 @@ kde <- function(data) {
     )
   )
 }
-kde4d_intern <- function(df) {
-  mins <- apply(df, 2, min)
-  maxs <- apply(df, 2, max)
-  res <- ks::kde(df, xmin = mins, xmax = maxs)
-  grid_points <- expand.grid(res$eval.points)
-  joint_densities <- as.vector(res$estimate)
-  density_data <- cbind(grid_points, joint_density = joint_densities)
-  return(density_data)
-}
-kde4d_bootstrap <- function(df, idx, n_iter = 10) {
-  temp <- kde4d_intern(df)
-  temp <- temp[!duplicated(temp[, idx]), ]
-  mode <- temp[which.max(temp[, 5]), idx]
-  modes <- numeric(n_iter)
-  res <- NULL
-  for (i in 1:n_iter) {
-    cat("Bootstrap iteration: ", i, "\n")
-    bootstrap_sample <- df[sample(1:nrow(df), replace = TRUE), ]
-    temp <- kde4d_intern(bootstrap_sample)
-    temp <- temp[!duplicated(temp[, idx]), ]
-    temp[, 5] <- transform(temp[, 5], "norm")
-    res <- temp
-    modes[i] <- temp[which.max(temp[, 5]), idx]
-  }
-  lower_ci <- quantile(modes, 0.025)
-  upper_ci <- quantile(modes, 0.975)
-
-  res <- kde4d_intern(df)
-  # res <- res[!duplicated(res[, idx]), ]
-  res[, 5] <- transform(res[, 5], "norm")
-
-  return(list(
-    res = res,
-    mode = mode,
-    lower_ci = lower_ci, upper_ci = upper_ci
-  ))
-}
-kde4d <- function(df, distris) {
-  df <- df[, 1:4]
-  for (i in 1:4) {
-    df[, i] <- transform(df[, i], distris[i])
-  }
-  res <- lapply(1:4, function(x) {
-    kde4d_bootstrap(df, x)
+kde4d_intern <- function(df, n_samp = 2000) {
+  H   <- ks::Hpi(as.matrix(df))
+  fit <- ks::kde(as.matrix(df), H = H)
+  draws <- as.data.frame(ks::rkde(n = n_samp, fhat = fit))
+  colnames(draws) <- colnames(df)
+  marginals <- lapply(seq_len(ncol(draws)), function(j) {
+    d <- density(draws[[j]], n = 512)
+    data.frame(x = d$x, y = d$y)
   })
-  return(
-    list(
-      mode = lapply(res, function(x) x$mode),
-      lower_ci = lapply(res, function(x) x$lower_ci),
-      upper_ci = lapply(res, function(x) x$upper_ci),
-      df = lapply(res, function(x) {
-        i <- parent.frame()$i[]
-        data.frame(x = x$res[, i], y = x$res[, 5])
-      })
-    )
+  names(marginals) <- colnames(draws)
+  list(fit = fit, draws = draws, marginals = marginals)
+}
+hdi_interval <- function(x, prob = 0.95) {
+  x <- sort(x[is.finite(x)])
+  n <- length(x)
+  if (n < 2) return(c(lower = NA_real_, upper = NA_real_))
+  m <- max(1L, floor(prob * n))
+  widths <- x[(m+1):n] - x[1:(n-m)]
+  j <- which.min(widths)
+  c(lower = x[j], upper = x[j + m])
+}
+kde4d_with_smr <- function(df, distris, prob = 0.95, n_samp = 20000,
+                           ci_kind = c("hdi", "quantile", "mode_boot"),
+                           boot_iter = 1000, density_n = 512) {
+  ci_kind <- match.arg(ci_kind)
+  df <- df[, 1:4, drop = FALSE]
+  df <- as.data.frame(mapply(transform, df, distris, SIMPLIFY = FALSE))
+  ki   <- kde4d_intern(df, n_samp = n_samp)
+  fit  <- ki$fit
+  Xs   <- ki$draws
+  grid <- expand.grid(fit$eval.points)
+  dens <- as.vector(fit$estimate)
+  mode <- as.numeric(grid[which.max(dens), ])
+  names(mode) <- colnames(df)
+  if (ci_kind == "quantile") {
+    alpha <- (1 - prob) / 2
+    qs <- t(apply(Xs, 2, quantile, probs = c(alpha, 1 - alpha), na.rm = TRUE))
+    colnames(qs) <- c("lower", "upper")
+  } else if (ci_kind == "hdi") {
+    qs <- t(apply(Xs, 2, function(col) hdi_interval(col, prob)))
+    colnames(qs) <- c("lower", "upper")
+  } else {
+    qs <- matrix(NA_real_, nrow = ncol(df), ncol = 2,
+                 dimnames = list(colnames(df), c("lower","upper")))
+    n <- nrow(df)
+    for (j in seq_len(ncol(df))) {
+      d0 <- density(Xs[[j]], n = density_n)
+      mb <- numeric(boot_iter)
+      for (b in seq_len(boot_iter)) {
+        bdf <- df[sample.int(n, n, replace = TRUE), , drop = FALSE]
+        kb  <- kde4d_intern(bdf, n_samp = nrow(Xs))
+        db  <- density(kb$draws[[j]], n = density_n)
+        mb[b] <- db$x[ which.max(db$y) ]
+      }
+      qs[j, ] <- stats::quantile(mb, c((1-prob)/2, 1-(1-prob)/2), names = FALSE)
+    }
+  }
+  list(
+    mode     = mode,
+    lower_ci = qs[, "lower"],
+    upper_ci = qs[, "upper"],
+    df       = ki$marginals
   )
 }
-# NOTE: Using Contour Levels for Significant Model Regions
-# Example call: result <- kde4d_with_smr(df, rep("norm", 4))
-# Significant Model Regions (SMR)
-#
-# Goal:
-# Identify regions of the density that contain a specified proportion
-# of the total probability mass (e.g., 95% for a confidence region).
-#
-# Steps:
-#  Calculate density estimates at all grid points.
-#  the density threshold (res$cont[level])
-#  for the desired cumulative probability (e.g., 0.95).
-#  Include only those grid points where the density is above the threshold.
-#
-# SMR highlights the most probable regions,
-# ignoring the "tails" of the distribution.
-kde4d_with_smr <- function(df, distris, prob = 0.95) {
-  df <- df[, 1:4]
-  df <- mapply(transform, df, distris, SIMPLIFY = FALSE)
-  df <- as.data.frame(df)
-  res <- ks::kde(df)
-  level <- paste0(prob * 100, "%")
-  density_threshold <- res$cont[level]
-  grid_points <- expand.grid(res$eval.points)
-  densities <- as.vector(res$estimate)
-  significant_points <- grid_points[densities >= density_threshold, ]
-  mode_index <- which.max(densities)
-  mode <- grid_points[mode_index, ]
-  mode <- ifelse(mode < 0, 0, mode) |> as.numeric()
-  CIs <- apply(significant_points, 2, range)
-  lc <- CIs[1, ]
-  lc <- ifelse(lc < 0, 0, lc)
-  uc <- CIs[2, ]
-  uc <- ifelse(uc < 0, 0, uc)
-  res <- kde4d_intern(df)
-  res[, 5] <- transform(res[, 5], "norm")
-  df <- lapply(1:4, function(x) {
-    i <- parent.frame()$i[]
-    data.frame(x = res[, i], y = res[, 5])
-  })
-  return(list(
-    mode = mode,
-    lower_ci = lc,
-    upper_ci = uc,
-    df = df
-  ))
-}
-
 # Plotting
 # ========================================
 plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
@@ -361,7 +320,7 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
   median_ci <- calc_location_ci_bootstrap(median, data[, idx])
   median_iqr <- median_iqr(data[, idx])
   mean_ci <- calc_location_ci_bootstrap(mean, data[, idx])
-  kde_ci <- kde(data[, idx])
+  kde_ci <- cis(data[, idx])
   fd <- fit_distri(data[, idx], distri)
   df <- fd$df
   df$linetype <- "Fitted distribution"
@@ -428,7 +387,7 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
       size = 1
     ) +
     scale_color_manual(
-      name = NULL,
+      name = "Location ± 95% CI",
       values = c(
         "Mean" = colors[1],
         "Median" = colors[2],
@@ -450,17 +409,16 @@ plotting <- function(data, idx, distri, density_data, kd4_m_ci) {
     ) +
     theme(
       legend.position = "right",
-      legend.box      = "horizontal",
-      legend.direction = "horizontal",
-      legend.text  = element_text(size = 28),
-      axis.text.x = element_text(size = 28),
-      axis.text.y = element_text(size = 28),
-      axis.title.x = element_text(size = 28),
-      axis.title.y = element_text(size = 28)
+      legend.title = element_text(size = 18),
+      legend.text  = element_text(size = 18),
+      axis.text.x = element_text(size = 18),
+      axis.text.y = element_text(size = 18),
+      axis.title.x = element_text(size = 18),
+      axis.title.y = element_text(size = 18)
     ) +
     guides(
-      linetype = guide_legend(order = 1, keywidth = 2, keyheight = 1, nrow = 2),
-      color    = guide_legend(order = 2, keywidth = 2, keyheight = 1, nrow = 2)
+      linetype = guide_legend(order = 1, keywidth = 2, keyheight = 1),
+      color    = guide_legend(order = 2, keywidth = 2, keyheight = 1)
     )
   return(p)
 }
@@ -480,67 +438,14 @@ plots <- lapply(plots, function(x) {
 })
 plot_grid <- plot_grid(
   plotlist = plots, nrow = 4,
-  labels = c("A", "B", "C", "D"), label_size = 28
+  labels = c("A", "B", "C", "D"), label_size = 18
 )
 final_plot <- plot_grid(
   plot_grid, legend,
-  ncol = 1,
-  rel_heights = c(1, 0.075)
+  ncol = 2,
+  rel_widths = c(1, 0.2)
 )
-ggsave(final_plot,
-  bg = "white",
-  file = "LocationEstimation.png",
-  width = 24,
-  height = 16
-)
+final_plot
 
-# Calculate results
-distis <- rep("norm", 4)
-back_transform <- function(transformed_data, distri,
-                           original_min, original_max) {
-  original_data <- transformed_data *
-    (original_max - original_min) + original_min
-  return(original_data)
-}
-calc_values <- function(df, distris) {
-  res <- kde4d_with_smr(df, distris)
-  res$mode
-  res$lower_ci
-  res$upper_ci
-  res <- lapply(1:4, function(idx) {
-    max <- max(df[, idx])
-    min <- min(df[, idx])
-    mode <- back_transform(res$mode[idx], distris[idx], min, max)
-    l <- back_transform(res$lower_ci[idx], distris[idx], min, max)
-    u <- back_transform(res$upper_ci[idx], distris[idx], min, max)
-    df_temp <- data.frame(
-      values = sprintf("%.3e", c(mode, l, u)),
-      type = c("mode", "lower", "upper")
-    )
-    names(df_temp)[1] <- names(df)[idx]
-    return(df_temp)
-  })
-  res <- lapply(res, function(x) {
-    x[, 1]
-  })
-  res <- Reduce(rbind, res) |> as.data.frame()
-  res <- cbind(names(df)[1:4], res)
-  names(res) <- c("Parameter", "mode", "lower", "upper")
-  row.names(res) <- NULL
-  return(res)
-}
-dba_res <- calc_values(p_dba, distris)
-dba_res
-ida_res <- calc_values(p_ida, distris)
-ida_res
-calc_values(p_gda, distris)
-
-
-# Calc IQR
-calc_iqr <- function(df) {
-  df <- df[, 1:4]
-  lapply(1:4, function(x) {
-    median_iqr(df[, x])
-  })
-}
-calc_iqr(p_dba)
+# Either update plot and table or change wording from CI to
+# per-parameter ranges inside the 95% joint KDE level set (an axis-aligned “HDR box”).
