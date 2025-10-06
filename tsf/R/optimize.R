@@ -8,11 +8,15 @@
 #' "dba_host_const",
 #' "dba_dye_const", "ida" or "gda".
 #' @param lowerBounds is a numeric vector defining the lower boundaries of the parameter.
-#'        In case of *dba_dye_const* or *dba_host_const the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
-#'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
+#'        In case of *dba_dye_const* or *dba_host_const the first parameter is: *khd*.
+#'        In case of *ida* and *ga* the first parameter is: *kg*.
+#'        Afterwards the parameters *I0*, *IHD* and *ID* have to be repeated for each signal respectivly.
 #' @param upperBounds is a numeric vector defining the upper boundaries of the parameter.
 #'        The order is the same as for the lower boundaries.
-#' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.
+#' @param path is a filepath which contains tabular x-y data.
+#'        The concentraion of dye or guest respectivly is assumed to be in the first column.
+#'        Furthermore, should the corresponding signals be stored in the other columns.
+#'        As an alternative an already loaded data.frame can be passed to the function.
 #' @param additionalParameters are required parameters which are specific for each case.
 #'        In case of *dba_host_const* a numeric vector of length 1 is expected which contains the concentration of the host.
 #'        In case of *dba_dye_const* a numeric vector of length 1 is expected which contains the concentration of the dye.
@@ -50,8 +54,8 @@ opti <- function(case, lowerBounds, upperBounds,
     if (length(lowerBounds) == 0) {
       stop("lowerBounds vector seems to be empty")
     }
-    if (length(lowerBounds) > 4) {
-      stop("lowerBounds vector has more than 4 entries")
+    if (length(lowerBounds) < 4) {
+      stop("lowerBounds vector has less than 4 entries")
     }
     if (!is.numeric(upperBounds)) {
       stop("upperBounds have to be of type numeric")
@@ -59,8 +63,8 @@ opti <- function(case, lowerBounds, upperBounds,
     if (length(upperBounds) == 0) {
       stop("upperBounds vector seems to be empty")
     }
-    if (length(upperBounds) > 4) {
-      stop("upperBounds vector has more than 4 entries")
+    if (length(upperBounds) < 4) {
+      stop("upperBounds vector has less than 4 entries")
     }
     if (!is.character(path) && !is.data.frame(path)) {
       stop("path has to be of type character or a data.frame")
@@ -155,6 +159,8 @@ opti <- function(case, lowerBounds, upperBounds,
       return(NULL)
     }
   )
+  n_sigs <- ncol(df) - 1
+  # TODO: add check that lb and ub match n_sigs
 
   lossFct <- tryCatch(
     expr = {
@@ -179,27 +185,28 @@ opti <- function(case, lowerBounds, upperBounds,
   env <- tryCatch(expr = {
     env <- new.env()
     env$error_calc_fct <- error_fct
+    env$n_sigs <- n_sigs
     if (case == "dba_host_const") {
-      names(df) <- c("dye", "signal")
+      names(df)[1] <- "dye"
       env$dye <- df[, 1]
-      env$signal <- df[, 2]
+      env$signal <- df[, -1] |> as.data.frame()
       env$h0 <- additionalParameters[1]
     } else if (case == "dba_dye_const") {
-      names(df) <- c("host", "signal")
+      names(df)[1] <- "host"
       env$host <- df[, 1]
-      env$signal <- df[, 2]
+      env$signal <- df[, -1] |> as.data.frame()
       env$d0 <- additionalParameters[1]
     } else if (case == "ida") {
-      names(df) <- c("guest", "signal")
+      names(df)[1] <- "guest"
       env$ga <- df[, 1]
-      env$signal <- df[, 2]
+      env$signal <- df[, -1] |> as.data.frame()
       env$h0 <- additionalParameters[1]
       env$d0 <- additionalParameters[2]
       env$kd <- additionalParameters[3]
     } else if (case == "gda") {
-      names(df) <- c("dye", "signal")
+      names(df)[1] <- "dye"
       env$dye <- df[, 1]
-      env$signal <- df[, 2]
+      env$signal <- df[, -1] |> as.data.frame()
       env$h0 <- additionalParameters[1]
       env$ga0 <- additionalParameters[2]
       env$kd <- additionalParameters[3]
@@ -210,7 +217,6 @@ opti <- function(case, lowerBounds, upperBounds,
   }, interrupt = function(e) {
     return(NULL)
   })
-
 
   runAsShiny <- tryCatch(expr = {
     runAsShiny <- new.env()
@@ -229,54 +235,48 @@ opti <- function(case, lowerBounds, upperBounds,
         env, lowerBounds, upperBounds, lossFct, ngen, npop,
         errorThreshold, Topo, FALSE, runAsShiny, add_info
       )
-      params <- create_params_df(res, case)
-      forwardResult <- forward_simulation(
-        case, df,
-        additionalParameters, params
-      )
-      df <- create_data_df(df, res, case)
-      df[["Signal simulated"]] <- spline(
-        x = forwardResult[, 1],
-        y = forwardResult[, 2],
-        xout = df[, 1]
-      )$y
-      lowerBounds <- correct_names_params(lowerBounds, case)
-      upperBounds <- correct_names_params(upperBounds, case)
+      params <- create_params_df(res, case, n_sigs)
+      df <- create_data_df(df, res, case, n_sigs)
+      lowerBounds <- correct_names_params(lowerBounds, case, n_sigs)
+      upperBounds <- correct_names_params(upperBounds, case, n_sigs)
       additionalParameters <- correct_names_additional_param(
         additionalParameters, case
       )
+      signal_plots <- plot_signals(df, case, n_sigs)
+      d_hd_plot <- plot_d_hd(df, case, n_sigs)
+
       return(list(
-        data = df, parameter = params, plot = plot_results(df, case),
-        metrices = metrices(df[, "Signal measured"], df[, "Signal simulated"], error_fct_name),
+        data = df, parameter = params,
+        signal_plots = signal_plots,
+        d_hd_plot = d_hd_plot,
+        metrices = metrices(df, error_fct_name, n_sigs),
         seed = seed, additionalParameters = additionalParameters,
         lowerBounds = lowerBounds, upperBounds = upperBounds,
-        npop = npop, ngen = ngen, Topology = Topology
+        npop = npop, ngen = ngen, Topology = Topology,
+        n_sigs = n_sigs
       ))
     },
     interrupt = function(e) {
       res <- runAsShiny$insilico
-      params <- create_params_df(res, case)
-      forwardResult <- forward_simulation(
-        case, df,
-        additionalParameters, params
-      )
-      df <- create_data_df(df, res, case)
-      df[["Signal simulated"]] <- spline(
-        x = forwardResult[, 1],
-        y = forwardResult[, 2],
-        xout = df[, 1]
-      )$y
-      lowerBounds <- correct_names_params(lowerBounds, case)
-      upperBounds <- correct_names_params(upperBounds, case)
+      params <- create_params_df(res, case, n_sigs)
+      df <- create_data_df(df, res, case, n_sigs)
+      lowerBounds <- correct_names_params(lowerBounds, case, n_sigs)
+      upperBounds <- correct_names_params(upperBounds, case, n_sigs)
       additionalParameters <- correct_names_additional_param(
         additionalParameters, case
       )
+      signal_plots <- plot_signals(df, case, n_sigs)
+      d_hd_plot <- plot_d_hd(df, case, n_sigs)
+
       return(list(
-        data = df, parameter = params, plot = plot_results(df, case),
-        metrices = metrices(df[, "Signal measured"], df[, "Signal simulated"], error_fct_name),
+        data = df, parameter = params,
+        signal_plots = signal_plots,
+        d_hd_plot = d_hd_plot,
+        metrices = metrices(df, error_fct_name, n_sigs),
         seed = seed, additionalParameters = additionalParameters,
         lowerBounds = lowerBounds, upperBounds = upperBounds,
-        npop = npop, ngen = ngen, Topology = Topology
+        npop = npop, ngen = ngen, Topology = Topology,
+        n_sigs = n_sigs
       ))
     },
     error = function(e) {

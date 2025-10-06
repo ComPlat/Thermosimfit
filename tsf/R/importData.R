@@ -32,8 +32,8 @@ importData <- function(path) {
   if (class(df) == "try-error") {
     return(ErrorClass$new("Could not import data"))
   }
-  if (ncol(df) != 2) {
-    return(ErrorClass$new("Data has wrong dimensions, two columns were expected"))
+  if (ncol(df) < 2) {
+    return(ErrorClass$new("Data has wrong dimensions, at least two columns were expected"))
   }
   if (nrow(df) == 0) {
     return(ErrorClass$new("Data has 0 rows"))

@@ -50,60 +50,58 @@ correct_names_additional_param <- function(df, case) {
 }
 
 # Parameter utilities
-correct_names_params <- function(df, case) {
+correct_names_params <- function(df, case, n_sigs) {
   if (case == "dba_host_const") {
-    names(df) <- c("Ka(HD) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+    names(df)[1] <- "Ka(HD) [1/M]"
   } else if (case == "dba_dye_const") {
-    names(df) <- c("Ka(HD) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+    names(df)[1] <- "Ka(HD) [1/M]"
   } else if (case == "ida") {
-    names(df) <- c("Ka(HG) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+    names(df)[1] <- "Ka(HG) [1/M]"
   } else if (case == "gda") {
-    names(df) <- c("Ka(HG) [1/M]", "I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+    names(df)[1] <- "Ka(HG) [1/M]"
   }
+  names <- vapply(1:n_sigs,
+    function(i) {
+      paste0("Sig Nr.", i, " ", c("I(0)", "I(HD) [1/M]", "I(D) [1/M]"))
+    }, character(3))
+  names(df)[-1] <- names
   return(df)
 }
 
-create_params_df <- function(res, case) {
-  df <- data.frame(
-    khd = res[[2]][1], I0 = res[[2]][2],
-    IHD = res[[2]][3], ID = res[[2]][4]
-  ) |> correct_names_params(case)
+create_params_df <- function(res, case, n_sigs) {
+  df <- data.frame(t(res[[2]])) |>
+    correct_names_params(case, n_sigs)
   return(df)
 }
 
 # data utilities
 correct_names_data <- function(df, case) {
+  nc <- ncol(df)
+  last2 <- (nc-1):(nc)
   if (case == "dba_host_const") {
-    names(df) <- c(
-      "total Dye measured [M]", "Signal measured",
-      "Signal simulated",
-      "free Dye simulated [M]", "Host-Dye simulated [M]"
-    )
+    names(df)[1] <- "total Dye measured [M]"
+    names(df)[last2] <- c("free Dye simulated [M]", "Host-Dye simulated [M]")
   } else if (case == "dba_dye_const") {
-    names(df) <- c(
-      "total Host measured [M]", "Signal measured",
-      "Signal simulated",
-      "free Dye simulated [M]", "Host-Dye simulated [M]"
-    )
+    names(df)[1] <- "total Host measured [M]"
+    names(df)[last2] <- c("free Dye simulated [M]", "Host-Dye simulated [M]")
   } else if (case == "ida") {
-    names(df) <- c(
-      "total Guest measured [M]", "Signal measured",
-      "Signal simulated",
-      "free Dye simulated [M]", "Host-Dye simulated [M]"
-    )
+    names(df)[1] <- "total Guest measured [M]"
+    names(df)[last2] <- c("free Dye simulated [M]", "Host-Dye simulated [M]")
   } else if (case == "gda") {
-    names(df) <- c(
-      "total Dye measured [M]", "Signal measured",
-      "Signal simulated",
-      "free Dye simulated [M]", "Host-Dye simulated [M]"
-    )
+    names(df)[1] <- "total Dye measured [M]"
+    names(df)[last2] <- c("free Dye simulated [M]", "Host-Dye simulated [M]")
   }
   return(df)
 }
-create_data_df <- function(df, res, case) {
-  df$signal_insilico <- res[[1]][, 1]
-  df$d <- res[[1]][, 2]
-  df$hd <- res[[1]][, 3]
+create_data_df <- function(df, res, case, n_sigs) {
+  for (i in 2:(n_sigs + 1)) {
+    names(df)[i] <- paste0("Sig. Nr. ", i - 1, " measured")
+  }
+  for (i in seq_len(n_sigs)) {
+    df[[paste0("Sig. Nr. ", i, " simulated")]] <- res[[1]][, i]
+  }
+  df$d <- res[[1]][, n_sigs + 1]
+  df$hd <- res[[1]][, n_sigs + 2]
   return(correct_names_data(df, case))
 }
 
@@ -119,7 +117,7 @@ add_axis_labels <- function(p, case, ylabel) {
   p + xlab(x_col) + ylab(ylabel)
 }
 
-plot_results <- function(df, case) {
+plot_signals <- function(df, case, nsigs) {
   case_df <- data.frame(
     dba_host_const = "total Dye measured [M]",
     dba_dye_const = "total Host measured [M]",
@@ -127,14 +125,51 @@ plot_results <- function(df, case) {
     gda = "total Dye measured [M]"
   )
   x_col <- case_df[case] |> as.character()
-  df_com <- data.frame(
-    x = rep(df[, x_col], 2),
-    y = c(df[, "Signal measured"], df[, "Signal simulated"]),
-    group = c(
-      rep("Measured", length(df[, x_col])),
-      rep("Predicted", length(df[, x_col]))
+
+  dfs <- lapply(1:nsigs, function(i) {
+    temp <- data.frame(
+      df[[x_col]],
+      df[[i + 1]],
+      df[[i + nsigs + 1]]
     )
+    names(temp) <- c(
+      x_col,
+      "Signal measured",
+      "Signal simulated"
+    )
+    temp
+  })
+  base_size <- 10
+  
+  lapply(dfs, function(df) {
+    sig_n <- parent.frame()$i[]
+    p <- ggplot(data = df) +
+      geom_point(data = df, aes(x = .data[[x_col]], .data[["Signal measured"]], colour = "Signal measured")) +
+      geom_point(data = df, aes(x = .data[[x_col]], .data[["Signal simulated"]], colour = "Signal simulated")) +
+      theme(
+        legend.position = "bottom",
+        axis.title = element_text(size = base_size * 1.2),
+        axis.text = element_text(size = base_size),
+        legend.text = element_text(size = base_size),
+        legend.title = element_text(size = base_size),
+        strip.text.x = element_text(size = base_size)
+      ) +
+      guides(colour = guide_legend(title = NULL)) +
+      labs(title = paste0("Sig. Nr.", sig_n))
+    add_axis_labels(p, case, "Signal [a.u]")
+  })
+}
+
+
+plot_d_hd <- function(df, case, nsigs) {
+  case_df <- data.frame(
+    dba_host_const = "total Dye measured [M]",
+    dba_dye_const = "total Host measured [M]",
+    ida = "total Guest measured [M]",
+    gda = "total Dye measured [M]"
   )
+  x_col <- case_df[case] |> as.character()
+
   df_d <- data.frame(
     x = df[, x_col],
     y = df[, "free Dye simulated [M]"]
@@ -145,49 +180,7 @@ plot_results <- function(df, case) {
   )
   base_size <- 10
 
-  p1 <- ggplot() +
-    geom_point(data = df_com[df_com$group == "Measured", ],
-      aes(
-        x = x,
-        y = y,
-        colour = "Measured"
-      ), size = 2, alpha = 0.5
-    ) +
-    geom_smooth(data = df_com[df_com$group == "Measured", ],
-      aes(
-        x = x,
-        y = y,
-        colour = "Measured"
-      ),
-      colour = "grey", formula = "y ~ x",
-      size = 1,
-      se = FALSE, method = "loess"
-    ) +
-    geom_point(data = df_com[df_com$group == "Predicted", ],
-      aes(
-        x = x,
-        y = y,
-        colour = "Predicted"
-      ), size = 2, alpha = 0.5
-    ) +
-    scale_colour_manual(
-      values = c(
-        "Measured" = "grey",
-        "Predicted" = RColorBrewer::brewer.pal(8, "Dark2")[1]
-      )
-    ) +
-    theme(
-      legend.position = "bottom",
-      axis.title = element_text(size = base_size * 1.2),
-      axis.text = element_text(size = base_size),
-      legend.text = element_text(size = base_size),
-      legend.title = element_text(size = base_size),
-      strip.text.x = element_text(size = base_size)
-    ) +
-    guides(colour = guide_legend(title = ""))
-  p1 <- add_axis_labels(p1, case, "Signal [a.u]")
-
-  p2 <- ggplot(
+  p1 <- ggplot(
     data = df_d,
     aes(x = x, y = y)
   ) +
@@ -197,9 +190,9 @@ plot_results <- function(df, case) {
       axis.text = element_text(size = base_size * 0.8),
       strip.text.x = element_text(size = base_size)
     )
-  p2 <- add_axis_labels(p2, case, "Dye [M]")
+  p1 <- add_axis_labels(p1, case, "Dye [M]")
 
-  p3 <- ggplot(
+  p2 <- ggplot(
     data = df_hd,
     aes(x = x, y = y)
   ) +
@@ -209,10 +202,11 @@ plot_results <- function(df, case) {
       axis.text = element_text(size = base_size * 0.8),
       strip.text.x = element_text(size = base_size)
     )
-  p3 <- add_axis_labels(p3, case, "Host-Dye [M]")
-  p1 + p2 + p3
+  p2 <- add_axis_labels(p2, case, "Host-Dye [M]")
+  p1 + p2
 }
 
+# TODO: still required?
 plot_results_plotly <- function(df, case) {
   case_df <- data.frame(
     dba_host_const = "total Dye measured [M]",
