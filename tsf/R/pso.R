@@ -245,7 +245,7 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
 
     print(add_message)
     print(iter)
-    print(format_scientific(global_best_vec))
+    # print(format_scientific(global_best_vec))
     print(format_scientific(global_best_error))
     if (is.environment(run_as_shiny)) {
       run_as_shiny$insilico <- list(

@@ -121,6 +121,7 @@ TaskQueue <- R6::R6Class(
       df <- self$dfs[[idx]]
       seed <- self$seeds[idx]
       m <- self$messages[idx]
+
       process <- callr::r_bg(
         function(case, lb, ub, df, ap,
                  seed, npop,
@@ -202,8 +203,10 @@ TaskQueue <- R6::R6Class(
       status <- character(length(self$processes))
       for (i in seq_len(length(self$processes))) {
         if (self$processes[[i]]$is_alive()) { # TODO: can be removed. But maybe slows down code?
-          status[i] <-
-            print_status(self$processes[[i]]$read_output(), self$case)
+          x <- print_status(self$processes[[i]]$read_output(), self$case)
+          x <- paste(x, collapse = "; ")
+          status[i] <- x
+            # print_status(self$processes[[i]]$read_output(), self$case)
         }
       }
       return(format_batch_status(stdout, status))

@@ -11,19 +11,19 @@ server <- function(input, output, session) {
 
   # data import
   # ============================================================================
-  data <- reactiveValues(df = NULL)
+  data <- reactiveValues(df = NULL, nsigs = 0L)
 
   observeEvent(input$upload, {
     req(input$upload)
     df <- importData(input$upload$datapath)
     if (is.data.frame(df)) {
-      if (ncol(df) != 2) {
-        showNotification("Data has wrong dimensions, two columns were expected")
-      } else if (nrow(df) == 0) {
-        showNotification("Data has 0 rows.")
+      if (ncol(df) < 2) {
+        showNotification("Data has wrong dimensions, at leat two columns were expected")
       } else {
-        names(df) <- c("var", "signal")
+        names(df)[1] <- "var"
+        names(df)[2:ncol(df)] <- paste0("signal", seq_len(ncol(df) - 1L))
         data$df <- df
+        data$nsigs <- ncol(df) - 1L
         output$df <- renderDT(data$df)
       }
     } else {
@@ -43,8 +43,8 @@ server <- function(input, output, session) {
     for (i in seq_along(list_dataframes)) {
       df <- list_dataframes[[i]]
       if (is.data.frame(df)) {
-        if (ncol(df) != 2) {
-          error <- "Error: Data has wrong dimensions, two columns were expected"
+        if (ncol(df) < 2) {
+          error <- "Error: Data has wrong dimensions, at least columns were expected"
           break
           showNotification(
             paste0(
@@ -59,7 +59,9 @@ server <- function(input, output, session) {
             paste0("Measurement Nr. ", i, " Data has 0 rows.")
           )
         } else {
-          names(df) <- c("var", "signal")
+          names(df)[1] <- "var"
+          names(df)[2:ncol(df)] <- paste0("signal", seq_len(ncol(df) - 1L))
+          data$nsigs <- ncol(df) - 1L
         }
       } else {
         error <- "Error: File cannot be used. Upload into R failed!"

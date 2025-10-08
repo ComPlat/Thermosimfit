@@ -104,54 +104,6 @@ jkd <- function(df) {
   return(res)
 }
 
-make_joint_sampler_kde <- function(df, lb, ub) {
-  eps <- 1e-6
-  p <- ncol(df)
-  to_unit <- function(X) {
-    U <- sweep(X, 2, lb, "-")
-    U <- sweep(U, 2, (ub - lb), "/")
-    pmin(pmax(U, eps), 1 - eps)
-  }
-  to_param <- function(U) {
-    U <- sweep(U, 2, (ub - lb), "*")
-    sweep(U, 2, lb, "+")
-  }
-  U <- to_unit(as.matrix(df))
-  Z <- qlogis(U)
-  kde_obj <- ks::kde(Z)
-  function(n) {
-    Znew <- ks::rkde(n = n, fhat = kde_obj)
-    Unew <- plogis(Znew)
-    Xnew <- to_param(Unew)
-    Xdf <- as.data.frame(Xnew)
-    colnames(Xdf) <- colnames(df)
-    Xdf
-  }
-}
-sobolVariance_dep <- function(parameter_df, lossFct, env, lb, ub, parameterNames, runAsShiny) {
-  n <- 1000
-  nboot <- 100
-  joint_sampler <- make_joint_sampler_kde(parameter_df, lb, ub)
-  X <- joint_sampler(n)
-  names(X) <- parameterNames
-  sobolFun <- function(X) {
-    p <- NULL
-    if (is.data.frame(X) || is.matrix(X)) {
-      return(sapply(1:nrow(X), function(x) {
-        lossFct(as.numeric(X[x, ]), env, FALSE)
-      }))
-    } else {
-      p <- as.numeric(X)
-    }
-    lossFct(p, env, FALSE)
-  }
-  sh <- shapleysobol_knn(model = sobolFun, X = X, nboot = nboot)
-  ggplot(sh) +
-    theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 1),
-          axis.text.y = element_text(size = 8)) +
-    ylab("Explained fraction of variance (Shapley effects)")
-}
-
 # Monte Carlo Estimation of Sobol’ Indices
 sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
   n <- 1000
@@ -178,18 +130,7 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
     lossFct(p, env, FALSE)
   }
   x <- sensitivity::sobol(model = sobolFun, X1 = X1, X2 = X2, order = 2, nboot = 100)
-  pl <- ggplot(x)
-  xBreaks <- layer_scales(pl)$x$break_positions()
-  xLabels <- layer_scales(pl)$x$limits
-  pl + theme(
-    axis.text.x = element_text(size = 8, angle = 90, hjust = 1),
-    axis.text.y = element_text(size = 8)
-  ) +
-    scale_x_continuous(
-      breaks = xBreaks,
-      labels = xLabels
-    ) +
-    ylab("Explained fraction of variance")
+  return(x$V)
 }
 
 #' Optimize algebraic systems which describe thermodynamic binding systems
@@ -201,8 +142,10 @@ sobolVariance <- function(lossFct, env, lb, ub, parameterNames, runAsShiny) {
 #' @param case is a character describing which system should be investigated. Either:
 #' "dba_host_const", "dba_dye_const", "ida" or "gda".
 #' @param parameters is a numeric vector containing already optimized parameter.
-#'        In case of *hg* the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
-#'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
+#'        In case of *dba_dye_const* or *dba_host_const the first parameter is: *khd*.
+#'        In case of *ida* and *ga* the first parameter is: *kg*.
+#'        Afterwards the parameters *I0*, *IHD* and *ID* have to be repeated for each signal respectivly.
+#'        It is mandatory that the entries are named as described above.
 #' @param percentage is the percentage +/- from parameters in which the sensitivity should be analysed.
 #' @param OffsetBoundaries in case percentage is not suitable a numeric vector (equivalent to parameters) can be used which is added/substracted from parameters. It is only possible to set either percentage or OffsetBoundaries.
 #' @param path is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.
@@ -233,8 +176,8 @@ sensitivity <- function(case, parameters, path, additionalParameters,
   if (length(parameters) == 0) {
     stop("optimizedParameters vector seems to be empty")
   }
-  if (length(parameters) > 4) {
-    stop("optimizedParameters vector has more than 4 entries")
+  if (length(parameters) < 4) {
+    stop("optimizedParameters vector has less than 4 entries")
   }
   if (case == "hg" && length(additionalParameters) != 1) {
     stop("additionalParameters have to be of length 1")
@@ -290,43 +233,41 @@ sensitivity <- function(case, parameters, path, additionalParameters,
   } else {
     df <- path
   }
+  n_sigs <- ncol(df) - 1
 
+  parameterNames <- names(parameters) # TODO: requires check that names exist
   parameters <- as.numeric(parameters)
   env <- new.env()
   env$error_calc_fct <- error_fct
-  parameterNames <- NULL
+  env$n_sigs <- n_sigs
   if (case == "dba_host_const") {
     names(df) <- c("dye", "signal")
     lossFct <- lossFctHG
     env$dye <- df[, 1]
-    env$signal <- df[, 2]
+    env$signal <- df[, -1] |> as.data.frame()
     env$h0 <- additionalParameters[1]
-    parameterNames <- c("kHD", "I0", "IHD", "ID")
   } else if (case == "dba_dye_const") {
     names(df) <- c("host", "signal")
     lossFct <- lossFctDBA
     env$host <- df[, 1]
-    env$signal <- df[, 2]
+    env$signal <- df[, -1] |> as.data.frame()
     env$d0 <- additionalParameters[1]
-    parameterNames <- c("kHD", "I0", "IHD", "ID")
   } else if (case == "ida") {
     names(df) <- c("guest", "signal")
     lossFct <- lossFctIDA
     env$ga <- df[, 1]
-    env$signal <- df[, 2]
+    env$signal <- df[, -1] |> as.data.frame()
     env$h0 <- additionalParameters[1]
     env$d0 <- additionalParameters[2]
     env$kd <- additionalParameters[3]
-    parameterNames <- c("kGuest", "I0", "IHD", "ID")
   } else if (case == "gda") {
     names(df) <- c("dye", "signal")
     lossFct <- lossFctGDA
     env$dye <- df[, 1]
-    env$signal <- df[, 2]
+    env$signal <- df[, -1] |> as.data.frame()
     env$h0 <- additionalParameters[1]
     env$ga0 <- additionalParameters[2]
     env$kd <- additionalParameters[3]
-    parameterNames <- c("kGuest", "I0", "IHD", "ID")
   }
   tryCatch(expr = {
     sobolVariance(lossFct, env, lowerBounds, upperBounds, parameterNames, runAsShiny)

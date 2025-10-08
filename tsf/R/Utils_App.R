@@ -318,13 +318,16 @@ download_file <- function(model, file, result_val) {
   writeData(wb, "Results", metrices, startRow = curr_row)
   curr_row <- curr_row + dim(metrices)[1] + 5
 
-  p <- result_val$plot
-  tempfile_plot <- tempfile(fileext = ".png")
-  ggsave(tempfile_plot,
-    plot = p, width = 15, height = 15, limitsize = FALSE
-  )
-  insertImage(wb, "Results", tempfile_plot, startRow = curr_row)
-  curr_row <- curr_row + 15
+  ps <- result_val$signal_plots
+  tempfile_plots <- list()
+  for (i in seq_len(length(ps))) {
+    tempfile_plots[[i]] <- tempfile(fileext = ".png")
+    ggsave(tempfile_plots[[i]],
+      plot = ps[[i]], width = 15, height = 15, limitsize = FALSE
+    )
+    insertImage(wb, "Results", tempfile_plots[[i]], startRow = curr_row)
+    curr_row <- curr_row + 15
+  }
 
   add_info <- data.frame(
     as.data.frame(t(result_val$additionalParameters)),
@@ -352,9 +355,8 @@ download_file <- function(model, file, result_val) {
   )
 
   openxlsx::saveWorkbook(wb, file)
-  unlink(tempfile_plot)
+  lapply(tempfile_plots, unlink)
 }
-
 
 download_csv <- function(model, file, result_val) {
   # csv file
@@ -438,7 +440,8 @@ adjust_theme <- function(p) {
   return(p)
 }
 
-download_batch_file <- function(model, file, result_val) {
+download_batch_file <- function(model, file, list) {
+  result_val <- list[[1]]
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
   writeData(wb, "Results",
@@ -456,18 +459,6 @@ download_batch_file <- function(model, file, result_val) {
   writeData(wb, "Results", parameter, startRow = curr_row)
   curr_row <- curr_row + dim(parameter)[1] + 5
 
-  tryCatch(
-    expr = {
-      joint_kernel_densi <- jkd(parameter[, 1:4])
-      writeData(wb, "Results", joint_kernel_densi, startRow = curr_row)
-      curr_row <- curr_row + dim(parameter)[1] + 5
-    },
-    error = function(err) {
-      showNotification("Could not calculate the joint kernel densities",
-      duration = 0, type = "error")
-    }
-  )
-
   lb <- as.data.frame(t(result_val$lowerBounds))
   lb$info <- "Lower bounds"
   ub <- as.data.frame(t(result_val$upperBounds))
@@ -480,40 +471,54 @@ download_batch_file <- function(model, file, result_val) {
   writeData(wb, "Results", metrices, startRow = curr_row)
   curr_row <- curr_row + dim(metrices)[1] + 5
 
-  p1 <- plotStates(result_val)
-  temp_files_p1 <- lapply(seq_len(length(p1)), function(x) {
+  # Ka plots
+  ka_plots <- list$ka_plots
+  temp_files_p1 <- lapply(seq_len(length(ka_plots)), function(x) {
     tempfile(fileext = ".png")
   })
-
-  for (i in seq_len(length(p1))) {
-    p <- p1[[i]]
+  for (i in seq_len(length(ka_plots))) {
+    p <- ka_plots[[i]]
     f <- temp_files_p1[[i]]
-    ggsave(f,
-      plot = p,
-      dpi = 600
-    )
-    insertImage(wb, "Results", f,
-      startRow = curr_row
-    )
+    ggsave(f, plot = p, dpi = 600)
+    insertImage(wb, "Results", f, startRow = curr_row)
     curr_row <- curr_row + 20
   }
 
-  p2 <- plotParams(result_val)
-  p3 <- plotMetrices(result_val)
+  hd_d_dataset_plots <- list$hd_d_plots
+  temp_files_p2 <- lapply(seq_len(length(hd_d_dataset_plots)), function(x) {
+    tempfile(fileext = ".png")
+  })
+  for (i in seq_len(length(hd_d_dataset_plots))) {
+    p <-  hd_d_dataset_plots[[i]]
+    f <- temp_files_p2[[i]]
+    ggsave(f, plot = p, dpi = 600)
+    insertImage(wb, "Results", f, startRow = curr_row)
+    curr_row <- curr_row + 20
+  }
 
-  tempfile_plot2 <- tempfile(fileext = ".png")
-  ggsave(tempfile_plot2,
-    plot = p2
-  )
-  insertImage(wb, "Results", tempfile_plot2, startRow = curr_row)
-  curr_row <- curr_row + 20
+  I_plots <- list$i_param_plots
+  temp_files_p3 <- lapply(seq_len(length(I_plots)), function(x) {
+    tempfile(fileext = ".png")
+  })
+  for (i in seq_len(length(I_plots))) {
+    p <- I_plots[[i]]
+    f <- temp_files_p3[[i]]
+    ggsave(f, plot = p, dpi = 600)
+    insertImage(wb, "Results", f, startRow = curr_row)
+    curr_row <- curr_row + 20
+  }
 
-  tempfile_plot3 <- tempfile(fileext = ".png")
-  ggsave(tempfile_plot3,
-    plot = p3
-  )
-  insertImage(wb, "Results", tempfile_plot3, startRow = curr_row)
-  curr_row <- curr_row + 20
+  Sig_plots <- list$state_plots
+  temp_files_p4 <- lapply(seq_len(length(Sig_plots)), function(x) {
+    tempfile(fileext = ".png")
+  })
+  for (i in seq_len(length(Sig_plots))) {
+    p <- Sig_plots[[i]]
+    f <- temp_files_p4[[i]]
+    ggsave(f, plot = p, dpi = 600)
+    insertImage(wb, "Results", f, startRow = curr_row)
+    curr_row <- curr_row + 20
+  }
 
   add_info <- result_val$additionalParameters |>
     t() |>
@@ -557,6 +562,7 @@ download_batch_file <- function(model, file, result_val) {
 
   openxlsx::saveWorkbook(wb, file)
   lapply(temp_files_p1, unlink)
-  unlink(tempfile_plot2)
-  unlink(tempfile_plot3)
+  lapply(temp_files_p2, unlink)
+  lapply(temp_files_p3, unlink)
+  lapply(temp_files_p4, unlink)
 }

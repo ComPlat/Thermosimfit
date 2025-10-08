@@ -78,6 +78,7 @@ importDataBatch <- function(path) {
 }
 
 seperate_batch_results <- function(list) {
+  # TODO: dont use indices but use names
   states <- lapply(list, function(x) {
     x[[1]]
   })
@@ -85,7 +86,7 @@ seperate_batch_results <- function(list) {
     x[[2]]
   })
   metrices <- lapply(list, function(x) {
-    x[[4]]
+    x[[5]]
   })
   seeds <- lapply(list, function(x) {
     x$seed

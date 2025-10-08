@@ -23,217 +23,132 @@ addTheme <- function(p, base_size = 6) {
   return(p)
 }
 
-plotSignal <- function(df, Dataset) {
-  df_signal <- data.frame(
-    x = rep(df[, 1], 2),
-    y = c(df[, 2], df[, 3]),
-    group = c(
-      rep("Signal measured", nrow(df)),
-      rep("Signal simulated", nrow(df))
-    ),
-    repetitions = paste0("Run Nr. ", df$repetition)
+plotStatesBatch <- function(list, case) {
+  case_df <- data.frame(
+    dba_host_const = "total Dye measured [M]",
+    dba_dye_const = "total Host measured [M]",
+    ida = "total Guest measured [M]",
+    gda = "total Dye measured [M]"
   )
-  ggplot() +
-    geom_point(data = df_signal[df_signal$group != "Signal measured", ],
-      aes(
-        x = x,
-        y = y,
-        colour = factor(repetitions)
-      ), size = dotSize()
-    ) +
-    geom_smooth(data = df_signal[df_signal$group == "Signal measured", ],
-      aes(
-        x = x,
-        y = y,
-        colour = group
-      ),
-      linewidth = lineSize(),
-      method = "loess",
-      formula = 'y ~ x',
-      se = FALSE
-    ) +
-    geom_point(data = df_signal[df_signal$group == "Signal measured", ],
-      aes(
-        x = x,
-        y = y,
-        colour = group
-      ),
-      size = dotSize()
-    ) +
-    ylab("Signal [a.u]") +
-    xlab(names(df)[1]) +
-    scale_colour_brewer(name = "", palette = "Dark2")
-}
-
-plotFreeDye <- function(df) {
-  df_dye <- data.frame(
-    x = df[, 1],
-    y = df[, 4],
-    repetitions = df$repetition
-  )
-  ggplot() +
-    geom_point(data = df_dye,
-      aes(
-        x = x,
-        y = y,
-        colour = factor(repetitions)
-      ), size = dotSize()
-    ) +
-    ylab("Dye [M]") +
-    xlab(names(df)[1]) +
-    scale_colour_brewer(name = "", palette = "Dark2") +
-    guides(colour = guide_legend(title = "Repetition"))
-}
-
-plotHostDye <- function(df) {
-  df_host_dye <- data.frame(
-    x = df[, 1],
-    y = df[, 5],
-    repetitions = df$repetition
-  )
-  ggplot() +
-    geom_point(data = df_host_dye,
-      aes(
-        x = x,
-        y = y,
-        colour = factor(repetitions)
-      ), size = dotSize()
-    ) +
-    ylab("Host-Dye [M]") +
-    xlab(names(df)[1]) +
-    scale_colour_brewer(name = "", palette = "Dark2") +
-    guides(colour = guide_legend(title = "Repetition"))
-}
-
-combinePlots <- function(p1, p2, p3, index, base_size = 6) {
-  p1 <- addTheme(p1, base_size)
-  legend <- cowplot::get_legend(p1 + theme(
-    legend.text = element_text(size = base_size),
-    legend.title = element_text(size = base_size),
-    legend.key.size = unit(0.25, "cm")
-  ))
-  p1 <- addTheme(p1, base_size)
-  p2 <- addTheme(p2, base_size)
-  p3 <- addTheme(p3, base_size)
-  p1 <- p1 + theme(legend.position = "none")
-  p2 <- p2 + theme(legend.position = "none")
-  p3 <- p3 + theme(legend.position = "none")
-  p <- cowplot::plot_grid(p1, p2, p3, nrow = 1)
-  p <- cowplot::plot_grid(p, legend, nrow = 1, rel_widths = c(0.8, 0.2))
-  p <- cowplot::ggdraw() +
-    cowplot::draw_plot(p) +
-    cowplot::draw_label(
-      paste0("Dataset Nr.", index),
-      x = 0.5, y = 1.0, hjust = -1.5, vjust = 1.2,
-      size = 12)
-  return(p)
-}
-
-plotStates <- function(list) {
+  x_col <- case_df[case] |> as.character()
   base_size <- baseSize()
-  list <- list[[1]]
+
+  list <- list[["states"]]
   df <- Reduce(rbind, list)
-  groups <- unique(df$dataset)
-  plot_list <- lapply(groups, function(x) {
-    temp_df <- df[df$dataset == x, ]
-    p1 <- plotSignal(temp_df, x)
-    p2 <- plotFreeDye(temp_df)
-    p3 <- plotHostDye(temp_df)
-    return(combinePlots(p1, p2, p3, parent.frame()$i[], base_size))
+  nsigs <- (ncol(df) - 5L) / 2L
+  dataset_col <- ncol(df)
+  repetion_col <- ncol(df) - 1L
+  lapply(unique(df$dataset), function(i) {
+    sub <- df[df$dataset == i, ]
+    lapply(2:(nsigs + 1), function(s) {
+      subsub <- sub[, c(1, s, s + nsigs, repetion_col, dataset_col)]
+      ym_col <- names(subsub)[2]
+      yis_col <- names(subsub)[3]
+      p <- ggplot(data = subsub) +
+        geom_boxplot(data = subsub,
+          aes(x = .data[[x_col]], y = .data[[yis_col]], group = .data[[x_col]], fill = "Signal in silico")) +
+        geom_point(data = subsub,
+          aes(x = .data[[x_col]], .data[[ym_col]], colour = "Signal measured")) +
+        scale_colour_manual(values = c("Signal measured" = "black"), name = NULL) +
+        theme(
+          legend.position = "bottom",
+          axis.title = element_text(size = base_size * 1.2),
+          axis.text = element_text(size = base_size),
+          legend.text = element_text(size = base_size),
+          legend.title = element_text(size = base_size),
+          strip.text.x = element_text(size = base_size)
+        ) +
+        guides(colour = guide_legend(title = NULL), fill = guide_legend(title = NULL)) +
+        labs(title = paste0("Sig. Nr.", s - 1))
+      add_axis_labels(p, case, "Signal [a.u]")
+    })
   })
-  return(plot_list)
 }
 
-plotParams <- function(list) {
-  list <- list[[2]]
+plotIParamsBatch <- function(list, num_rep = 1) {
+  base_size <- baseSize()
+  list <- list[["params"]]
   df <- Reduce(rbind, list)
-  data <- data.frame(
-    x = rep(df$dataset, 4),
-    y = c(df[, 1], df[, 2], df[, 3], df[, 4]),
-    names = c(
-      rep(names(df)[1], nrow(df)),
-      rep(names(df)[2], nrow(df)),
-      rep(names(df)[3], nrow(df)),
-      rep(names(df)[4], nrow(df))
-    ),
-    repetition = rep(df$repetition, 4)
-  )
-  p <- ggplot() +
-    geom_boxplot(
-      data = data,
-      aes(
-        y = y, fill = "Entire data", x = factor(0)
-      )
-    ) +
-    geom_boxplot(
-      data = data,
-      aes(
-        x = factor(x), y = y,
-        group = factor(x),
-        fill = factor(x)
-      )
-    ) +
-    facet_wrap(. ~ names,
-      scales = "free_y",
-      strip.position = "left"
-    ) +
-    xlab(NULL) +
-    ylab(NULL) +
-    theme(
-      panel.spacing = unit(2, "lines"),
-      strip.background = element_blank(),
-      strip.placement = "outside"
-    ) +
-    guides(fill = guide_legend(title = "Datasets"))
-  p <- addTheme(p)
-  p <- p + theme(
-    plot.background = element_rect(color = "grey", fill = NA, size = 2)
-  )
-  return(p)
+  nsigs <- (ncol(df) - 3L) / 3L
+  i_inds <- 2:(1 + nsigs*3)
+  lapply(unique(df$dataset), function(i) {
+    sub <- df[df$dataset == i, ]
+    sub <- sub[, i_inds]
+    inds <- split(seq_len(ncol(sub)), ceiling(seq_along(sub) / 3))
+    subs <- lapply(inds, function(i) sub[, i, drop = FALSE])
+    lapply(subs, function(s) {
+      sig <- names(s)[[1]]
+      sig <- gsub(".*(Nr\\.?[0-9]+).*", "\\1", sig)
+      title <- paste0("Dataset Nr.", i, " Signal ", sig)
+      names(s) <- c("I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+      s <- stack(s)
+      ggplot(data = s) +
+        geom_boxplot(aes(y = values, group = 1L)) +
+        labs(title = title, x = NULL, y = NULL) +
+        facet_wrap(~ ind, scales = "free") +
+        theme(
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank()
+        )
+    })
+  })
 }
 
-plotMetrices <- function(list) {
-  list <- list[[3]]
+plotKaBatch <- function(list, num_rep = 1) {
+  base_size <- baseSize()
+  list <- list[["params"]]
   df <- Reduce(rbind, list)
-  data <- data.frame(
-    x = rep(df$dataset, 2),
-    y = c(df[, 1], df[, 2]),
-    names = c(
-      rep(names(df)[1], nrow(df)),
-      rep(names(df)[2], nrow(df))
-    ),
-    repetition = rep(df$repetition, 2)
-  )
-  p <- ggplot() +
-    geom_boxplot(
-      data = data,
-      aes(
-        y = y, fill = "Entire data", x = factor(0)
-      )
-    ) +
-    geom_boxplot(
-      data = data,
-      aes(
-        x = factor(x), y = y,
-        group = factor(x),
-        fill = factor(x)
-      )
-    ) +
-    facet_wrap(. ~ names,
-      scales = "free_y",
-      strip.position = "left"
-    ) +
-    xlab(NULL) +
-    ylab(NULL) +
-    theme(
-      panel.spacing = unit(2, "lines"),
-      strip.background = element_blank(),
-      strip.placement = "outside"
-    ) +
-    guides(fill = guide_legend(title = "Datasets"))
-  p <- addTheme(p)
-  p <- p + theme(
-    plot.background = element_rect(color = "grey", fill = NA, size = 2)
-  )
-  return(p)
+  df <- df[, c(1, ncol(df) - 1, ncol(df))]
+  x_col <- names(df)[1]
+  ps <- list()
+  ps[[1]] <- ggplot() +
+    geom_boxplot(data = df, aes(y = .data[[x_col]]))
+  ps_per_dataset <- lapply(unique(df$dataset), function(i) {
+    sub <- df[df$dataset == i, ]
+    ggplot() +
+      geom_boxplot(data = sub, aes(y = .data[[x_col]])) +
+      labs(title = sprintf("Dataset Nr.%s", i))
+  })
+  list(ps, ps_per_dataset)
+}
+
+plotMetricesBatch <- function(list, num_rep = 1) {
+  base_size <- baseSize()
+  list <- list[["metrices"]]
+  df <- Reduce(rbind, list)
+  nsigs <- length(unique(df[["Signal"]]))
+  lapply(unique(df$dataset), function(d) {
+    sub <- df[df$dataset == d, ]
+    lapply(seq_len(nsigs), function(s) {
+      subsub <- sub[sub$Signal == s,]
+      title <- paste0("Sig. Nr.", s)
+      subsub <- stack(subsub[, 1:4])
+      ggplot(data = subsub, aes(y = values)) +
+        geom_boxplot() +
+        facet_wrap(~ ind, scales = "free") +
+        labs(title = title)
+    })
+  })
+}
+
+plotDAndHDBatch <- function(list, num_rep = 1) {
+  base_size <- baseSize()
+  list <- list[["states"]]
+  df <- Reduce(rbind, list)
+  df <- df[, c(1, rev(ncol(df):(ncol(df) - 3)))]
+  x_col <- names(df)[1]
+  lapply(unique(df$dataset), function(i) {
+    sub <- df[df$dataset == i, ]
+    pdye <- ggplot() +
+      geom_boxplot(data = sub, aes(x = .data[[x_col]],
+        y = .data[["free Dye simulated [M]"]],
+        group = .data[[x_col]])) +
+      labs(title = sprintf("Dataset Nr.%s", i))
+    phostdye <- ggplot() +
+      geom_boxplot(data = sub, aes(x = .data[[x_col]],
+        y = .data[["Host-Dye simulated [M]"]],
+        group = .data[[x_col]])) +
+      labs(title = sprintf("Dataset Nr.%s", i))
+    list(pdye + phostdye)
+  })
 }

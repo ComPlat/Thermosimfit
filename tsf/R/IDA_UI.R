@@ -4,36 +4,36 @@ idaUI <- function(id) {
     tabName = "IDA",
     tags$script(
       "Shiny.addCustomMessageHandler('IDAupdateField', function(message) {
-              var result = message.message;
-              $('#IDA-output').html(result);
-            });"
+      var result = message.message;
+      $('#IDA-output').html(result);
+      });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAclearField', function(message) {
-              $('#IDA-output').empty();
-            });"
+      $('#IDA-output').empty();
+      });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAupdateFieldSense', function(message) {
-              var result = message.message;
-              $('#IDA-output_sense').html(result);
-            });"
+      var result = message.message;
+      $('#IDA-output_sense').html(result);
+      });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAclearFieldSense', function(message) {
-              $('#IDA-output_sense').empty();
-            });"
+      $('#IDA-output_sense').empty();
+      });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAupdateFieldBatch', function(message) {
-              var result = message.message;
-              $('#IDA-output_Batch').html(result);
-            });"
+      var result = message.message;
+      $('#IDA-output_Batch').html(result);
+      });"
     ),
     tags$script(
       "Shiny.addCustomMessageHandler('IDAclearFieldBatch', function(message) {
-              $('#IDA-output_Batch').empty();
-            });"
+      $('#IDA-output_Batch').empty();
+      });"
     ),
     fluidRow(
       box(
@@ -74,33 +74,14 @@ idaUI <- function(id) {
         ),
         width = 6,
         title = "Parameter", solidHeader = TRUE,
-        status = "warning", height = 625
+        status = "warning", height = 660
       ),
       box(
         box(
           textInput(NS(id, "kHG_lb"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
           textInput(NS(id, "kHG_ub"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08)
         ),
-        box(
-          textInput(NS(id, "I0_lb"), "I(0) value lower boundary", value = 0),
-          textInput(NS(id, "I0_ub"), "I(0) value upper boundary", value = 1e08)
-        ),
-        box(
-          textInput(NS(id, "IHD_lb"),
-            label = tagList(
-              "I(HD) value lower boundary [1/M]",
-              actionButton(NS(id, "AdviceUBIHD"), "Help",
-                icon = icon("question-circle"),
-                style = "background-color:transparent; border:none;"
-              )
-            ), value = 0
-          ),
-          textInput(NS(id, "IHD_ub"), "I(HD) value upper boundary [1/M]", value = 1e08)
-        ),
-        box(
-          textInput(NS(id, "ID_lb"), "I(D) value lower boundary [1/M]", value = 0),
-          textInput(NS(id, "ID_ub"), "I(D) value upper boundary [1/M]", value = 1e08)
-        ),
+        uiOutput(NS(id, "BOUNDS_I")),
         width = 6,
         title = tagList(
           "Boundaries",
@@ -110,7 +91,7 @@ idaUI <- function(id) {
           )
         ),
         solidHeader = TRUE,
-        status = "warning", height = 625
+        status = "warning", height = 660
       )
     ),
     fluidRow(
@@ -134,10 +115,21 @@ idaUI <- function(id) {
                 br(),
                 DT::DTOutput(NS(id, "params")),
                 DT::DTOutput(NS(id, "metrices")),
-                plotlyOutput(NS(id, "plot")),
-                width = 7, solidHeader = TRUE, status = "warning"
+                plotOutput(NS(id, "host_dye_plot")),
+                plotOutput(NS(id, "signal_plot")),
+                actionButton(
+                  inputId = NS(id, "previous_signal_plot"),
+                  label = "Previous Signal",
+                  class = "add-button df-button"
+                ),
+                actionButton(
+                  inputId = NS(id, "next_signal_plot"),
+                  label = "Next Signal",
+                  class = "add-button df-button"
+                ),
+                width = 12, solidHeader = TRUE, status = "warning"
               ),
-              width = 12, title = "Optimization", solidHeader = TRUE,
+              width = 14, title = "Optimization", solidHeader = TRUE,
               collapsible = TRUE, status = "warning"
             )
           )
@@ -156,8 +148,8 @@ idaUI <- function(id) {
               ),
               box(
                 br(),
-                plotOutput(NS(id, "sensi_plot")),
-                width = 7, solidHeader = TRUE, status = "warning"
+                DT::DTOutput(NS(id, "sensi_table")),
+                width = 10, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
               collapsible = TRUE, status = "warning"
@@ -185,11 +177,55 @@ idaUI <- function(id) {
                 verbatimTextOutput(NS(id, "output_Batch")),
                 width = 12
               ),
+
+              # TOP: dataset overview
               box(
-                id = "IDA-output_Batch",
-                plotlyOutput(NS(id, "batch_data_plot"), height = 1200),
-                width = 12, solidHeader = TRUE, status = "warning"
+                title = div(class = "titlebar",
+                  div(
+                    span("Batch overview — Ka (global)", class = "crumb"),
+                    span(textOutput(NS(id, "title_batch"), container = span), class = "muted ms-2")
+                  ),
+                  div(class = "tools",
+                    actionButton(NS(id, "previous_dataset"), "Previous dataset", class = "btn btn-default btn-xs"),
+                    actionButton(NS(id, "next_dataset"),     "Next dataset",     class = "btn btn-primary btn-xs")
+                  )
+                ),
+                status = "primary", solidHeader = TRUE, background = "blue", width = 12,
+                plotOutput(NS(id, "Ka_main_plot"), height = 320)
               ),
+
+              # MIDDLE: per-dataset details
+              box(
+                title = div(class = "titlebar",
+                  span("Dataset details — Ka & HD/D", class = "crumb"),
+                  span(textOutput(NS(id, "dataset_label"), container = span), class = "muted")
+                ),
+                status = "info", solidHeader = TRUE, width = 12, class = "info-fill",
+                fluidRow(
+                  column(6, plotOutput(NS(id, "Ka_dataset_plot"), height = 380)),
+                  column(6, plotOutput(NS(id, "hd_d_dataset_plot"), height = 380))
+                )
+              ),
+
+              # BOTTOM: per-signal details
+              box(
+                title = div(class = "titlebar",
+                  div(
+                    span("Signal details — Intensities", class = "crumb"),
+                    span(textOutput(NS(id, "signal_label"), container = span), class = "muted ms-2")
+                  ),
+                  div(class = "tools",
+                    actionButton(NS(id, "previous_signal_batch"), "Previous signal", class = "btn btn-default btn-xs"),
+                    actionButton(NS(id, "next_signal_batch"),     "Next signal",     class = "btn btn-success btn-xs")
+                  )
+                ),
+                status = "success", solidHeader = TRUE, width = 12, class = "success-fill",
+                fluidRow(
+                  column(6, plotOutput(NS(id, "I_dataset_signal_plot"),      height = 360)),
+                  column(6, plotOutput(NS(id, "Signal_dataset_signal_plot"), height = 360))
+                )
+              ),
+
               width = 12, title = "Batch analysis", solidHeader = TRUE,
               collapsible = TRUE, status = "warning"
             )

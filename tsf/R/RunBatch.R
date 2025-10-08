@@ -152,8 +152,10 @@ batch <- function(case,
   list <- tq$seperate_results()
   list(
     list,
-    plotStates(list),
-    plotParams(list),
-    plotMetrices(list)
+    plotStatesBatch(list, case),
+    plotIParamsBatch(list, num_rep),
+    plotKaBatch(list, num_rep),
+    plotMetricesBatch(list, num_rep),
+    plotDAndHDBatch(list, num_rep)
   )
 }

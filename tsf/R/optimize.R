@@ -160,7 +160,6 @@ opti <- function(case, lowerBounds, upperBounds,
     }
   )
   n_sigs <- ncol(df) - 1
-  # TODO: add check that lb and ub match n_sigs
 
   lossFct <- tryCatch(
     expr = {
@@ -244,7 +243,6 @@ opti <- function(case, lowerBounds, upperBounds,
       )
       signal_plots <- plot_signals(df, case, n_sigs)
       d_hd_plot <- plot_d_hd(df, case, n_sigs)
-
       return(list(
         data = df, parameter = params,
         signal_plots = signal_plots,

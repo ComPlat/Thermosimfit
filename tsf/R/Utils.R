@@ -1,3 +1,135 @@
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+getAST <- function(inp) {
+  if (!is.call(inp)) {
+    return(inp)
+  }
+  inp <- as.list(inp)
+  # check if is function
+  fct <- inp[[1]]
+  allowed_fcts <- c( "-", "+", "*", "/","^")
+  check <- deparse(fct)
+  if ((check %in% allowed_fcts) == FALSE) {
+    return(ErrorClass$new(paste0("Error: function ", check ," not allowed")))
+  }
+  lapply(inp, getAST)
+}
+
+importData <- function(path) {
+  if (!is.character(path)) {
+    return(ErrorClass$new("path is not of type character"))
+  }
+  df <- try(as.data.frame(read_excel(path, col_names = TRUE)), silent = TRUE)
+  if (class(df) != "try-error") {
+    return(df)
+  }
+  line <- readLines(path, n = 1)
+  semicolon <- grepl(";", line)
+  comma <- grepl(",", line)
+  tab <- grepl("\t", line)
+  seperator <- NULL
+  if (semicolon == TRUE) {
+    seperator <- ";"
+  } else if (comma == TRUE) {
+    seperator <- ","
+  } else if (tab == TRUE) {
+    seperator <- "\t"
+  } else {
+    return(ErrorClass$new("Could not identify seperator in file"))
+  }
+  header <- FALSE
+  firstLine <- try(readLines(path, n = 1L))
+  if (class(firstLine) == "try-error") {
+    return(ErrorClass$new("Could not read first line of file"))
+  }
+  firstLine <- strsplit(firstLine, split = seperator)[[1]]
+  firstLine <- as.numeric(firstLine)
+  if (all(is.na(firstLine))) header <- TRUE
+  df <- try(read.csv(path, header = header, sep = seperator))
+  if (class(df) == "try-error") {
+    return(ErrorClass$new("Could not import data"))
+  }
+  if (ncol(df) < 2) {
+    return(ErrorClass$new("Data has wrong dimensions, at least two columns were expected"))
+  }
+  if (nrow(df) == 0) {
+    return(ErrorClass$new("Data has 0 rows"))
+  }
+  if (nrow(df) > 10000) {
+    return(ErrorClass$new("Data has more than 10000 rows"))
+  }
+  if (any(is.na(df))) {
+    return(ErrorClass$new("Data contains missing values"))
+  }
+  if (!all(sapply(df, is.numeric))) {
+    return(ErrorClass$new("Data contains non-numeric values"))
+  }
+  return(df)
+}
+
+ErrorClass <- R6::R6Class(
+  "ErrorClass",
+  public = list(
+    message = NULL,
+    object = NULL,
+    initialize = function(message, object = NULL) {
+      if (is.null(message)) {
+        stop("No message object is passed. Undefined case")
+      } else {
+        self$message <- message
+        if (!is.null(object)) {
+          self$object <- object
+        }
+      }
+    }
+  )
+)
+
+Communicator <- R6::R6Class("Communicator",
+  public = list(
+    file = NULL,
+    result = NULL,
+    initialize = function() {
+      self$file <- tempfile()
+      self$result <- tempfile()
+      write("Ready", self$file)
+      write("", self$result)
+    },
+    getStatus = function() {
+      scan(self$file, what = "character", sep = "\n")
+    },
+    setStatus = function(msg) {
+      write(msg, self$file)
+    },
+    setData = function(data) {
+      write(data, self$result)
+    },
+    getData = function() {
+      scan(self$result, what = "character", sep = "\n")
+    },
+    interrupt = function() {
+      self$setStatus("interrupt")
+    },
+    ready = function() {
+      self$setStatus("ready")
+    },
+    running = function(percComplete) {
+      msg <- "Running..."
+      if (!missing(percComplete)) {
+        msg <- paste0("Running... ", percComplete, "% Complete")
+      }
+      self$setStatus(msg)
+    },
+    isInterrupted = function() {
+      self$getStatus() == "interrupt"
+    },
+    destroy = function() {
+      if (file.exists(self$file)) unlink(self$file)
+      if (file.exists(self$result)) unlink(self$result)
+    }
+  )
+)
+
 in_shiny_app <- function() {
   requireNamespace("shiny", quietly = TRUE) && shiny::isRunning()
 }
@@ -204,109 +336,4 @@ plot_d_hd <- function(df, case, nsigs) {
     )
   p2 <- add_axis_labels(p2, case, "Host-Dye [M]")
   p1 + p2
-}
-
-# TODO: still required?
-plot_results_plotly <- function(df, case) {
-  case_df <- data.frame(
-    dba_host_const = "total Dye measured [M]",
-    dba_dye_const = "total Host measured [M]",
-    ida = "total Guest measured [M]",
-    gda = "total Dye measured [M]"
-  )
-  x_col <- case_df[case] |> as.character()
-  df_com <- data.frame(
-    x = rep(df[, x_col], 2),
-    y = c(df[, "Signal measured"], df[, "Signal simulated"]),
-    group = c(
-      rep("Measured", length(df[, x_col])),
-      rep("Predicted", length(df[, x_col]))
-    )
-  )
-  df_d <- data.frame(
-    x = df[, x_col],
-    y = df[, "free Dye simulated [M]"]
-  )
-  df_hd <- data.frame(
-    x = df[, x_col],
-    y = df[, "Host-Dye simulated [M]"]
-  )
-  base_size <- 10
-
-  colors <- c(
-    "Measured" = "grey",
-    "Predicted" = RColorBrewer::brewer.pal(8, "Dark2")[1]
-  )
-
-  p1 <- plot_ly() %>%
-    # Measured points
-    add_trace(
-      data = df_com[df_com$group == "Measured", ],
-      x = ~x, y = ~y,
-      type = "scatter",
-      mode = "markers",
-      marker = list(color = colors["Measured"], size = 10, opacity = 0.5),
-      name = "Measured"
-    ) %>%
-    # Measured smoothed line
-    add_trace(
-      data = df_com[df_com$group == "Measured", ],
-      x = ~x, y = ~y,
-      type = "scatter",
-      mode = "lines",
-      line = list(color = "grey", width = 2),
-      name = "Measured Loess",
-      showlegend = FALSE
-    ) %>%
-    # Predicted points
-    add_trace(
-      data = df_com[df_com$group == "Predicted", ],
-      x = ~x, y = ~y,
-      type = "scatter",
-      mode = "markers",
-      marker = list(color = colors["Predicted"], size = 10, opacity = 0.5),
-      name = "Predicted"
-    )
-
-  p2 <- plot_ly() %>%
-    add_trace(
-      data = df_d,
-      x = ~x, y = ~y,
-      type = "scatter",
-      mode = "markers",
-      showlegend = FALSE
-    )
-
-  p3 <- plot_ly() %>%
-    add_trace(
-      data = df_hd,
-      x = ~x, y = ~y,
-      type = "scatter",
-      mode = "markers",
-      showlegend = FALSE
-    )
-
-  case_df <- data.frame(
-    dba_host_const = "total Dye measured [M]",
-    dba_dye_const = "total Host measured [M]",
-    ida = "total Guest measured [M]",
-    gda = "total Dye measured [M]"
-  )
-  x_col <- case_df[case] |> as.character()
-
-  subplot(
-    p1, p2, p3,
-    nrows = 2,
-    margin = 0.05,
-    shareX = FALSE,
-    shareY = FALSE
-  ) %>%
-    layout(
-      xaxis = list(title = x_col),
-      xaxis2 = list(title = x_col),
-      xaxis3 = list(title = x_col),
-      yaxis = list(title = "Signal [a.u]"),
-      yaxis2 = list(title = "Dye [M]"),
-      yaxis3 = list(title = "Host-Dye [M]")
-    )
 }
