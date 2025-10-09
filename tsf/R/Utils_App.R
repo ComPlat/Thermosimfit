@@ -419,28 +419,16 @@ create_df_for_batch <- function(list, what) {
   return(df)
 }
 
-adjust_theme <- function(p) {
-  base_size <- 4
-  p <- p + theme(
-    legend.position = "right",
-    legend.justification = c("right", "top"),
-    legend.box.just = "right",
-    legend.margin = margin(10, 10, 10, 10),
-    title = element_text(size = base_size, face = "bold"),
-    axis.title = element_text(size = base_size, face = "bold"),
-    axis.text = element_text(size = base_size),
-    legend.text = element_text(size = base_size),
-    legend.title = element_text(size = base_size),
-    legend.key.size = unit(0.25, "cm"),
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-    plot.margin = margin(5, 5, 5, 5),
-    strip.text.x = element_text(size = base_size, face = "bold"),
-    strip.text.y = element_text(size = base_size, face = "bold")
-  )
-  return(p)
+insert_plot_batch <- function(wb, p, start_row, env_files) {
+  f <- tempfile(fileext = ".png")
+  ggsave(f, plot = p, dpi = 600)
+  insertImage(wb, "Results", f, startRow = start_row)
+  env_files$l <- c(env_files$l, f)
+  start_row + 20
 }
 
 download_batch_file <- function(model, file, list) {
+  env_files <- new.env(); env_files$l <- list()
   result_val <- list[[1]]
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
@@ -473,51 +461,30 @@ download_batch_file <- function(model, file, list) {
 
   # Ka plots
   ka_plots <- list$ka_plots
-  temp_files_p1 <- lapply(seq_len(length(ka_plots)), function(x) {
-    tempfile(fileext = ".png")
-  })
-  for (i in seq_len(length(ka_plots))) {
-    p <- ka_plots[[i]]
-    f <- temp_files_p1[[i]]
-    ggsave(f, plot = p, dpi = 600)
-    insertImage(wb, "Results", f, startRow = curr_row)
-    curr_row <- curr_row + 20
+  curr_row <- insert_plot_batch(wb, ka_plots[[1]], curr_row, env_files)
+  for (i in seq_len(length(ka_plots[[2]]))) {
+    curr_row <- insert_plot_batch(wb, ka_plots[[2]][[i]], curr_row, env_files)
   }
 
   hd_d_dataset_plots <- list$hd_d_plots
-  temp_files_p2 <- lapply(seq_len(length(hd_d_dataset_plots)), function(x) {
-    tempfile(fileext = ".png")
-  })
   for (i in seq_len(length(hd_d_dataset_plots))) {
-    p <-  hd_d_dataset_plots[[i]]
-    f <- temp_files_p2[[i]]
-    ggsave(f, plot = p, dpi = 600)
-    insertImage(wb, "Results", f, startRow = curr_row)
-    curr_row <- curr_row + 20
+    curr_row <- insert_plot_batch(wb, hd_d_dataset_plots[[i]], curr_row, env_files)
   }
 
   I_plots <- list$i_param_plots
-  temp_files_p3 <- lapply(seq_len(length(I_plots)), function(x) {
-    tempfile(fileext = ".png")
-  })
   for (i in seq_len(length(I_plots))) {
-    p <- I_plots[[i]]
-    f <- temp_files_p3[[i]]
-    ggsave(f, plot = p, dpi = 600)
-    insertImage(wb, "Results", f, startRow = curr_row)
-    curr_row <- curr_row + 20
+    ps_per_signal <- I_plots[[i]]
+    for (j in seq_len(length(ps_per_signal))) {
+      curr_row <- insert_plot_batch(wb, ps_per_signal[[j]], curr_row, env_files)
+    }
   }
 
   Sig_plots <- list$state_plots
-  temp_files_p4 <- lapply(seq_len(length(Sig_plots)), function(x) {
-    tempfile(fileext = ".png")
-  })
   for (i in seq_len(length(Sig_plots))) {
-    p <- Sig_plots[[i]]
-    f <- temp_files_p4[[i]]
-    ggsave(f, plot = p, dpi = 600)
-    insertImage(wb, "Results", f, startRow = curr_row)
-    curr_row <- curr_row + 20
+    ps_per_signal <- Sig_plots[[i]]
+    for (j in seq_len(length(ps_per_signal))) {
+      curr_row <- insert_plot_batch(wb, ps_per_signal[[j]], curr_row, env_files)
+    }
   }
 
   add_info <- result_val$additionalParameters |>
@@ -561,8 +528,5 @@ download_batch_file <- function(model, file, list) {
   )
 
   openxlsx::saveWorkbook(wb, file)
-  lapply(temp_files_p1, unlink)
-  lapply(temp_files_p2, unlink)
-  lapply(temp_files_p3, unlink)
-  lapply(temp_files_p4, unlink)
+  lapply(env_files$l, unlink)
 }

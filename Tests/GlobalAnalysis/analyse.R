@@ -77,8 +77,9 @@ lowerBounds <- c(Ka = 0, rep(c(I0 = 0, IHD = 0, ID = 0), 10L))
 upperBounds <- c(Ka = 10^5, rep(c(I0 = 10^5, IHD = 10^5, ID = 10^5), 10L))
 res_batch <- batch("ida",lowerBounds, upperBounds,
       path, additionalParameters, num_rep = 3L, num_cores = 5L)
-names(res_batch)
-res_batch[[2]]
+names(res_batch[[2]])
+res_batch[[3]]
+res_batch[[4]][[1]]
 res_batch$params
 res_batch$metrices
 

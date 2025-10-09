@@ -68,7 +68,7 @@ dbaUI <- function(id) {
         ),
         width = 6,
         title = "Parameter", solidHeader = TRUE,
-        status = "warning", height = 660
+        status = "warning", height = 700
       ),
       box(
         box(
@@ -85,7 +85,7 @@ dbaUI <- function(id) {
           )
         ),
         solidHeader = TRUE,
-        status = "warning", height = 660
+        status = "warning", height = 700
       )
     ),
     fluidRow(

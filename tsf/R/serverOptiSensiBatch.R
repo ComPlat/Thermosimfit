@@ -6,7 +6,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
 
     # Render parameter boundaries
     # ===============================================================================
-    parameter_state <- reactiveValues(idx = 1L, Is = list(), confirmed = list())
+    parameter_state <- reactiveValues(idx = 1L, Is = list(), confirmed = list(), Is_old = list())
 
     I_inputs <- reactive({
       list(
@@ -16,8 +16,30 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       )
     })
 
+    output[["Confirmed_I"]] <- renderUI({
+      class <- "label label-default"
+      status <- "Not confirmed"
+      if (length(parameter_state$Is) >= parameter_state$idx) {
+        if (parameter_state$confirmed[[parameter_state$idx]]) {
+          old <- parameter_state$Is_old[[parameter_state$idx]]
+          current <- I_inputs()
+          if (all(unlist(Map(`==`, old, current)))) {
+            class <- "label label-success"
+            status <- "confirmed"
+          } else {
+            class <- "label label-info"
+            status <- "edited"
+          }
+        }
+      }
+      tags$span(
+        status,
+        class = class,
+        style = "font-size:12px; padding:2px 6px; border-radius:999px; margin-left:.5rem;"
+      )
+    })
+
     output[["BOUNDS_I"]] <- renderUI({
-      status_col <- "light-blue"
       lb_I0 <- 0; ub_I0 <- 10^8;
       lb_IHD <- 0; ub_IHD <- 10^8;
       lb_ID <- 0; ub_ID <- 10^8;
@@ -30,12 +52,14 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         ub_IHD <- Is[["ub_IHD"]]
         lb_ID <- Is[["lb_ID"]]
         ub_ID <- Is[["ub_ID"]]
-        if (parameter_state$confirmed[[parameter_state$idx]]) status_col <- "green"
       }
 
       div(
         box(
-          h4(sprintf("I parameter for signal: %s", parameter_state$idx), class = "m-0"),
+          title = div(class = "d-flex justify-content-between align-items-center",
+            h4(sprintf("I parameters — signal %s", parameter_state$idx), class = "m-0"),
+            uiOutput(NS(id, "Confirmed_I"), inline = TRUE)
+          ),
           textInput(NS(id, "I0_lb"), "I(0) value lower boundary", value = lb_I0) |> tagAppendAttributes(title = "Lower bound for I(0). Use 0 if unknown."),
           textInput(NS(id, "I0_ub"), "I(0) value upper boundary", value = ub_I0) |> tagAppendAttributes(title = "Upper bound for I(0). Use 10^8 if unknown."),
           textInput(NS(id, "IHD_lb"),
@@ -64,14 +88,14 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
             inputId = NS(id, "NextIParameter"),
             label = "Next boundaries",
             class = "add-button df-button"
-          ),
-          background = status_col
+          )
         )
       )
     })
 
     observeEvent(input$Confirm, ignoreInit = TRUE, {
       parameter_state$Is[[parameter_state$idx]] <- I_inputs()
+      parameter_state$Is_old[[parameter_state$idx]] <- parameter_state$Is[[parameter_state$idx]]
       parameter_state$confirmed[[parameter_state$idx]] <- TRUE
     })
 
@@ -223,15 +247,20 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
 
     create_lb <- function() {
       is <- parameter_state$Is
-      i_lbs <- lapply(1:3, function(i) {
-        i <- unlist(is[[i]])
-        lbs <- i[c(1, 3, 5)]
-        par_names <- c("I(0)", "I(HD) [1/M]", "I(D) [1/M]")
-        names(lbs) <- vapply(1:3, function(n) {
-          paste0("Sig. Nr.", n, " ", par_names[n])
-        }, character(1))
-        lbs
-      }) |> unlist()
+      par_names <- c("I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+      if (length(is) == 1) {
+        i_lbs <- is[[1]][c(1, 3, 5)]
+        names(i_lbs) <- par_names
+      } else {
+        i_lbs <- lapply(1:3, function(i) {
+          i <- unlist(is[[i]])
+          lbs <- i[c(1, 3, 5)]
+          names(lbs) <- vapply(1:3, function(n) {
+            paste0("Sig. Nr.", n, " ", par_names[n])
+          }, character(1))
+          lbs
+        }) |> unlist()
+      }
       lb <- ""
       if (id == "HG" || id == "DBA") {
         lb <- convert_all_to_num(
@@ -249,15 +278,20 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
 
     create_ub <- function() {
       is <- parameter_state$Is
-      i_ubs <- lapply(1:3, function(i) {
-        i <- unlist(is[[i]])
-        ubs <- i[c(2, 4, 6)]
-        par_names <- c("I(0)", "I(HD) [1/M]", "I(D) [1/M]")
-        names(ubs) <- vapply(1:3, function(n) {
-          paste0("Sig. Nr.", n, " ", par_names[n])
-        }, character(1))
-        ubs
-      }) |> unlist()
+      par_names <- c("I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+      if (length(is) == 1) {
+        i_ubs <- is[[1]][c(2, 4, 6)]
+        names(i_ubs) <- par_names
+      } else {
+        i_ubs <- lapply(1:3, function(i) {
+          i <- unlist(is[[i]])
+          ubs <- i[c(2, 4, 6)]
+          names(ubs) <- vapply(1:3, function(n) {
+            paste0("Sig. Nr.", n, " ", par_names[n])
+          }, character(1))
+          ubs
+        }) |> unlist()
+      }
       ub <- ""
       if (id == "HG" || id == "DBA") {
         ub <- convert_all_to_num(
@@ -749,24 +783,12 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
     })
 
     output$sensi_download <- downloadHandler(
-      filename = function() {
-        "result.xlsx"
-      },
+      filename = function() "result.csv",
       content = function(file) {
         req(sensi_result_created())
-        wb <- openxlsx::createWorkbook()
-        addWorksheet(wb, "Results")
-        if (sensi_result_created()) {
-          curr_val <- sensi_result()
-          write.table(curr_val, file,
-            append = TRUE,
-            sep = ",", row.names = FALSE
-          )
-        }
-        openxlsx::saveWorkbook(wb, file)
+        write.table(sensi_result(), file, sep = ",", row.names = FALSE, col.names = TRUE)
       }
     )
-
 
     # Batch analysis
     # ===============================================================================

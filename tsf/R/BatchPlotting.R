@@ -59,7 +59,7 @@ plotStatesBatch <- function(list, case) {
           strip.text.x = element_text(size = base_size)
         ) +
         guides(colour = guide_legend(title = NULL), fill = guide_legend(title = NULL)) +
-        labs(title = paste0("Sig. Nr.", s - 1))
+        labs(title = sprintf("Dataset Nr.%s, Sig. Nr.%s", i, s - 1))
       add_axis_labels(p, case, "Signal [a.u]")
     })
   })
@@ -103,13 +103,13 @@ plotKaBatch <- function(list, num_rep = 1) {
   ps <- list()
   ps[[1]] <- ggplot() +
     geom_boxplot(data = df, aes(y = .data[[x_col]]))
-  ps_per_dataset <- lapply(unique(df$dataset), function(i) {
+  ps[[2]] <- lapply(unique(df$dataset), function(i) {
     sub <- df[df$dataset == i, ]
     ggplot() +
       geom_boxplot(data = sub, aes(y = .data[[x_col]])) +
       labs(title = sprintf("Dataset Nr.%s", i))
   })
-  list(ps, ps_per_dataset)
+  ps
 }
 
 plotMetricesBatch <- function(list, num_rep = 1) {
@@ -149,6 +149,6 @@ plotDAndHDBatch <- function(list, num_rep = 1) {
         y = .data[["Host-Dye simulated [M]"]],
         group = .data[[x_col]])) +
       labs(title = sprintf("Dataset Nr.%s", i))
-    list(pdye + phostdye)
+    pdye + phostdye
   })
 }
