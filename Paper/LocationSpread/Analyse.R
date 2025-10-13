@@ -62,23 +62,6 @@ data <- lapply(1:4, function(x) {
   res
 })
 
-# TODO: last plot
-# dont plot labels and add to captions --> Done
-# overlapping of bootstrapped JDK in legend --> Done
-# make the lines thicker for the JDK --> Done
-# TODO: Update text what is actually a good standard location+/- spread. Discussion
-# TODO: update abstract and conclusion --> Done
-# TODO: replace CI with HDR --> done
-# TODO:update last table. --> Done
-# TODO: rename Mane to Rel. Error --> Done
-# TODO: explanation why error < 1 is good --> Done
-# TODO: shapley. Later after a community standard.
-# TODO: global analysis. Each signal has its own I values.
-# when more than one signal is used plot only Ka in batch mode.
-#   * update import
-#   * update init of parameters.
-#   * update loss functions
-
 data[[4]][["Labels"]]
 
 source("Plotting.R")
