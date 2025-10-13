@@ -1,4 +1,3 @@
-# TODO: write tests
 forward_dba_dye_const <- function(Kd, Id, Ihd, d0, h0_values) {
   valid_h0 <- c()
   Signal_values <- c()
@@ -91,7 +90,7 @@ forward_dba_host_const <- function(Kd, Id, Ihd, h0, d0_values) {
 }
 
 
-forward_ida <- function(Kd, Kg, Id, Ihd, h0, d0, g0_values) {
+forward_ida <- function(Kg, I0, Ihd, Id, Kd, h0, d0, g0_values) {
   valid_g0 <- c()
   Signal_values <- c()
   for (g0 in g0_values) {
@@ -130,13 +129,7 @@ forward_ida <- function(Kd, Kg, Id, Ihd, h0, d0, g0_values) {
       silent = TRUE
     )
   }
-
-  results_table <- data.frame(
-    g0 = valid_g0,
-    Signal = Signal_values
-  )
-
-  return(results_table)
+  return(Signal_values + I0)
 }
 
 forward_gda <- function(Kd, Kg, Id, Ihd, h0, g0, d0_values) {

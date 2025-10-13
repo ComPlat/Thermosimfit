@@ -5,7 +5,9 @@ test_sensitivity_valid_input <- function() {
   path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
   optimP <- data.frame(80699337.884, 0.000, 1251.928, 0.000)
   result <- sensitivity("ida", optimP, path, c(4.3, 6.0, 7079458), 20)
-  expect_true("gg" %in% class(result))
+  expect_true(is.data.frame(result))
+  names <- names(result)
+  expect_equal(names, c("original", "bias", "std. error", "min. c.i.", "max. c.i."))
 }
 test_sensitivity_valid_input()
 
@@ -26,7 +28,9 @@ test_sensitivity_gda <- function() {
   path <- paste0(system.file("examples", package = "tsf"), "/GDA.txt")
   optimP <- data.frame(1.932e+06, 2.324e+02, 3.341e+09, 4.438e+04)
   result <- sensitivity("gda", optimP, path, c(1.65e-06, 1.32e-06, 1.7e07), 15)
-  expect_true("gg" %in% class(result))
+  expect_true(is.data.frame(result))
+  names <- names(result)
+  expect_equal(names, c("original", "bias", "std. error", "min. c.i.", "max. c.i."))
 }
 test_sensitivity_gda()
 
@@ -40,7 +44,9 @@ test_sensitivity_dba_const_host <- function() {
     additionalParameters = c(dye = 0.000151),
     percentage = 15
   )
-  expect_true("gg" %in% class(result))
+  expect_true(is.data.frame(result))
+  names <- names(result)
+  expect_equal(names, c("original", "bias", "std. error", "min. c.i.", "max. c.i."))
 }
 test_sensitivity_dba_const_host()
 
@@ -54,6 +60,8 @@ test_sensitivity_dba_const_dye <- function() {
     additionalParameters = c(dye = 0.000151),
     percentage = 15
   )
-  expect_true("gg" %in% class(result))
+  expect_true(is.data.frame(result))
+  names <- names(result)
+  expect_equal(names, c("original", "bias", "std. error", "min. c.i.", "max. c.i."))
 }
 test_sensitivity_dba_const_dye()

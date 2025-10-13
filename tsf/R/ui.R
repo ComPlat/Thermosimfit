@@ -1,6 +1,21 @@
 uiInterface <- function() {
     ui <- dashboardPage(
 
+    tags$head(tags$style(HTML("
+      /* Flex title with right-aligned tools */
+      .box .titlebar { display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+      .box .titlebar .tools .btn { padding:2px 10px; }
+
+      /* Pale body fills for whole-box emphasis */
+      .box.info-fill   .box-body { background:#eef7fb; }  /* light teal */
+      .box.success-fill .box-body { background:#e8f5e9; } /* light green */
+
+      /* Compact plot spacing */
+      .box .box-body .shiny-plot-output { margin-bottom: 0.75rem; }
+      .muted { color:#6c757d; font-size:.95rem; }
+      .crumb { font-weight:600; }
+      "))),
+
     skin = "blue",
     
     dashboardHeader(title = "Thermosimfit"),

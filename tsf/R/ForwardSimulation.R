@@ -73,19 +73,21 @@ forward_simulation <- function(case, df, additionalParameters, parameter, n = 10
     )
     result[, 2] <- result[, 2] + parameter[2]
   } else if (case == "ida") {
-    params[[1]] <- parameter[1] # KaHG
-    params[[2]] <- parameter[4] # I(D)
-    params[[3]] <- parameter[3] # I(HD)
-    params[[4]] <- additionalParameters[1] # H0
-    params[[5]] <- additionalParameters[2] # D0
-    params[[6]] <- additionalParameters[3] # KaHD
-    params[[7]] <- var_new # Guest
-    result <- forward_ida(
-      params[[6]], params[[1]],
-      params[[2]], params[[3]],
-      params[[4]], params[[5]], params[[7]]
-    )
-    result[, 2] <- result[, 2] + parameter[2]
+    params <- matrix(parameter[-1], nrow = 3)
+    sigs <- lapply(1:nrow(params), function(i) {
+      forward_ida(
+        parameter[1], # KaHG
+        params[i, 1], # I0
+        params[i, 2], # IHD
+        params[i, 3], # ID
+        additionalParameters[3], # KaHD
+        additionalParameters[1], # H0
+        additionalParameters[2], # D0
+        var_new # Guest
+      )
+    })
+    sigs <- Reduce(cbind, sigs)
+    result <- data.frame(guest = var_new, sigs)
   } else if (case == "gda") {
     params[[1]] <- parameter[1] # KaHD
     params[[2]] <- parameter[4] # I(D)

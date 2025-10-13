@@ -31,7 +31,7 @@ test_batch_dba_dye_const <- function() {
   trash <- sapply(metrices$R2, function(x) {
     expect_true(x > 0.95)
   })
-  return(trash)
+  expect_true(all(trash))
 }
 test_batch_dba_dye_const()
 
@@ -65,7 +65,7 @@ test_batch_dba_host_const <- function() {
   trash <- sapply(metrices$R2, function(x) {
     expect_true(x > 0.95)
   })
-  return(trash)
+  expect_true(all(trash))
 }
 test_batch_dba_host_const()
 
@@ -79,10 +79,10 @@ test_batch_gda <- function() {
     ID = 0
   )
   upperBounds <- c(
-    kG = 10^10,
-    I0 = 10^10,
-    IHD = 10^10,
-    ID = 10^10
+    kG = 10^11,
+    I0 = 10^11,
+    IHD = 10^11,
+    ID = 10^11
   )
   additionalParameters <- c(
     host = 1.65E-06,
@@ -93,7 +93,7 @@ test_batch_gda <- function() {
     "gda",
     lowerBounds, upperBounds,
     path, additionalParameters,
-    ngen = 150,
+    ngen = 250,
     num_cores = 6,
     num_rep = 3
   )
@@ -101,7 +101,7 @@ test_batch_gda <- function() {
   trash <- sapply(metrices$R2, function(x) {
     expect_true(x > 0.95)
   })
-  return(trash)
+  expect_true(all(trash))
 }
 test_batch_gda()
 
@@ -137,7 +137,7 @@ test_batch <- function() {
   trash <- sapply(metrices$R2, function(x) {
     expect_true(x > 0.95)
   })
-  return(trash)
+  expect_true(all(trash))
 }
 test_batch()
 
