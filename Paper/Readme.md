@@ -14,6 +14,10 @@ the impact of the two most important parameters (identified in the Sensitivity a
 
 The analysis of a large number of optimizations in combination with several repetitions in the wet laboratory can be found in MeasurementSimulationVariance.
 
+## Versions
 
+The analysis located in DecentFitParameterVariance, LocationSpread,
+MeasurementVariance, Sensitivity, and Regions are conducted with tsf V.0.2.
+The code can be found here: https://github.com/ComPlat/Thermosimfit/releases/tag/v.1.2
 
-
+The code of the GlobalAnalysis and LocationSpread was conducted using tsf. V0.3 and the code can be found here: https://github.com/ComPlat/Thermosimfit/releases/tag/v.1.3

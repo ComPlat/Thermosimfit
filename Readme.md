@@ -62,6 +62,6 @@ library(remotes)
 ```
 2. Use the `install_github` function to install the package "tsf".
 ```R
-remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf", ref = "v1.1") # Stable version
+remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf", ref = "v1.3") # Stable version
 # remotes::install_github("ComPlat/Thermosimfit", subdir = "tsf") # Development version
 ```
