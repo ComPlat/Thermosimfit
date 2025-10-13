@@ -11,6 +11,7 @@ test_hg <- function() {
   env$h0 <- 5
   env$dye <- df[, 1]
   env$signal <- df[, 2]
+  env$n_sigs <- 1L
   result <- tsf:::lossFctHG(parameter, env, TRUE)
   df[, 2] <- result$insilico
   file <- tempfile(fileext = ".txt")
@@ -20,7 +21,7 @@ test_hg <- function() {
     "dba_host_const", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, env$h0,
     npop = 40, ngen = 100
   )
-  expect_true(res[[4]]$R2 >= 0.99)
+  expect_true(res$metrices$R2 >= 0.99)
 }
 test_hg()
 
@@ -33,6 +34,7 @@ test_dba <- function() {
   env$d0 <- 5
   env$host <- df[, 1]
   env$signal <- df[, 2]
+  env$n_sigs <- 1L
   result <- tsf:::lossFctDBA(parameter, env, TRUE)
   df[, 2] <- result$insilico
   file <- tempfile(fileext = ".txt")
@@ -42,7 +44,7 @@ test_dba <- function() {
     "dba_dye_const", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, env$d0,
     npop = 40, ngen = 100
   )
-  expect_true(res[[4]]$R2 >= 0.99)
+  expect_true(res$metrices$R2 >= 0.99)
 }
 test_dba()
 
@@ -56,6 +58,7 @@ test_ida <- function() {
   env$d0 <- 6
   env$ga <- df[, 1]
   env$signal <- df[, 2]
+  env$n_sigs <- 1L
   result <- tsf:::lossFctIDA(parameter, env, TRUE)
   df[, 2] <- result$insilico
   file <- tempfile(fileext = ".txt")
@@ -65,7 +68,7 @@ test_ida <- function() {
     "ida", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, c(env$h0, env$d0, env$kd),
     npop = 40, ngen = 150
   )
-  expect_true(res[[4]]$R2 >= 0.99)
+  expect_true(res$metrices$R2 >= 0.99)
 }
 test_ida()
 
@@ -79,6 +82,7 @@ test_gda <- function() {
   df <- read.csv(path, header = TRUE, sep = ",")
   env$dye <- df[, 1]
   env$signal <- df[, 2]
+  env$n_sigs <- 1L
   result <- tsf:::lossFctGDA(parameter, env, TRUE)
   df[, 2] <- result$insilico
   file <- tempfile(fileext = ".txt")
@@ -88,6 +92,6 @@ test_gda <- function() {
     additionalParameters = c(env$h0, env$ga0, env$kd),
     npop = 40, ngen = 175
   )
-  expect_true(res[[4]]$R2 >= 0.99)
+  expect_true(res$metrices$R2 >= 0.99)
 }
 test_gda()
