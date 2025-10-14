@@ -1,10 +1,11 @@
 load("./Paper/GlobalAnalysis/10Runs.RData")
 names(res[[1]])
 
-ms <- lapply(seq_len(length(res)), \(i) {
-  res[[i]][["metrices"]]
-})
-ms
+errors <- vapply(seq_len(length(res)), \(i) {
+  sum(res[[i]][["metrices"]]$MeanSquareError)
+}, double(1))
+boxplot(c(runif(10), 100), plot = FALSE)
+
 # Signal plots
 # ====================================================================
 states <- lapply(seq_len(length(res)), \(i) {
