@@ -49,7 +49,8 @@ lossFctHG2 <- function(parameter, env, eval = FALSE) {
     hg[i] <- res$hg
     hgg[i] <- res$hgg
   }
-  signalInsilico <- I0 + IH*h + IG*g + IHG*hg + IHGG*hgg
+  # signalInsilico <- I0 + IH*h + IG*g + IHG*hg + IHGG*hgg
+  signalInsilico <- I0 + IH*h + IHG*hg + IHGG*hgg
   if (eval) {
     return(data.frame(insilico = signalInsilico, g = g, hg = hg))
   }

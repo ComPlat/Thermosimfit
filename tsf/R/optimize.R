@@ -9,7 +9,7 @@
 #' "dba_dye_const", "ida" or "gda".
 #' @param lowerBounds is a numeric vector defining the lower boundaries of the parameter.
 #'        In case of *dba_dye_const* or *dba_host_const the order of the parameters is: *khd*, *I0*, *IHD* and *ID*
-#'        In case of *dba_host_const2* tje order of the parameters is: *kg*, *kgg*, *I0*, *IH*, *IG*, *IHG*, and *IHGG*
+#'        In case of *dba_host_const2* the order of the parameters is: *kg*, *kgg*, *I0*, *IH*, *IG*, *IHG*, and *IHGG*
 #'        In case of *ida* and *ga* the order of the parameters is: *kg*, *I0*, *IHD* and *ID*.
 #' @param upperBounds is a numeric vector defining the upper boundaries of the parameter.
 #'        The order is the same as for the lower boundaries.
