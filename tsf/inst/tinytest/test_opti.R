@@ -27,9 +27,9 @@ test_hg()
 
 # DBA is case DBA with const dye and increasing host
 test_dba <- function() {
-  path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
+  path <- system.file("extdata", "dba_dye_const_real.txt", package = "tsf")
   df <- read.csv(path, header = FALSE, sep = "\t")
-  parameter <- c(10^8, 0, 1000, 1)
+  parameter <- c(3e3, 2.0, 1.65e7, 1.6e6)
   env <- new.env()
   env$d0 <- 5
   env$host <- df[, 1]
@@ -41,7 +41,9 @@ test_dba <- function() {
   write.csv(df, file, quote = FALSE, row.names = FALSE)
   set.seed(1234)
   res <- tsf::opti(
-    "dba_dye_const", c(1, 0, 0, 0), c(10^9, 1, rep(10^5, 2)), file, env$d0,
+    "dba_dye_const",
+    c(1, 0, 1e2, 1e2), c(1e8, 1e4, 1e8, 1e8),
+    file, env$d0,
     npop = 40, ngen = 100
   )
   expect_true(res$metrices$R2 >= 0.99)

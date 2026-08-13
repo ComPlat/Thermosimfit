@@ -137,6 +137,141 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       ))
     })
 
+    # Batch-PSO has its own independent I0/IHD/ID boundary-setting flow,
+    # a full mirror of the one above rather than sharing parameter_state -
+    # otherwise there's no visibility on the Batch-PSO tab that these
+    # boundaries even exist or need to be set.
+    parameter_state_batch <- reactiveValues(idx = 1L, Is = list(), confirmed = list(), Is_old = list())
+
+    I_inputs_batch <- reactive({
+      list(
+        lb_I0  = input$I0_lb_batch, ub_I0  = input$I0_ub_batch,
+        lb_IHD = input$IHD_lb_batch, ub_IHD = input$IHD_ub_batch,
+        lb_ID  = input$ID_lb_batch, ub_ID  = input$ID_ub_batch
+      )
+    })
+
+    output[["Confirmed_I_batch"]] <- renderUI({
+      class <- "label label-default"
+      status <- "Not confirmed"
+      if (length(parameter_state_batch$Is) >= parameter_state_batch$idx) {
+        if (parameter_state_batch$confirmed[[parameter_state_batch$idx]]) {
+          old <- parameter_state_batch$Is_old[[parameter_state_batch$idx]]
+          current <- I_inputs_batch()
+          if (all(unlist(Map(`==`, old, current)))) {
+            class <- "label label-success"
+            status <- "confirmed"
+          } else {
+            class <- "label label-info"
+            status <- "edited"
+          }
+        }
+      }
+      tags$span(
+        status,
+        class = class,
+        style = "font-size:12px; padding:2px 6px; border-radius:999px; margin-left:.5rem;"
+      )
+    })
+
+    output[["BOUNDS_I_batch"]] <- renderUI({
+      lb_I0 <- 0; ub_I0 <- 10^8;
+      lb_IHD <- 0; ub_IHD <- 10^8;
+      lb_ID <- 0; ub_ID <- 10^8;
+
+      if (length(parameter_state_batch$Is) >= parameter_state_batch$idx) {
+        Is <- parameter_state_batch$Is[[parameter_state_batch$idx]]
+        lb_I0 <- Is[["lb_I0"]]
+        ub_I0 <- Is[["ub_I0"]]
+        lb_IHD <- Is[["lb_IHD"]]
+        ub_IHD <- Is[["ub_IHD"]]
+        lb_ID <- Is[["lb_ID"]]
+        ub_ID <- Is[["ub_ID"]]
+      }
+
+      div(
+        box(
+          title = div(class = "d-flex justify-content-between align-items-center",
+            h4(sprintf("I parameters — signal %s", parameter_state_batch$idx), class = "m-0"),
+            uiOutput(NS(id, "Confirmed_I_batch"), inline = TRUE)
+          ),
+          textInput(NS(id, "I0_lb_batch"), "I(0) value lower boundary", value = lb_I0) |> tagAppendAttributes(title = "Lower bound for I(0). Use 0 if unknown."),
+          textInput(NS(id, "I0_ub_batch"), "I(0) value upper boundary", value = ub_I0) |> tagAppendAttributes(title = "Upper bound for I(0). Use 10^8 if unknown."),
+          textInput(NS(id, "IHD_lb_batch"),
+            label = tagList(
+              "I(HD) value lower boundary [1/M]",
+              actionButton(NS(id, "AdviceUBIHD_batch"), "Help",
+                icon = icon("question-circle"),
+                style = "background-color:transparent; border:none;"
+              )
+            ), value = lb_IHD
+          ) |> tagAppendAttributes(title = "Lower bound for I(HD). Use 0 if unknown."),
+          textInput(NS(id, "IHD_ub_batch"), "I(HD) value upper boundary [1/M]", value = ub_IHD) |> tagAppendAttributes(title = "Upper bound for I(HD). Use 10^8 if unknown."),
+          textInput(NS(id, "ID_lb_batch"), "I(D) value lower boundary [1/M]", value = lb_ID) |> tagAppendAttributes(title = "Lower bound for I(D). Use 0 if unknown."),
+          textInput(NS(id, "ID_ub_batch"), "I(D) value upper boundary [1/M]", value = ub_ID) |> tagAppendAttributes(title = "Upper bound for I(D). Use 10^8 if unknown."),
+          actionButton(
+            inputId = NS(id, "Confirm_batch"),
+            label = "Confirm boundaries",
+            class = "add-button df-button"
+          ),
+          actionButton(
+            inputId = NS(id, "PreviousIParameter_batch"),
+            label = "Previous boundaries",
+            class = "add-button df-button"
+          ),
+          actionButton(
+            inputId = NS(id, "NextIParameter_batch"),
+            label = "Next boundaries",
+            class = "add-button df-button"
+          )
+        )
+      )
+    })
+
+    observeEvent(input$Confirm_batch, ignoreInit = TRUE, {
+      parameter_state_batch$Is[[parameter_state_batch$idx]] <- I_inputs_batch()
+      parameter_state_batch$Is_old[[parameter_state_batch$idx]] <- parameter_state_batch$Is[[parameter_state_batch$idx]]
+      parameter_state_batch$confirmed[[parameter_state_batch$idx]] <- TRUE
+    })
+
+    observeEvent(input$NextIParameter_batch, ignoreInit = TRUE, {
+      if (parameter_state_batch$idx < nsigs()) {
+        parameter_state_batch$idx <- parameter_state_batch$idx + 1L
+      } else {
+        showNotification("Already at the last signal",
+          type = "error", duration = 20
+        )
+      }
+    })
+
+    observeEvent(input$PreviousIParameter_batch, ignoreInit = TRUE, {
+      if (parameter_state_batch$idx > 1L) {
+        parameter_state_batch$idx <- parameter_state_batch$idx - 1L
+      } else {
+        showNotification("Already at the first signal",
+          type = "error", duration = 20
+        )
+      }
+    })
+
+    observeEvent(input$helpButton_batch, {
+      showModal(modalDialog(
+        title = "Help",
+        HTML("Conduct two optimizations. First with wide boundaries. \n
+          Afterwards chose narrow boundaries based on the result of the first optimization."),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    })
+    observeEvent(input$AdviceUBIHD_batch, {
+      showModal(modalDialog(
+        title = "Help",
+        HTML("Set upper boundary to IHD * conc ≈ Signal"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    })
+
     # Optimization
     # ===============================================================================
     invalid_time <- reactiveVal(1100)
@@ -155,9 +290,9 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         "Please enter a value for number of particles")
       rwn(!is.na(input$ngen),
         "Please enter a value for the number of generations")
-      rwn(!is_integer(input$npop),
+      rwn(is_integer(input$npop),
         "Please enter an integer value for number of particles")
-      rwn(!is_integer(input$ngen),
+      rwn(is_integer(input$ngen),
         "Please enter an integer value for number of generations")
       rwn(!is.na(input$threshold),
         "Please enter a value for the error threshold")
@@ -209,14 +344,14 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       if (id == "HG") {
         rwn(input$H0 != "",
           "Please enter a value for the Host")
-        rwn(!is_integer(input$sens_bounds),
+        rwn(is_integer(input$sens_bounds),
           "Please enter an integer value for the sensitivity boundary")
         rwn(opti_result_created(),
           "Please run first an optimization") 
       } else if (id == "DBA") {
         rwn(input$D0 != "",
           "Please enter a value for the Dye")
-        rwn(!is_integer(input$sens_bounds),
+        rwn(is_integer(input$sens_bounds),
           "Please enter an integer value for the sensitivity boundary")
         rwn(opti_result_created(),
           "Please run first an optimization") 
@@ -227,7 +362,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
           "Please enter a value for the Dye")
         rwn(input$kHD != "",
           "Please enter a value for KaHD")
-        rwn(!is_integer(input$sens_bounds),
+        rwn(is_integer(input$sens_bounds),
           "Please enter an integer value for the sensitivity boundary")
         rwn(opti_result_created(),
           "Please run first an optimization") 
@@ -238,7 +373,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
           "Please enter a value for the Guest")
         rwn(input$kHD != "",
           "Please enter a value for KaHD")
-        rwn(!is_integer(input$sens_bounds),
+        rwn(is_integer(input$sens_bounds),
           "Please enter an integer value for the sensitivity boundary")
         rwn(opti_result_created(),
           "Please run first an optimization") 
@@ -307,17 +442,189 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       return(ub)
     }
 
-    create_additional_parameters <- function() {
+    # Batch-PSO has its own fully independent H0/D0/kHD/bounds/npop/ngen/
+    # topology/threshold/error_calc_fct/Seed (the "_batch"-suffixed inputs),
+    # separate from the single-run Optimization tab's. The I0/IHD/ID
+    # boundaries are the one exception, shared with the Optimization tab
+    # since they're per-signal state rather than per-optimizer-run.
+    create_lb_batch <- function() {
+      is <- parameter_state_batch$Is
+      par_names <- c("I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+      if (length(is) == 1) {
+        i_lbs <- is[[1]][c(1, 3, 5)]
+        names(i_lbs) <- par_names
+      } else {
+        i_lbs <- lapply(1:3, function(i) {
+          i <- unlist(is[[i]])
+          lbs <- i[c(1, 3, 5)]
+          names(lbs) <- vapply(1:3, function(n) {
+            paste0("Sig. Nr.", n, " ", par_names[n])
+          }, character(1))
+          lbs
+        }) |> unlist()
+      }
+      lb <- ""
+      if (id == "HG" || id == "DBA") {
+        lb <- convert_all_to_num(
+          "lower boundaries",
+          input$kHD_lb_batch, i_lbs
+        )
+      } else if (id == "IDA" || id == "GDA") {
+        lb <- convert_all_to_num(
+          "lower boundaries",
+          input$kHG_lb_batch, i_lbs
+        )
+      }
+      return(lb)
+    }
+
+    create_ub_batch <- function() {
+      is <- parameter_state_batch$Is
+      par_names <- c("I(0)", "I(HD) [1/M]", "I(D) [1/M]")
+      if (length(is) == 1) {
+        i_ubs <- is[[1]][c(2, 4, 6)]
+        names(i_ubs) <- par_names
+      } else {
+        i_ubs <- lapply(1:3, function(i) {
+          i <- unlist(is[[i]])
+          ubs <- i[c(2, 4, 6)]
+          names(ubs) <- vapply(1:3, function(n) {
+            paste0("Sig. Nr.", n, " ", par_names[n])
+          }, character(1))
+          ubs
+        }) |> unlist()
+      }
+      ub <- ""
+      if (id == "HG" || id == "DBA") {
+        ub <- convert_all_to_num(
+          "upper boundaries",
+          input$kHD_ub_batch, i_ubs
+        )
+      } else if (id == "IDA" || id == "GDA") {
+        ub <- convert_all_to_num(
+          "upper boundaries",
+          input$kHG_ub_batch, i_ubs
+        )
+      }
+      return(ub)
+    }
+
+    create_additional_parameters_batch <- function() {
       if (id == "HG") {
         additionalParameters <- convert_all_to_num(
           "Additional Parameters",
-          input$H0 
+          input$H0_batch
         )
         return(additionalParameters)
       } else if (id == "DBA") {
         additionalParameters <- convert_all_to_num(
           "Additional Parameters",
-          input$D0 
+          input$D0_batch
+        )
+        return(additionalParameters)
+      } else if (id == "IDA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0_batch, input$D0_batch, input$kHD_batch
+        )
+        return(additionalParameters)
+      } else if (id == "GDA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0_batch, input$G0_batch, input$kHD_batch
+        )
+        return(additionalParameters)
+      }
+    }
+
+    create_npop_batch <- function() {
+      convert_num_to_int(input$npop_batch)
+    }
+
+    create_ngen_batch <- function() {
+      convert_num_to_int(input$ngen_batch)
+    }
+
+    create_topology_batch <- function() {
+      input$topology_batch
+    }
+
+    create_error_threshold_batch <- function() {
+      input$threshold_batch
+    }
+
+    # VAPRO only searches the nonlinear binding constant (Ka/Kg); I0/IHD/ID
+    # are profiled out via NNLS, so no I-parameter boundaries are needed.
+    # It has its own fully independent H0/D0/kHD/bounds inputs (the
+    # "_vapro"-suffixed ones), separate from the PSO tab's.
+    check_inputs_vapro <- function() {
+      rwn(!is.na(input$nGrid),
+        "Please enter a value for the number of VAPRO grid points")
+      rwn(is_integer(input$nGrid),
+        "Please enter an integer value for the number of VAPRO grid points")
+
+      if (id == "HG") {
+        rwn(input$H0_vapro != "", "Please enter a value for the Host")
+        rwn(input$kHD_lb_vapro != "",
+          "Please enter a value for the lower boundary of KaHD")
+        rwn(input$kHD_ub_vapro != "",
+          "Please enter a value for the upper boundary of KaHD")
+      } else if (id == "DBA") {
+        rwn(input$D0_vapro != "", "Please enter a value for the Dye")
+        rwn(input$kHD_lb_vapro != "",
+          "Please enter a value for the lower boundary of KaHD")
+        rwn(input$kHD_ub_vapro != "",
+          "Please enter a value for the upper boundary of KaHD")
+      } else if (id == "IDA") {
+        rwn(input$H0_vapro != "", "Please enter a value for the Host")
+        rwn(input$D0_vapro != "", "Please enter a value for the Dye")
+        rwn(input$kHD_vapro != "", "Please enter a value for KaHD")
+        rwn(input$kHG_lb_vapro != "",
+          "Please enter a value for the lower boundary of KaHG")
+        rwn(input$kHG_ub_vapro != "",
+          "Please enter a value for the upper boundary of KaHG")
+      } else if (id == "GDA") {
+        rwn(input$H0_vapro != "", "Please enter a value for the Host")
+        rwn(input$G0_vapro != "", "Please enter a value for the Guest")
+        rwn(input$kHD_vapro != "", "Please enter a value for KaHD")
+        rwn(input$kHG_lb_vapro != "",
+          "Please enter a value for the lower boundary of KaHG")
+        rwn(input$kHG_ub_vapro != "",
+          "Please enter a value for the upper boundary of KaHG")
+      }
+    }
+
+    create_lb_vapro <- function() {
+      if (id == "HG" || id == "DBA") {
+        return(convert_all_to_num("lower boundary", input$kHD_lb_vapro))
+      } else {
+        return(convert_all_to_num("lower boundary", input$kHG_lb_vapro))
+      }
+    }
+
+    create_ub_vapro <- function() {
+      if (id == "HG" || id == "DBA") {
+        return(convert_all_to_num("upper boundary", input$kHD_ub_vapro))
+      } else {
+        return(convert_all_to_num("upper boundary", input$kHG_ub_vapro))
+      }
+    }
+
+    create_nGrid <- function() {
+      convert_num_to_int(input$nGrid)
+    }
+
+    create_additional_parameters <- function() {
+      if (id == "HG") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0
+        )
+        return(additionalParameters)
+      } else if (id == "DBA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$D0
         )
         return(additionalParameters)
       } else if (id == "IDA") {
@@ -330,6 +637,34 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         additionalParameters <- convert_all_to_num(
           "Additional Parameters",
           input$H0, input$G0, input$kHD
+        )
+        return(additionalParameters)
+      }
+    }
+
+    create_additional_parameters_vapro <- function() {
+      if (id == "HG") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0_vapro
+        )
+        return(additionalParameters)
+      } else if (id == "DBA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$D0_vapro
+        )
+        return(additionalParameters)
+      } else if (id == "IDA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0_vapro, input$D0_vapro, input$kHD_vapro
+        )
+        return(additionalParameters)
+      } else if (id == "GDA") {
+        additionalParameters <- convert_all_to_num(
+          "Additional Parameters",
+          input$H0_vapro, input$G0_vapro, input$kHD_vapro
         )
         return(additionalParameters)
       }
@@ -398,7 +733,19 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         return("GDAupdateField")
       }
     }
-    
+
+    get_update_field_vapro <- function() {
+      if (id == "HG") {
+        return("HGupdateFieldVapro")
+      } else if (id == "DBA") {
+        return("DBAupdateFieldVapro")
+      } else if (id == "IDA") {
+        return("IDAupdateFieldVapro")
+      } else if (id == "GDA") {
+        return("GDAupdateFieldVapro")
+      }
+    }
+
     get_update_field_sense <- function() {
       if (id == "HG") {
         return("HGupdateFieldSense")
@@ -640,7 +987,173 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
       }
     )
 
+    # VAPRO Optimization
+    # ===============================================================================
+    # VAPRO is a deterministic grid search (no stochastic generations to show
+    # progress across), so unlike PSO there is no cancel button and no live
+    # status feed - just launch, poll until done, render.
+    vapro_opti_result_created <- reactiveVal(FALSE)
+    vapro_opti_result <- reactiveVal()
+    vapro_process <- reactiveVal()
+    vapro_setup_done <- reactiveVal(FALSE)
+    vapro_opti_result_signal_idx <- reactiveVal(1L)
 
+    vapro_message <- function(message) {
+      session$sendCustomMessage(
+        type = get_update_field_vapro(),
+        list(message = message)
+      )
+      return(NULL)
+    }
+
+    observeEvent(input$Start_Vapro_Opti, {
+      if (nclicks() != 0) {
+        print_noti("Already running analysis", type = "warning")
+        return(NULL)
+      }
+      check_inputs_vapro()
+      request_cores(1, session$token)
+      lb <- create_lb_vapro()
+      ub <- create_ub_vapro()
+      additionalParameters <- create_additional_parameters_vapro()
+      nGrid <- create_nGrid()
+      ecf <- input$error_calc_fct_vapro
+      # clear everything
+      vapro_setup_done(FALSE)
+      vapro_opti_result_created(FALSE)
+      vapro_process(NULL)
+      invalid_time(1100)
+      nclicks(nclicks() + 1)
+      vapro_message("Running VAPRO optimization...")
+
+      # start process
+      result <- call_opti_vapro_in_bg(get_Model(), lb, ub, df(), additionalParameters, nGrid, ecf)
+      vapro_process(result)
+      vapro_setup_done(TRUE)
+      NULL
+    })
+
+    vapro_process_done <- function() {
+      req(vapro_setup_done())
+      req(length(vapro_process()) > 0)
+      if (vapro_process()$is_alive()) {
+        req(vapro_process()$get_status() != "running")
+        req(vapro_process()$get_status() != "sleeping")
+      }
+      invalid_time(invalid_time() + 1000)
+      nclicks(0)
+      return(TRUE)
+    }
+
+    correct_results_vapro <- function() {
+      req(vapro_opti_result_created())
+      req(!is.null(vapro_opti_result()))
+    }
+
+    get_vapro_opti_data <- reactive({
+      if (class(vapro_process())[[1]] == "r_process") {
+        req(!vapro_process()$is_alive())
+      }
+      print_error(vapro_process()$read_error())
+      try(vapro_opti_result(vapro_process()$get_result()))
+      try({
+        if (is.null(vapro_opti_result()) || inherits(vapro_opti_result(), "ErrorClass")) {
+          if (inherits(vapro_opti_result(), "ErrorClass")) {
+            print_error(vapro_opti_result()$message)
+          }
+          vapro_opti_result(NULL)
+          vapro_message("")
+          send_and_read_info(paste0("release: ", session$token))
+          vapro_process()$wait()
+          vapro_process()$kill()
+          vapro_process(NULL)
+          return(NULL)
+        }
+      })
+      vapro_message("")
+      vapro_process()$kill()
+      send_and_read_info(paste0("release: ", session$token))
+      vapro_process(NULL)
+    })
+
+    # observe results
+    observe({
+      invalidateLater(invalid_time())
+      if (vapro_process_done() && !vapro_opti_result_created()) {
+        get_vapro_opti_data()
+        vapro_opti_result_created(TRUE)
+      }
+    })
+
+    output$params_vapro <- renderDT({
+      correct_results_vapro()
+      res <- vapro_opti_result()[[2]]
+      names(res)[1] <- get_K_param()
+      datatable(res, escape = FALSE) |>
+        formatSignif(columns = 1:ncol(res), digits = 3)
+    })
+
+    output$host_dye_plot_vapro <- renderPlot({
+      correct_results_vapro()
+      vapro_opti_result()[[4]]
+    })
+
+    output$metrices_vapro <- renderDT({
+      correct_results_vapro()
+      res <- as.data.frame(vapro_opti_result()[[5]])
+      names(res)[3] <- c("R<sup>2</sup>")
+      names(res)[4] <- c("R<sup>2</sup> adjusted")
+      datatable(res,
+        escape = FALSE,
+        caption = "Error Metrics: Comparison of in silico signal and measured signal"
+      )
+    })
+
+    output$signal_plot_vapro <- renderPlot({
+      correct_results_vapro()
+      vapro_opti_result()[[3]][[vapro_opti_result_signal_idx()]]
+    })
+    observeEvent(input$next_signal_plot_vapro, ignoreInit = TRUE, {
+      correct_results_vapro()
+      orsi <- vapro_opti_result_signal_idx()
+      if (orsi < nsigs()) {
+        vapro_opti_result_signal_idx(orsi + 1L)
+      } else {
+        showNotification("Already at the last signal",
+          type = "error", duration = 20
+        )
+      }
+    })
+
+    observeEvent(input$previous_signal_plot_vapro, ignoreInit = TRUE, {
+      correct_results_vapro()
+      orsi <- vapro_opti_result_signal_idx()
+      if (orsi > 1L) {
+        vapro_opti_result_signal_idx(orsi - 1L)
+      } else {
+        showNotification("Already at the first signal",
+          type = "error", duration = 20
+        )
+      }
+    })
+
+    output$download_vapro <- downloadHandler(
+      filename = function() {
+        paste("result_vapro", switch(input$file_type_vapro,
+          xlsx = ".xlsx",
+          csv = ".csv"
+        ), sep = "")
+      },
+      content = function(file) {
+        correct_results_vapro()
+        result_val <- vapro_opti_result()
+        if (input$file_type_vapro == "xlsx") {
+          download_file_vapro(get_Model_capital(), file, result_val)
+        } else {
+          download_csv_vapro(get_Model_capital(), file, result_val)
+        }
+      }
+    )
 
     # sensitivity
     # ===============================================================================
@@ -815,7 +1328,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         "Please provide a number of replicates/dataset"
       )
       rwn(
-        !is_integer(input$NumRepDataset),
+        is_integer(input$NumRepDataset),
         "Please provide an integer entry for the replicates/dataset"
       )
       rwn(
@@ -823,9 +1336,62 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         "The dataset list seems to be empty. Please upload a file"
       )
       rwn( # TODO: update also other server code
-        !is_integer(input$NumCores),
+        is_integer(input$NumCores),
         "Please provide an integer entry for number of cores"
       )
+
+      rwn(!is.na(input$npop_batch),
+        "Please enter a value for number of particles")
+      rwn(!is.na(input$ngen_batch),
+        "Please enter a value for the number of generations")
+      rwn(is_integer(input$npop_batch),
+        "Please enter an integer value for number of particles")
+      rwn(is_integer(input$ngen_batch),
+        "Please enter an integer value for number of generations")
+      rwn(!is.na(input$threshold_batch),
+        "Please enter a value for the error threshold")
+
+      Is <- parameter_state_batch$Is
+      rwn(length(Is) == nsigs(), "The I parameter boundaries are not defined for all signals")
+      lapply(Is, function(I) {
+        rwn(!is.null(I), "Not all I parameter boundaries are set")
+        rwn(I$lb_I0 != "", sprintf("Please set the lower bound for I0 for signal Nr.%s", parent.frame()$i[]))
+        rwn(I$ub_I0 != "", sprintf("Please set the upper bound for I0 for signal Nr.%s", parent.frame()$i[]))
+        rwn(I$lb_IHD != "", sprintf("Please set the lower bound for IHD for signal Nr.%s", parent.frame()$i[]))
+        rwn(I$ub_IHD != "", sprintf("Please set the upper bound for IHD for signal Nr.%s", parent.frame()$i[]))
+        rwn(I$lb_ID != "", sprintf("Please set the lower bound for ID for signal Nr.%s", parent.frame()$i[]))
+        rwn(I$ub_ID != "", sprintf("Please set the upper bound for ID for signal Nr.%s", parent.frame()$i[]))
+      })
+
+      if (id == "HG") {
+        rwn(input$H0_batch != "", "Please enter a value for the Host")
+        rwn(input$kHD_lb_batch != "",
+          "Please enter a value for the lower boundary of KaHD")
+        rwn(input$kHD_ub_batch != "",
+          "Please enter a value for the upper boundary of KaHD")
+      } else if (id == "DBA") {
+        rwn(input$D0_batch != "", "Please enter a value for the Dye")
+        rwn(input$kHD_lb_batch != "",
+          "Please enter a value for the lower boundary of KaHD")
+        rwn(input$kHD_ub_batch != "",
+          "Please enter a value for the upper boundary of KaHD")
+      } else if (id == "IDA") {
+        rwn(input$H0_batch != "", "Please enter a value for the Host")
+        rwn(input$D0_batch != "", "Please enter a value for the Dye")
+        rwn(input$kHD_batch != "", "Please enter a value for KaHD")
+        rwn(input$kHG_lb_batch != "",
+          "Please enter a value for the lower boundary of KaHG")
+        rwn(input$kHG_ub_batch != "",
+          "Please enter a value for the upper boundary of KaHG")
+      } else if (id == "GDA") {
+        rwn(input$H0_batch != "", "Please enter a value for the Host")
+        rwn(input$G0_batch != "", "Please enter a value for the Guest")
+        rwn(input$kHD_batch != "", "Please enter a value for KaHD")
+        rwn(input$kHG_lb_batch != "",
+          "Please enter a value for the lower boundary of KaHG")
+        rwn(input$kHG_ub_batch != "",
+          "Please enter a value for the upper boundary of KaHG")
+      }
     }
 
     get_num_core <- function() {
@@ -843,19 +1409,18 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks) 
         return(NULL)
       }
       # check input
-      check_inputs()
       check_inputs_batch()
-      lb <- create_lb()
-      ub <- create_ub()
-      additionalParameters <- create_additional_parameters()
-      npop <- create_npop()
-      ngen <- create_ngen()
-      topo <- create_topology()
-      ecf <- input$error_calc_fct
-      et <- create_error_threshold()
+      lb <- create_lb_batch()
+      ub <- create_ub_batch()
+      additionalParameters <- create_additional_parameters_batch()
+      npop <- create_npop_batch()
+      ngen <- create_ngen_batch()
+      topo <- create_topology_batch()
+      ecf <- input$error_calc_fct_batch
+      et <- create_error_threshold_batch()
       num_cores <- get_num_core()
       # check seed case
-      seed <- input$Seed
+      seed <- input$Seed_batch
       num_rep <- as.integer(input$NumRepDataset)
       num_rep_batch(num_rep)
       seed_case <- determine_seed_case(seed, num_rep)

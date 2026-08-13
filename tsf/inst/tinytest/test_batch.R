@@ -93,7 +93,7 @@ test_batch_gda <- function() {
     "gda",
     lowerBounds, upperBounds,
     path, additionalParameters,
-    ngen = 250,
+    ngen = 500,
     num_cores = 6,
     num_rep = 3
   )
@@ -171,7 +171,7 @@ invalid_path <- function() {
     num_rep = 3 # NOTE: thus 6 runs in total
   ))
   expect_true(class(res) == "try-error")
-  return()
+  invisible(NULL)
 }
 invalid_path()
 
@@ -204,7 +204,7 @@ invalid_model <- function() {
     num_rep = 3
   ))
   expect_true(class(res) == "try-error")
-  return()
+  invisible(NULL)
 }
 invalid_model()
 
@@ -237,7 +237,7 @@ invalid_num_rep <- function() {
     num_rep = -3
   ))
   expect_true(class(res) == "try-error")
-  return()
+  invisible(NULL)
 }
 invalid_num_rep()
 
@@ -270,7 +270,7 @@ invalid_num_cores <- function() {
     num_rep = 3
   ))
   expect_true(class(res) == "try-error")
-  return()
+  invisible(NULL)
 }
 invalid_num_cores()
 
@@ -302,6 +302,6 @@ invalid_ap <- function() {
     num_rep = 3
   ))
   expect_true(class(res) == "try-error")
-  return()
+  invisible(NULL)
 }
 invalid_ap()

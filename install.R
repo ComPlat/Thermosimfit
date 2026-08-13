@@ -1,5 +1,4 @@
 roxygen2::roxygenise("tsf")
-devtools::install("tsf", build_vignettes = TRUE, upgrade = "never")
 install.packages("tsf", repos = NULL, type = "source")
 detach("package:tsf", unload = TRUE)
 tsf::runApp(4005)

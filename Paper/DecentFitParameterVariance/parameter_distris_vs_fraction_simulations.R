@@ -77,41 +77,20 @@ write.csv(gda_params, "./Paper/DecentFitParameterVariance/gda_params.csv", quote
 
 cp <- function(config, thresholds) {
   res <- calc_errors_and_chose_sims(config$path, thresholds)
-  df <- res$states
-  dfs <- lapply(unique(df$dataset), \(x) {
-    sub <- df[df$dataset == x, ]
-    rep1 <- unique(sub$repetition)[[1]]
-    sub <- sub[sub$repetition == rep1, ]
-    q1 <- unique(sub$quantile)[[1]]
-    sub[sub$quantile == q1, ]
-  })
-  df <- Reduce(rbind, dfs)
-  res$states[[config$x]] <- factor(res$states[[config$x]])
-  df[[config$x]] <- factor(df[[config$x]])
-  p1 <- ggplot() +
-    geom_point(data = res$states, aes(x = .data[[config$x]],
-      y = .data[["Signal simulated"]], colour = quantile),
-      position = position_dodge2(width = 0.5)) +
-    geom_point(data = df, aes(x = .data[[config$x]],
-      y = .data[["Signal measured"]], shape = factor(dataset)),
-      position = position_dodge2(width = 0.5), size = 1) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
   res$parameter$quantile <- res$parameter$quantile * 100
-  p2 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[[config$y]])) +
+  p1 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[[config$y]])) +
     geom_boxplot() +
     labs(x = "% best simulations")
-  p3 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[["I(0)"]])) +
+  p2 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[["I(0)"]])) +
     geom_boxplot() +
     labs(x = "% best simulations")
-  p4 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[["I(HD) [1/M]"]])) +
+  p3 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[["I(HD) [1/M]"]])) +
     geom_boxplot() +
     labs(x = "% best simulations")
-  p5 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[["I(D) [1/M]"]])) +
+  p4 <- ggplot(data = res$parameter, aes(x = quantile, group = quantile, y = .data[["I(D) [1/M]"]])) +
     geom_boxplot() +
     labs(x = "% best simulations")
-  pp <- plot_grid(plotlist = list(p2, p3, p4, p5))
-  plot_grid(plotlist = list(p1, pp), nrow = 2L)
+  plot_grid(p1, p2, p3, p4)
 }
 
 p <- cp(dba, thresholds)
@@ -120,3 +99,4 @@ p <- cp(ida, thresholds)
 ggsave("./Paper/DecentFitParameterVariance/IDA.png", p)
 p <- cp(gda, thresholds)
 ggsave("./Paper/DecentFitParameterVariance/GDA.png", p)
+p

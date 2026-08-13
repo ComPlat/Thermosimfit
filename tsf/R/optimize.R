@@ -41,7 +41,7 @@ opti <- function(case, lowerBounds, upperBounds,
                  npop = 40, ngen = 200,
                  Topology = "random",
                  errorThreshold = -Inf, error_calc_fct = "Rel. Error", add_info = "") {
-  tryCatch(expr = {
+  validation <- tryCatch(expr = {
     if (!is.character(case)) {
       stop("case has to be of type character")
     }
@@ -127,6 +127,9 @@ opti <- function(case, lowerBounds, upperBounds,
   }, interrupt = function(e) {
     return(ErrorClass$new("Interrupted by user"))
   })
+  if (inherits(validation, "ErrorClass")) {
+    return(validation)
+  }
 
   Topo <- tryCatch(
     expr = {

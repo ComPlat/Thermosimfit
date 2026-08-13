@@ -157,8 +157,6 @@ func runTCP(errCh chan<- error) {
 	}
 }
 
-// TODO: use this later to allocate cores to sessions with highest priority
-// Session with highest priority available
 func getHighestPriority() string {
 	prio := -1
 	id_max_prio := ""
