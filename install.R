@@ -3,13 +3,6 @@ install.packages("tsf", repos = NULL, type = "source")
 tsf::runApp(4005)
 tinytest::test_package("tsf")
 
-path <- "./tsf/inst/tinytest/"
-test_files <- c(
-  "test_batch.R", "test_create_polynom.R",
-  "test_lossFct.R", "test_opti.R", "test_opti_vapro.R",
-  "test_pso.R", "test_pso_loss_ast2ast.R", "test_pso_vs_ast2ast.R",
-  "test_sensitivity.R", "test_utils.R"
-)
 tinytest::run_test_file("./tsf/inst/tinytest/test_opti_vapro.R")
 
 load_packages <- function() {
