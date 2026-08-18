@@ -15,7 +15,11 @@ pso(
   global = FALSE,
   save_swarm = FALSE,
   run_as_shiny = FALSE,
-  add_message = ""
+  add_message = "",
+  engine = c("r", "ast2ast"),
+  loss_particle_a2a = NULL,
+  add_params = NULL,
+  error_code = 1L
 )
 }
 \arguments{
@@ -45,6 +49,24 @@ calculated for each generation.}
 \item{run_as_shiny}{is an internal parameter which is used when running the shiny app interface.}
 
 \item{add_message}{is an optional character argument which is printed during optimization}
+
+\item{engine}{is an optional character argument selecting the fitness-evaluation backend: "r"
+(the default here -- \code{\link{opti}}, which always supplies loss_particle_a2a/
+add_params, defaults to "ast2ast" instead) calls \code{loss} directly. "ast2ast" calls the
+ast2ast-compiled loss_particle_a2a instead for every non-eval fitness evaluation, leaving
+the rest of this function (RNG draw order, asynchronous per-particle updates, neighbor
+lookups) untouched -- so results differ from engine = "r" only by floating-point-level
+differences (a different uniroot implementation), not by a different PSO trajectory.
+Requires loss_particle_a2a and add_params to be supplied; a generic caller of pso()
+(like the examples below) has no compiled loss to pass, so must use engine = "r".}
+
+\item{loss_particle_a2a}{is the ast2ast-compiled per-particle loss function, required when
+engine = "ast2ast".}
+
+\item{add_params}{is the struct passed to loss_particle_a2a, required when engine = "ast2ast".}
+
+\item{error_code}{selects the error function used by loss_particle_a2a when engine = "ast2ast"
+(see pso_error_code()).}
 }
 \description{
 Interface to the particle swarm optimization (pso) algorithm.

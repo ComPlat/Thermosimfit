@@ -32,11 +32,6 @@ format_scientific <- function(x) {
   formatC(x, format = "e", digits = 3)
 }
 
-flush <- function(f) { # TODO: still needed?
-  file_con <- file(f, open = "w")
-  close(file_con)
-}
-
 extract_iter <- function(s) { # TODO: still needed?
   if (!is.character(s)) {
     return()
@@ -224,47 +219,17 @@ request_cores <- function(n_cores, token) {
   )
 }
 
-call_opti_in_bg <- function(case, lb, ub,
-                            df, ap, seed,
-                            npop, ngen, topo,
-                            et, ecf) {
-  callr::r_bg(
-    function(case, lb, ub, df, ap,
-             seed, npop, ngen, Topology, errorThreshold, error_calc_fct) {
-      res <- tsf::opti(
-        case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold, error_calc_fct
-      )
-      return(res)
-    },
-    args = list(
-      case, lb, ub, df,
-      ap, seed, npop, ngen, topo, et, ecf
-    )
-  )
-}
+# Warms Rcpp's compile cache for every case in this process; return value unused.
+warm_ast2ast_cache <- function() {
+  for (case in c("dba_dye_const", "dba_host_const", "ida", "gda")) {
+    pso_spec <- tsf:::pso_a2a_spec(case)
+    ast2ast::translate(pso_spec$loss_fct, args_f = pso_spec$args_f, types_f = pso_spec$types_f)
 
-call_opti_vapro_in_bg <- function(case, lb, ub, df, ap, nGrid, ecf) {
-  callr::r_bg(
-    function(case, lb, ub, df, ap, nGrid, error_calc_fct) {
-      res <- tsf::opti_vapro(
-        case, lb, ub, df, ap, nGrid, error_calc_fct
-      )
-      return(res)
-    },
-    args = list(case, lb, ub, df, ap, nGrid, ecf)
-  )
-}
-
-call_sensi_in_bg <- function(case, optim_params, df, ap, sense_bounds, error_calc_fct) {
-  callr::r_bg(
-    function(case, optim_params, df, ap, sense_bounds, error_calc_fct) {
-      res <- tsf::sensitivity(
-        case, optim_params, df, ap, sense_bounds, error_calc_fct = error_calc_fct
-      )
-      return(res)
-    },
-    args = list(case, optim_params, df, ap, sense_bounds, error_calc_fct)
-  )
+    vapro_spec <- tsf:::vapro_a2a_spec(case)
+    ast2ast::translate(vapro_spec$loss_fct, args_f = vapro_spec$args_f_loss, types_f = vapro_spec$types_f)
+    ast2ast::translate(vapro_spec$grid_fct, args_f = vapro_spec$args_f_grid, types_f = vapro_spec$types_f)
+  }
+  invisible(TRUE)
 }
 
 determine_seed_case <- function(seed, num_rep) {
@@ -289,9 +254,9 @@ determine_seed_case <- function(seed, num_rep) {
 # ========================================================================================
 convert_num_to_int <- function(number) {
   if (!is.numeric(number)) {
-    return(0) # default value
+    return(0L) # default value
   }
-  return(round(number))
+  return(as.integer(round(number)))
 }
 
 is_integer <- function(x) {

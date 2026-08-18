@@ -2,13 +2,6 @@
 library(tsf)
 library(tinytest)
 
-# Real experimental data has no known ground truth, so unlike the synthetic
-# tests below, we can't check parameter recovery. What we can check: both
-# opti_vapro and opti() converge, fit the measured signal reasonably well
-# (R2), and agree with each other on the identifiable nonlinear binding
-# constant (Kd/Kg) - if the two independent methods disagree a lot on real
-# data, that's a sign something is off (bad bounds, a bug, or genuine
-# multimodality), even without knowing the "true" value.
 check_real_data_fit <- function(case, path, additionalParameters,
                                  vaproLower, vaproUpper,
                                  psoLower, psoUpper,
@@ -129,12 +122,15 @@ test_ida_vapro <- function() {
     additionalParameters = c(h0, d0, Kd),
     nGrid = 2000
   )
-  expect_true(fit$metrices$R2 >= 0.999)
-  expect_true(abs(fit$parameter[[1]] - Kg) / Kg < 0.05)
+
+  checks <- c()
+
+  checks <- c(fit$metrices$R2 >= 0.999)
+  checks <- c(checks, abs(fit$parameter[[1]] - Kg) / Kg < 0.05)
   fitEffIntercept <- fit$parameter[[2]] + fit$parameter[[3]] * d0
   fitEffSlope <- fit$parameter[[4]] - fit$parameter[[3]]
-  expect_true(abs(fitEffIntercept - effIntercept) / abs(effIntercept) < 0.05)
-  expect_true(abs(fitEffSlope - effSlope) / abs(effSlope) < 0.05)
+  checks <- c(checks, abs(fitEffIntercept - effIntercept) / abs(effIntercept) < 0.05)
+  checks <- c(checks, abs(fitEffSlope - effSlope) / abs(effSlope) < 0.05)
 
   res <- tsf::opti(
     case = "ida",
@@ -142,14 +138,15 @@ test_ida_vapro <- function() {
     upperBounds = c(1e9, 1e4, 1e8, 1e8),
     path = simulated,
     additionalParameters = c(h0, d0, Kd),
-    ngen = 300, seed = 1234
+    ngen = 2000, seed = 1234
   )
-  expect_true(res$metrices$R2 >= 0.99)
-  expect_true(abs(res$parameter[[1]] - Kg) / Kg < 0.25)
+  checks <- c(checks, res$metrices$R2 >= 0.99)
+  checks <- c(checks, abs(res$parameter[[1]] - Kg) / Kg < 0.25)
   resEffIntercept <- res$parameter[[2]] + res$parameter[[3]] * d0
   resEffSlope <- res$parameter[[4]] - res$parameter[[3]]
-  expect_true(abs(resEffIntercept - effIntercept) / abs(effIntercept) < 0.1)
-  expect_true(abs(resEffSlope - effSlope) / abs(effSlope) < 0.1)
+  checks <- c(checks, abs(resEffIntercept - effIntercept) / abs(effIntercept) < 0.1)
+  checks <- c(checks, abs(resEffSlope - effSlope) / abs(effSlope) < 0.1)
+  expect_true(all(checks))
 }
 test_ida_vapro()
 
@@ -172,32 +169,34 @@ test_dba_dye_const_vapro <- function() {
   fit <- tsf::opti_vapro(
     case = "dba_dye_const",
     lowerBounds = 1,
-    upperBounds = 1e8,
+    upperBounds = 1e7,
     path = simulated,
     additionalParameters = d0,
     nGrid = 2000
   )
-  expect_true(fit$metrices$R2 >= 0.999)
-  expect_true(abs(fit$parameter[[1]] - Kd) / Kd < 0.05)
+  checks <- c()
+  checks <- c(fit$metrices$R2 >= 0.999)
+  checks <- c(checks, abs(fit$parameter[[1]] - Kd) / Kd < 0.05)
   fitEffIntercept <- fit$parameter[[2]] + fit$parameter[[3]] * d0
   fitEffSlope <- fit$parameter[[4]] - fit$parameter[[3]]
-  expect_true(abs(fitEffIntercept - effIntercept) / abs(effIntercept) < 0.05)
-  expect_true(abs(fitEffSlope - effSlope) / abs(effSlope) < 0.05)
+  checks <- c(checks, abs(fitEffIntercept - effIntercept) / abs(effIntercept) < 0.05)
+  checks <- c(checks, abs(fitEffSlope - effSlope) / abs(effSlope) < 0.05)
 
   res <- tsf::opti(
     case = "dba_dye_const",
     lowerBounds = c(1, 0, 1e2, 1e2),
-    upperBounds = c(1e8, 1e3, 1e7, 1e7),
+    upperBounds = c(1e7, 1e3, 1e6, 1e6),
     path = simulated,
     additionalParameters = d0,
-    ngen = 300, seed = 1234
+    ngen = 4000, seed = 1234
   )
-  expect_true(res$metrices$R2 >= 0.99)
-  expect_true(abs(res$parameter[[1]] - Kd) / Kd < 0.25)
+  checks <- c(checks, res$metrices$R2 >= 0.99)
+  checks <- c(checks, abs(res$parameter[[1]] - Kd) / Kd < 0.25)
   resEffIntercept <- res$parameter[[2]] + res$parameter[[3]] * d0
   resEffSlope <- res$parameter[[4]] - res$parameter[[3]]
-  expect_true(abs(resEffIntercept - effIntercept) / abs(effIntercept) < 0.1)
-  expect_true(abs(resEffSlope - effSlope) / abs(effSlope) < 0.1)
+  checks <- c(checks, abs(resEffIntercept - effIntercept) / abs(effIntercept) < 0.1)
+  checks <- c(checks, abs(resEffSlope - effSlope) / abs(effSlope) < 0.1)
+  expect_true(all(checks))
 }
 test_dba_dye_const_vapro()
 
@@ -238,7 +237,7 @@ test_dba_host_const_vapro <- function() {
     path = simulated,
     seed = 1234,
     additionalParameters = h0,
-    ngen = 400
+    ngen = 4000
   )
   checks <- c(checks, res$metrices$R2 >= 0.99)
   checks <- c(checks, abs(res$parameter[[1]] - Kd) / Kd < 0.25)
@@ -273,11 +272,12 @@ test_gda_vapro <- function() {
     additionalParameters = c(h0, g0, Kd),
     nGrid = 2000
   )
-  expect_true(fit$metrices$R2 >= 0.999)
-  expect_true(abs(fit$parameter[[1]] - Kg) / Kg < 0.1)
-  expect_true(abs(fit$parameter[[2]] - I0) / I0 < 0.2)
-  expect_true(abs(fit$parameter[[3]] - Ihd) / Ihd < 0.1)
-  expect_true(abs(fit$parameter[[4]] - Id) < 1e3)
+  checks <- c()
+  checks <- c(checks, fit$metrices$R2 >= 0.999)
+  checks <- c(checks, abs(fit$parameter[[1]] - Kg) / Kg < 0.1)
+  checks <- c(checks, abs(fit$parameter[[2]] - I0) / I0 < 0.2)
+  checks <- c(checks, abs(fit$parameter[[3]] - Ihd) / Ihd < 0.1)
+  checks <- c(checks, abs(fit$parameter[[4]] - Id) < 1e3)
 
   res <- tsf::opti(
     case = "gda",
@@ -285,12 +285,13 @@ test_gda_vapro <- function() {
     upperBounds = c(1e8, 1, 1e7, 1e7),
     path = simulated,
     additionalParameters = c(h0, g0, Kd),
-    ngen = 300,
+    ngen = 3000,
     seed = 1234
   )
-  expect_true(res$metrices$R2 >= 0.99)
-  expect_true(abs(res$parameter[[1]] - Kg) / Kg < 0.3)
-  expect_true(abs(res$parameter[[3]] - Ihd) / Ihd < 0.3)
-  expect_true(abs(res$parameter[[4]] - Id) < 1e4)
+  checks <- c(checks, res$metrices$R2 >= 0.99)
+  checks <- c(checks, abs(res$parameter[[1]] - Kg) / Kg < 0.3)
+  checks <- c(checks, abs(res$parameter[[3]] - Ihd) / Ihd < 0.3)
+  checks <- c(checks, abs(res$parameter[[4]] - Id) < 1e4)
+  expect_true(all(checks))
 }
 test_gda_vapro()

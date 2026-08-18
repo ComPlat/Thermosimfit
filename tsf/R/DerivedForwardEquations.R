@@ -35,7 +35,7 @@ equation_h_dba <- function(h, Kd, h0, d0) {
 solve_h_dba <- function(Kd, h0, d0) {
   n <- max(length(h0), length(d0))
   h0 <- rep_len(h0, n)
-  h0 <- ifelse(h0 <= 0, 1e-15, h0)
+  h0 <- ifelse(h0 <= 0, 1e-10, h0)
   d0 <- rep_len(d0, n)
   d <- rep(NA_real_, n)
   hd <- rep(NA_real_, n)
@@ -117,7 +117,7 @@ equation_h_ida_gda <- function(h, Kd, Kg, h0, d0, g0) {
 solve_h_ida_gda <- function(Kd, Kg, h0, d0, g0) {
   n <- max(length(h0), length(d0), length(g0))
   h0 <- rep_len(h0, n)
-  h0 <- ifelse(h0 <= 0, 1e-15, h0)
+  h0 <- ifelse(h0 <= 0, 1e-10, h0)
   d0 <- rep_len(d0, n)
   g0 <- rep_len(g0, n)
   d <- rep(NA_real_, n)

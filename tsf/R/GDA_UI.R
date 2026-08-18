@@ -25,6 +25,24 @@ gdaUI <- function(id) {
               $('#GDA-output_Batch').html(result);
             });"
     ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('GDAupdateFieldVaproBatch', function(message) {
+              var result = message.message;
+              $('#GDA-output_Vapro_Batch').html(result);
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('GDAupdateFieldUncertainty', function(message) {
+              var result = message.message;
+              $('#GDA-output_uncertainty').html(result);
+            });"
+    ),
+    tags$script(
+      "Shiny.addCustomMessageHandler('GDAupdateFieldVaproUncertainty', function(message) {
+              var result = message.message;
+              $('#GDA-output_vapro_uncertainty').html(result);
+            });"
+    ),
     fluidRow(
       tabBox(
         id = NS(id, "ResultPanel"),
@@ -194,6 +212,7 @@ gdaUI <- function(id) {
           fluidRow(
             box(
               box(
+                uiOutput(NS(id, "sensi_source_ui")),
                 numericInput(NS(id, "sens_bounds"), "+/- boundary in [%]", value = 15),
                 actionButton(NS(id, "Start_Sensi"), "Start Sensitivity analysis"),
                 actionButton(NS(id, "cancel_sense"), "Cancel"),
@@ -203,7 +222,7 @@ gdaUI <- function(id) {
               ),
               box(
                 br(),
-                DT::DTOutput(NS(id, "sensi_table")),
+                plotOutput(NS(id, "sensi_plot")),
                 width = 10, solidHeader = TRUE, status = "warning"
               ),
               width = 12, title = "Sensitivity analysis", solidHeader = TRUE,
@@ -254,7 +273,7 @@ gdaUI <- function(id) {
             box(
               textInput(NS(id, "kHG_lb_batch"), HTML("K<sub>a</sub>(HG) value lower boundary [1/M]"), value = 10),
               textInput(NS(id, "kHG_ub_batch"), HTML("K<sub>a</sub>(HG) value upper boundary [1/M]"), value = 1e08),
-              uiOutput(NS(id, "BOUNDS_I_batch")),
+              uiOutput(NS(id, "BOUNDS_I_BATCH")),
               width = 6,
               title = tagList(
                 "Boundaries",
@@ -271,13 +290,8 @@ gdaUI <- function(id) {
             box(
               box(
                 numericInput(NS(id, "NumRepDataset"),
-                  min = 1, max = 5,
+                  min = 1, max = 200,
                   "How often should each dataset be analysed (using different seeds)",
-                  value = 1
-                ),
-                numericInput(NS(id, "NumCores"),
-                  min = 1, max = 20,
-                  "How many cores should be used for the batch analysis?",
                   value = 1
                 ),
                 actionButton(NS(id, "Start_Batch"), "Start batch analysis"),
@@ -350,9 +364,7 @@ gdaUI <- function(id) {
               box(
                 title = "Advanced options",
                 collapsible = TRUE, collapsed = TRUE,
-                numericInput(NS(id, "nGrid_vapro_batch"), "Number of VAPRO grid points", value = 1000),
-                numericInput(NS(id, "nBoot_vapro_batch"), "Number of bootstrap replicates", value = 500),
-                selectInput(NS(id, "error_calc_fct_vapro_batch"), "Function to calculate the error:",
+                numericInput(NS(id, "nGrid_vapro_batch"), "Number of VAPRO grid points", value = 1000),                selectInput(NS(id, "error_calc_fct_vapro_batch"), "Function to calculate the error:",
                   c(
                     "rel. Error" = "rel. Error",
                     "RMSE" = "RMSE",
@@ -400,10 +412,10 @@ gdaUI <- function(id) {
                 plotOutput(NS(id, "Ka_main_plot_vapro_batch"), height = 320)
               ),
 
-              # BOTTOM: per-dataset bootstrap summary
+              # BOTTOM: per-dataset parameter estimates
               box(
                 title = div(class = "titlebar",
-                  span("Dataset details — bootstrap summary", class = "crumb"),
+                  span("Dataset details — parameter estimates", class = "crumb"),
                   span(textOutput(NS(id, "dataset_label_vapro_batch"), container = span), class = "muted")
                 ),
                 status = "info", solidHeader = TRUE, width = 12, class = "info-fill",
@@ -412,6 +424,71 @@ gdaUI <- function(id) {
 
               width = 12, title = "VAPRO Batch analysis", solidHeader = TRUE,
               collapsible = TRUE, status = "warning"
+            )
+          )
+        ),
+        tabPanel(
+          "Uncertainty",
+          fluidRow(
+            box(
+              radioButtons(NS(id, "uncertainty_method"), "Method:",
+                choices = c(
+                  "Batch (pools repeated PSO runs across datasets - real measurement noise, needs a completed Batch analysis)" = "batch",
+                  "Direct bootstrap (perturbs the Optimization fit's residuals - synthetic noise, needs a completed Optimization)" = "direct"
+                ),
+                selected = "batch"
+              ),
+              conditionalPanel(
+                condition = paste0("input['", id, "-uncertainty_method'] == 'batch'"),
+                numericInput(NS(id, "unc_best_pct"),
+                  "Keep best % (by error) of each dataset's runs before pooling",
+                  min = 1, max = 100, value = 50
+                ),
+                numericInput(NS(id, "unc_n_boot"), "Number of KDE bootstrap resamples", value = 1000)
+              ),
+              conditionalPanel(
+                condition = paste0("input['", id, "-uncertainty_method'] == 'direct'"),
+                numericInput(NS(id, "unc_direct_nBoot"), "Number of bootstrap replicates", value = 500),
+                numericInput(NS(id, "unc_direct_seed"), "Seed which should be set", value = NULL)
+              ),
+              actionButton(NS(id, "Start_Uncertainty"), "Start uncertainty estimation"),
+              actionButton(NS(id, "cancel_Uncertainty"), "Stop uncertainty estimation"),
+              downloadButton(NS(id, "uncertainty_download"), "Save result of uncertainty estimation"),
+              verbatimTextOutput(NS(id, "output_uncertainty")),
+              width = 12
+            )
+          ),
+          fluidRow(
+            box(
+              plotOutput(NS(id, "uncertainty_plot"), height = 400),
+              width = 12, solidHeader = TRUE, status = "warning"
+            ),
+            box(
+              DT::DTOutput(NS(id, "uncertainty_table")),
+              width = 12, solidHeader = TRUE, status = "warning"
+            )
+          )
+        ),
+        tabPanel(
+          "VAPRO Uncertainty",
+          fluidRow(
+            box(
+              numericInput(NS(id, "vapro_unc_nBoot"), "Number of bootstrap replicates", value = 500),
+              actionButton(NS(id, "Start_Vapro_Uncertainty"), "Start uncertainty estimation"),
+              actionButton(NS(id, "cancel_Vapro_Uncertainty"), "Stop uncertainty estimation"),
+              downloadButton(NS(id, "vapro_uncertainty_download"), "Save result of uncertainty estimation"),
+              verbatimTextOutput(NS(id, "output_vapro_uncertainty")),
+              width = 12
+            )
+          ),
+          fluidRow(
+            box(
+              plotOutput(NS(id, "vapro_uncertainty_plot"), height = 400),
+              width = 12, solidHeader = TRUE, status = "warning"
+            ),
+            box(
+              DT::DTOutput(NS(id, "vapro_uncertainty_table")),
+              width = 12, solidHeader = TRUE, status = "warning"
             )
           )
         ),

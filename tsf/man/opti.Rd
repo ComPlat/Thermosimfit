@@ -15,8 +15,9 @@ opti(
   ngen = 200,
   Topology = "random",
   errorThreshold = -Inf,
+  error_calc_fct = "Rel. Error",
   add_info = "",
-  error_calc_fct = NULL
+  engine = c("ast2ast", "r")
 )
 }
 \arguments{
@@ -25,13 +26,17 @@ opti(
 "dba_dye_const", "ida" or "gda".}
 
 \item{lowerBounds}{is a numeric vector defining the lower boundaries of the parameter.
-In case of \emph{dba_dye_const} or *dba_host_const the order of the parameters is: \emph{khd}, \emph{I0}, \emph{IHD} and \emph{ID}
-In case of \emph{ida} and \emph{ga} the order of the parameters is: \emph{kg}, \emph{I0}, \emph{IHD} and \emph{ID}.}
+In case of \emph{dba_dye_const} or *dba_host_const the first parameter is: \emph{khd}.
+In case of \emph{ida} and \emph{ga} the first parameter is: \emph{kg}.
+Afterwards the parameters \emph{I0}, \emph{IHD} and \emph{ID} have to be repeated for each signal respectivly.}
 
 \item{upperBounds}{is a numeric vector defining the upper boundaries of the parameter.
 The order is the same as for the lower boundaries.}
 
-\item{path}{is a filepath which contains tabular x-y data. The concentraion of dye or guest respectivly is assumed to be in the first column. Furthermore, should the corresponding signal be stored in the second column. As an alternative an already loaded data.frame can be passed to the function.}
+\item{path}{is a filepath which contains tabular x-y data.
+The concentraion of dye or guest respectivly is assumed to be in the first column.
+Furthermore, should the corresponding signals be stored in the other columns.
+As an alternative an already loaded data.frame can be passed to the function.}
 
 \item{additionalParameters}{are required parameters which are specific for each case.
 In case of \emph{dba_host_const} a numeric vector of length 1 is expected which contains the concentration of the host.
@@ -49,9 +54,16 @@ In case of \emph{gda} a numeric vector of length 3 is expected which contains th
 
 \item{errorThreshold}{is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.}
 
+\item{error_calc_fct}{is an optional character argument defining how the error between the
+in silico signal and the measured signal is calculated. One of \emph{Rel. Error}, \emph{RMSE},
+\emph{SSE}, or \emph{Huber}. The default is \emph{Rel. Error}.}
+
 \item{add_info}{is an optional character argument which is printed during optimization}
 
-\item{error_calc_fct}{is an optional input function which is used to calculate the error. The function should expect two arguments, first the insilico signal followed by the measured signal.}
+\item{engine}{is an optional character argument selecting the fitness-evaluation backend for
+the particle swarm optimization: "ast2ast" (the default) is an ast2ast-compiled
+per-particle loss, "r" is the plain-R loss function -- see \code{\link{pso}}'s engine
+parameter for details. Results match to floating-point precision either way.}
 }
 \value{
 either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the \emph{insilico} signal values are returned.

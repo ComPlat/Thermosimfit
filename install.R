@@ -1,29 +1,32 @@
 roxygen2::roxygenise("tsf")
 install.packages("tsf", repos = NULL, type = "source")
-detach("package:tsf", unload = TRUE)
 tsf::runApp(4005)
 tinytest::test_package("tsf")
 
-library(shiny)
-library(DT)
-library(shinydashboard)
-library(shinyWidgets)
-library(shinyjs)
-library(shinytest2)
-library(rootSolve)
-library(ggplot2)
-library(patchwork)
-library(R6)
-library(sensitivity)
-library(openxlsx)
-library(callr)
-library(cowplot)
-library(RColorBrewer)
-library(plotly)
-library(ks)
-# host = 4.0,
-# dye = 6,
-# kHD = 1.7e01
+path <- "./tsf/inst/tinytest/"
+test_files <- c(
+  "test_batch.R", "test_create_polynom.R",
+  "test_lossFct.R", "test_opti.R", "test_opti_vapro.R",
+  "test_pso.R", "test_pso_loss_ast2ast.R", "test_pso_vs_ast2ast.R",
+  "test_sensitivity.R", "test_utils.R"
+)
+tinytest::run_test_file("./tsf/inst/tinytest/test_opti_vapro.R")
+
+load_packages <- function() {
+  packages <- c(
+    "shiny", "DT", "shinydashboard", "shinyWidgets",
+    "shinyjs", "shinytest2", "rootSolve", "ggplot2", "patchwork",
+    "R6", "sensitivity", "openxlsx", "callr",
+    "cowplot", "RColorBrewer", "plotly", "ks"
+  )
+  for (pkg in packages) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      stop("Required package not installed: ", pkg)
+    }
+    library(pkg, character.only = TRUE)
+  }
+}
+load_packages()
 files <- list.files("./tsf/R", full.names = TRUE)
 trash <- lapply(files, source)
 runApp(4005)

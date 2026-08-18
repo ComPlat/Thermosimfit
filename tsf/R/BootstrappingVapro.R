@@ -39,6 +39,14 @@
 #'        silico signal and the measured signal is calculated. See \code{\link{opti_vapro}}.
 #' @param showProgress is an optional logical argument defining whether a text progress
 #'        bar tracking the bootstrap replicates is printed. The default value is TRUE.
+#' @param engine is an optional character argument selecting the fitting backend: "r"
+#'        (the default) uses the plain R/nnls-package grid search, identical to previous
+#'        versions of this function. "ast2ast" uses the ast2ast-compiled grid search
+#'        (see \code{\link{vapro_ast2ast_bootstrap}}) instead, which is substantially
+#'        faster for large nBoot/nGrid since every replicate fit runs compiled instead of
+#'        interpreted -- at the cost of only supporting \code{error_calc_fct = "Rel. Error"}
+#'        (the compiled loss is hardwired to relative error) and not (yet) returning the
+#'        insilico signal columns that the "r" engine's per-replicate evaluation produces.
 #' @return a list containing: \code{draws} (a data.frame with one row per successful
 #'        bootstrap replicate containing the binding parameter, the linear parameters
 #'        and the loss), \code{summary} (mean, sd and 2.5/50/97.5 percentiles per
@@ -53,7 +61,9 @@ opti_vapro_bootstrap <- function(case, lowerBounds, upperBounds,
                                  nBoot = 500L, sigma = NULL,
                                  nGrid = 1000L, seed = NULL,
                                  error_calc_fct = "Rel. Error",
-                                 showProgress = TRUE) {
+                                 showProgress = TRUE,
+                                 engine = c("r", "ast2ast")) {
+  engine <- match.arg(engine)
   validation <- tryCatch(expr = {
     if (!is.character(case)) {
       stop("case has to be of type character")
@@ -94,6 +104,9 @@ opti_vapro_bootstrap <- function(case, lowerBounds, upperBounds,
     if (!is.null(sigma) && !is.numeric(sigma)) {
       stop("sigma has to be NULL or numeric")
     }
+    if (engine == "ast2ast" && !identical(error_calc_fct, "Rel. Error")) {
+      stop("engine = \"ast2ast\" only supports error_calc_fct = \"Rel. Error\" (the compiled loss is hardwired to relative error)")
+    }
   }, error = function(e) {
     return(ErrorClass$new(conditionMessage(e)))
   }, interrupt = function(e) {
@@ -101,6 +114,15 @@ opti_vapro_bootstrap <- function(case, lowerBounds, upperBounds,
   })
   if (inherits(validation, "ErrorClass")) {
     return(validation)
+  }
+
+  if (engine == "ast2ast") {
+    return(vapro_ast2ast_bootstrap(
+      case = case, lowerBounds = lowerBounds, upperBounds = upperBounds,
+      path = path, additionalParameters = additionalParameters,
+      nBoot = nBoot, sigma = sigma, nGrid = nGrid, seed = seed,
+      showProgress = showProgress
+    ))
   }
 
   if (is.null(seed)) {

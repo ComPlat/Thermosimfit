@@ -27,10 +27,14 @@
 #' @param ngen is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.
 #' @param Topology is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.
 #' @param errorThreshold is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.
-#' @param error_calc_fct is an optional input defining how the error between the in silico signal and the measured signal is calculated.
-#'        One can use one of the following predefined functions as character vectors: *Rel. Error*, *RMSE*, *SSE*, or *Huber*. The default function is *Rel. Error*.
-#'        Alternatively a function can be passed to opti, which has to expect two arguments, first the insilico signal followed by the measured signal.
+#' @param error_calc_fct is an optional character argument defining how the error between the
+#'        in silico signal and the measured signal is calculated. One of *Rel. Error*, *RMSE*,
+#'        *SSE*, or *Huber*. The default is *Rel. Error*.
 #' @param add_info is an optional character argument which is printed during optimization
+#' @param engine is an optional character argument selecting the fitness-evaluation backend for
+#'        the particle swarm optimization: "ast2ast" (the default) is an ast2ast-compiled
+#'        per-particle loss, "r" is the plain-R loss function -- see \code{\link{pso}}'s engine
+#'        parameter for details. Results match to floating-point precision either way.
 #' @return either an instance of ErrorClass if something went wrong. Otherwise the optimized parameter and the *insilico* signal values are returned.
 #' @examples
 #' path <- paste0(system.file("examples", package = "tsf"), "/IDA.txt")
@@ -40,7 +44,9 @@ opti <- function(case, lowerBounds, upperBounds,
                  seed = NULL,
                  npop = 40, ngen = 200,
                  Topology = "random",
-                 errorThreshold = -Inf, error_calc_fct = "Rel. Error", add_info = "") {
+                 errorThreshold = -Inf, error_calc_fct = "Rel. Error", add_info = "",
+                 engine = c("ast2ast", "r")) {
+  engine <- match.arg(engine)
   validation <- tryCatch(expr = {
     if (!is.character(case)) {
       stop("case has to be of type character")
@@ -112,16 +118,13 @@ opti <- function(case, lowerBounds, upperBounds,
     if (any(check == TRUE)) {
       stop("lowerBounds < upperBounds not fulfilled")
     }
-    error_fct <- NULL
-    error_fct_name <- NULL
-    if (is.character(error_calc_fct)) {
-      error_fct_name <- error_calc_fct
-      error_fct <- get_error_calc_fct(error_calc_fct)
-    } else {
-      error_fct_name <- "User defined function"
-      check_error_calc_function(error_calc_fct)
-      error_fct <- error_calc_fct
+    if (!is.character(error_calc_fct) || length(error_calc_fct) != 1 ||
+      !(error_calc_fct %in% c("rel. Error", "Rel. Error", "RMSE", "SSE", "Huber"))) {
+      stop('error_calc_fct has to be one of "Rel. Error", "RMSE", "SSE" or "Huber"')
     }
+    error_fct_name <- error_calc_fct
+    error_fct <- get_error_calc_fct(error_calc_fct)
+    error_code <- pso_error_code(error_calc_fct)
   }, error = function(e) {
     return(ErrorClass$new(conditionMessage(e)))
   }, interrupt = function(e) {
@@ -220,6 +223,16 @@ opti <- function(case, lowerBounds, upperBounds,
     return(NULL)
   })
 
+  loss_particle_a2a <- NULL
+  add_params <- NULL
+  if (engine == "ast2ast") {
+    spec <- pso_a2a_spec(case)
+    add_params <- spec$build_add_params(df, additionalParameters)
+    loss_particle_a2a <- ast2ast::translate(
+      spec$loss_fct, args_f = spec$args_f, types_f = spec$types_f
+    )
+  }
+
   runAsShiny <- tryCatch(expr = {
     runAsShiny <- new.env()
     runAsShiny$insilico <- NULL
@@ -235,7 +248,9 @@ opti <- function(case, lowerBounds, upperBounds,
       set.seed(seed)
       res <- pso(
         env, lowerBounds, upperBounds, lossFct, ngen, npop,
-        errorThreshold, Topo, FALSE, runAsShiny, add_info
+        errorThreshold, Topo, FALSE, runAsShiny, add_info,
+        engine = engine, loss_particle_a2a = loss_particle_a2a,
+        add_params = add_params, error_code = error_code
       )
       params <- create_params_df(res, case, n_sigs)
       df <- create_data_df(df, res, case, n_sigs)
