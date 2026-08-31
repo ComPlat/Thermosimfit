@@ -229,7 +229,7 @@ opti <- function(case, lowerBounds, upperBounds,
     spec <- pso_a2a_spec(case)
     add_params <- spec$build_add_params(df, additionalParameters)
     loss_particle_a2a <- ast2ast::translate(
-      spec$loss_fct, args_f = spec$args_f, types_f = spec$types_f
+      spec$loss_fct, types_f = spec$types_f
     )
   }
 

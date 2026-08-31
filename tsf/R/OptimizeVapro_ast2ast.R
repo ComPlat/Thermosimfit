@@ -78,9 +78,7 @@ vapro_a2a_spec <- function(case) {
   if (case %in% c("dba_dye_const", "dba_host_const")) {
     list(
       types_f = types_f_dba,
-      args_f_loss = args_f_loss_dba,
       loss_fct = loss_fct_dba_a2a,
-      args_f_grid = args_f_grid_search_dba,
       grid_fct = grid_search_dba_a2a,
       build_add_params = function(df, additionalParameters) {
         build_add_params_dba_a2a(df, additionalParameters, case)
@@ -90,9 +88,7 @@ vapro_a2a_spec <- function(case) {
   } else if (case == "ida") {
     list(
       types_f = types_f_ida,
-      args_f_loss = args_f_loss_ida,
       loss_fct = loss_fct_ida_a2a,
-      args_f_grid = args_f_grid_search_ida,
       grid_fct = grid_search_ida_a2a,
       build_add_params = build_add_params_ida_a2a,
       bound_name = "Ka(HG) [1/M]"
@@ -100,9 +96,7 @@ vapro_a2a_spec <- function(case) {
   } else if (case == "gda") {
     list(
       types_f = types_f_gda,
-      args_f_loss = args_f_loss_gda,
       loss_fct = loss_fct_gda_a2a,
-      args_f_grid = args_f_grid_search_gda,
       grid_fct = grid_search_gda_a2a,
       build_add_params = build_add_params_gda_a2a,
       bound_name = "Ka(HG) [1/M]"
@@ -163,7 +157,7 @@ opti_vapro_ast2ast <- function(case, lowerBounds, upperBounds,
 
   # ---- ast2ast approach ---------------------------------------------------
   add_params <- spec$build_add_params(df, additionalParameters)
-  loss_a2a <- ast2ast::translate(spec$loss_fct, args_f = spec$args_f_loss, types_f = spec$types_f)
+  loss_a2a <- ast2ast::translate(spec$loss_fct, types_f = spec$types_f)
   a2a_fit <- vapro_grid_search_a2a(loss_a2a, add_params, lowerBounds, upperBounds, nGrid)
 
   list(r = r_fit, a2a = a2a_fit)
@@ -211,7 +205,7 @@ vapro_ast2ast_bootstrap <- function(case, lowerBounds, upperBounds,
   numberOfSignals <- ncol(df) - 1L
   numberOfObservations <- nrow(df)
 
-  grid_a2a <- ast2ast::translate(spec$grid_fct, args_f = spec$args_f_grid, types_f = spec$types_f)
+  grid_a2a <- ast2ast::translate(spec$grid_fct, types_f = spec$types_f)
 
   originalAddParams <- spec$build_add_params(df, additionalParameters)
 

@@ -1,11 +1,16 @@
 loss_fct_pso_dba_a2a <- function(parameter, add_params, error_code) {
+  argtypes(
+    parameter |> type(vec(double)),
+    add_params |> type(AddParamsDba),
+    error_code |> type(int)
+  )
   equation_h_dba <- fn(
-    f_args = function(h, params) {
-      h |> type(double)
+    argtypes(
+      h |> type(double),
       params |> type(EquationParamsDba)
-    },
-    return_value = type(double),
-    block = function(h, params) {
+    ),
+    return(double),
+    {
       if (h <= 0) {
         return(1.797693e+308)
       }
@@ -119,20 +124,20 @@ loss_fct_pso_dba_a2a <- function(parameter, add_params, error_code) {
   return(total_err / add_params$n_sigs)
 }
 
-args_f_pso_dba <- function(parameter, add_params, error_code) {
-  parameter |> type(vec(double))
-  add_params |> type(AddParamsDba)
-  error_code |> type(int)
-}
 
 loss_fct_pso_ida_a2a <- function(parameter, add_params, error_code) {
+  argtypes(
+    parameter |> type(vec(double)),
+    add_params |> type(AddParamsIda),
+    error_code |> type(int)
+  )
   equation_h_ida <- fn(
-    f_args = function(h, params) {
-      h |> type(double)
+    argtypes(
+      h |> type(double),
       params |> type(EquationParamsIda)
-    },
-    return_value = type(double),
-    block = function(h, params) {
+    ),
+    return(double),
+    {
       if (h <= 0) {
         return(1.797693e+308)
       }
@@ -243,20 +248,20 @@ loss_fct_pso_ida_a2a <- function(parameter, add_params, error_code) {
   return(total_err / add_params$n_sigs)
 }
 
-args_f_pso_ida <- function(parameter, add_params, error_code) {
-  parameter |> type(vec(double))
-  add_params |> type(AddParamsIda)
-  error_code |> type(int)
-}
 
 loss_fct_pso_gda_a2a <- function(parameter, add_params, error_code) {
+  argtypes(
+    parameter |> type(vec(double)),
+    add_params |> type(AddParamsGda),
+    error_code |> type(int)
+  )
   equation_h_gda <- fn(
-    f_args = function(h, params) {
-      h |> type(double)
+    argtypes(
+      h |> type(double),
       params |> type(EquationParamsGda)
-    },
-    return_value = type(double),
-    block = function(h, params) {
+    ),
+    return(double),
+    {
       if (h <= 0) {
         return(1.797693e+308)
       }
@@ -372,8 +377,3 @@ loss_fct_pso_gda_a2a <- function(parameter, add_params, error_code) {
   return(total_err / add_params$n_sigs)
 }
 
-args_f_pso_gda <- function(parameter, add_params, error_code) {
-  parameter |> type(vec(double))
-  add_params |> type(AddParamsGda)
-  error_code |> type(int)
-}

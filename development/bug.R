@@ -37,3 +37,4 @@ res <- opti(
   engine = "ast2ast",
   seed = 2L
 )
+traceback()

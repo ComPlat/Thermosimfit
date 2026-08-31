@@ -30,7 +30,6 @@ pso_a2a_spec <- function(case) {
   if (case %in% c("dba_dye_const", "dba_host_const")) {
     list(
       types_f = types_f_dba,
-      args_f = args_f_pso_dba,
       loss_fct = loss_fct_pso_dba_a2a,
       build_add_params = function(df, additionalParameters) {
         build_add_params_dba_a2a(df, additionalParameters, case)
@@ -39,14 +38,12 @@ pso_a2a_spec <- function(case) {
   } else if (case == "ida") {
     list(
       types_f = types_f_ida,
-      args_f = args_f_pso_ida,
       loss_fct = loss_fct_pso_ida_a2a,
       build_add_params = build_add_params_ida_a2a
     )
   } else if (case == "gda") {
     list(
       types_f = types_f_gda,
-      args_f = args_f_pso_gda,
       loss_fct = loss_fct_pso_gda_a2a,
       build_add_params = build_add_params_gda_a2a
     )

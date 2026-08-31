@@ -48,27 +48,31 @@ types_f_ida <- function() {
 
 # parameter: [Kga] only -- linear coeffs are profiled out via nnls() below.
 loss_fct_ida_a2a <- function(parameter, add_params) {
+  argtypes(
+    parameter |> type(vec(double)),
+    add_params |> type(AddParamsIda)
+  )
   solve_h_ida <- fn(
-    f_args = function(Kd, Kg, h0, d0, g) {
-      Kd |> type(double) |> const()
-      Kg |> type(double) |> const()
-      h0 |> type(double) |> const()
-      d0 |> type(double) |> const()
+    argtypes(
+      Kd |> type(double) |> const(),
+      Kg |> type(double) |> const(),
+      h0 |> type(double) |> const(),
+      d0 |> type(double) |> const(),
       g |> type(vec(double)) |> const()
-    },
-    return_value = type(SolveD_HD_Result),
-    block = function(Kd, Kg, h0, d0, g) {
+    ),
+    return(SolveD_HD_Result),
+    {
 
       # equation_h_ida_gda(h, Kd, Kg, h0, d0, g0), specialized to a single
       # unary-in-h root-find target -- Kd/Kg/h0/d0/g are read from `params`,
       # passed explicitly as uniroot()'s 5th argument, not via closure.
       equation_h_ida <- fn(
-        f_args = function(h, params) {
-          h |> type(double)
+        argtypes(
+          h |> type(double),
           params |> type(EquationParamsIda)
-        },
-        return_value = type(double),
-        block = function(h, params) {
+        ),
+        return(double),
+        {
           if (h <= 0) {
             return(1.797693e+308)
           }
@@ -173,10 +177,6 @@ loss_fct_ida_a2a <- function(parameter, add_params) {
   return(total_err / add_params$n_sigs)
 }
 
-args_f_loss_ida <- function(parameter, add_params) {
-  parameter |> type(vec(double))
-  add_params |> type(AddParamsIda)
-}
 
 # The coarse exponential grid search (vapro_grid_search's grid part, not the
 # stats::optimize() local refinement -- that stays in R for now, it's cheap
@@ -187,33 +187,39 @@ args_f_loss_ida <- function(parameter, add_params) {
 # through a length-1 `parameter` vector (that vector only existed for R's
 # own stats::optimize() calling convention).
 grid_search_ida_a2a <- function(lowerBounds, upperBounds, nGrid, add_params) {
+  argtypes(
+    lowerBounds |> type(double),
+    upperBounds |> type(double),
+    nGrid |> type(int),
+    add_params |> type(AddParamsIda)
+  )
   loss_fn <- fn(
-    f_args = function(Kga, add_params) {
-      Kga |> type(double)
+    argtypes(
+      Kga |> type(double),
       add_params |> type(AddParamsIda)
-    },
-    return_value = type(LossEval),
-    block = function(Kga, add_params) {
+    ),
+    return(LossEval),
+    {
       eval_out |> type(LossEval)
       eval_out$betas <- numeric(3L * add_params$n_sigs)
       eval_out$fitted_signal <- numeric(add_params$n_sigs * length(add_params$ga))
       solve_h_ida <- fn(
-        f_args = function(Kd, Kg, h0, d0, g) {
-          Kd |> type(double) |> const()
-          Kg |> type(double) |> const()
-          h0 |> type(double) |> const()
-          d0 |> type(double) |> const()
+        argtypes(
+          Kd |> type(double) |> const(),
+          Kg |> type(double) |> const(),
+          h0 |> type(double) |> const(),
+          d0 |> type(double) |> const(),
           g |> type(vec(double)) |> const()
-        },
-        return_value = type(SolveD_HD_Result),
-        block = function(Kd, Kg, h0, d0, g) {
+        ),
+        return(SolveD_HD_Result),
+        {
           equation_h_ida <- fn(
-            f_args = function(h, params) {
-              h |> type(double)
+            argtypes(
+              h |> type(double),
               params |> type(EquationParamsIda)
-            },
-            return_value = type(double),
-            block = function(h, params) {
+            ),
+            return(double),
+            {
               if (h <= 0) {
                 return(1.797693e+308)
               }
@@ -354,12 +360,6 @@ grid_search_ida_a2a <- function(lowerBounds, upperBounds, nGrid, add_params) {
   return(res)
 }
 
-args_f_grid_search_ida <- function(lowerBounds, upperBounds, nGrid, add_params) {
-  lowerBounds |> type(double)
-  upperBounds |> type(double)
-  nGrid |> type(int)
-  add_params |> type(AddParamsIda)
-}
 
 # ===========================================================================
 # DBA (dba_dye_const / dba_host_const): single binding equilibrium. Both
@@ -418,21 +418,25 @@ types_f_dba <- function() {
 
 # parameter: [Kd] only -- linear coeffs are profiled out via nnls() below.
 loss_fct_dba_a2a <- function(parameter, add_params) {
+  argtypes(
+    parameter |> type(vec(double)),
+    add_params |> type(AddParamsDba)
+  )
   solve_h_dba_a2a <- fn(
-    f_args = function(Kd, h0, d0) {
-      Kd |> type(double) |> const()
-      h0 |> type(vec(double)) |> const()
+    argtypes(
+      Kd |> type(double) |> const(),
+      h0 |> type(vec(double)) |> const(),
       d0 |> type(vec(double)) |> const()
-    },
-    return_value = type(SolveD_HD_Result),
-    block = function(Kd, h0, d0) {
+    ),
+    return(SolveD_HD_Result),
+    {
       equation_h_dba <- fn(
-        f_args = function(h, params) {
-          h |> type(double)
+        argtypes(
+          h |> type(double),
           params |> type(EquationParamsDba)
-        },
-        return_value = type(double),
-        block = function(h, params) {
+        ),
+        return(double),
+        {
           if (h <= 0) {
             return(1.797693e+308)
           }
@@ -528,42 +532,44 @@ loss_fct_dba_a2a <- function(parameter, add_params) {
   return(total_err / add_params$n_sigs)
 }
 
-args_f_loss_dba <- function(parameter, add_params) {
-  parameter |> type(vec(double))
-  add_params |> type(AddParamsDba)
-}
 
 # Same coarse exponential grid search as grid_search_ida_a2a, specialized to
 # the single-Kd DBA/HG equation -- see that function's header comment for why
 # the whole loop (not just loss_fct's body) is duplicated in C++ here rather
 # than calling loss_fct_dba_a2a from R per grid point.
 grid_search_dba_a2a <- function(lowerBounds, upperBounds, nGrid, add_params) {
+  argtypes(
+    lowerBounds |> type(double),
+    upperBounds |> type(double),
+    nGrid |> type(int),
+    add_params |> type(AddParamsDba)
+  )
   loss_fn <- fn(
-    f_args = function(Kd, add_params) {
-      Kd |> type(double)
+    argtypes(
+      Kd |> type(double),
       add_params |> type(AddParamsDba)
-    },
-    return_value = type(LossEval),
-    block = function(Kd, add_params) {
+    ),
+    return(LossEval),
+    {
       eval_out |> type(LossEval)
       eval_out$betas <- numeric(3L * add_params$n_sigs)
       eval_out$fitted_signal <- numeric(add_params$n_sigs * length(add_params$h0))
 
       solve_h_dba_a2a <- fn(
-        f_args = function(Kd, h0, d0) {
-          Kd |> type(double) |> const()
-          h0 |> type(vec(double)) |> const()
+        argtypes(
+          Kd |> type(double) |> const(),
+          h0 |> type(vec(double)) |> const(),
           d0 |> type(vec(double)) |> const()
-        },
-        return_value = type(SolveD_HD_Result),
-        block = function(Kd, h0, d0) {
+        ),
+        return(SolveD_HD_Result),
+        {
           equation_h_dba <- fn(
-            f_args = function(h, params) {
-              h |> type(double)
+            argtypes(
+              h |> type(double),
               params |> type(EquationParamsDba)
-            },
-            return_value = type(double),
-            block = function(h, params) {
+            ),
+            return(double),
+            {
               if (h <= 0) {
                 return(1.797693e+308)
               }
@@ -698,12 +704,6 @@ grid_search_dba_a2a <- function(lowerBounds, upperBounds, nGrid, add_params) {
   return(res)
 }
 
-args_f_grid_search_dba <- function(lowerBounds, upperBounds, nGrid, add_params) {
-  lowerBounds |> type(double)
-  upperBounds |> type(double)
-  nGrid |> type(int)
-  add_params |> type(AddParamsDba)
-}
 
 # ===========================================================================
 # GDA: two coupled equilibria (host-dye and host-guest), same equation as
@@ -766,23 +766,27 @@ types_f_gda <- function() {
 
 # parameter: [Kga] only -- linear coeffs are profiled out via nnls() below.
 loss_fct_gda_a2a <- function(parameter, add_params) {
+  argtypes(
+    parameter |> type(vec(double)),
+    add_params |> type(AddParamsGda)
+  )
   solve_h_gda <- fn(
-    f_args = function(Kd, Kg, h0, d0, g) {
-      Kd |> type(double) |> const()
-      Kg |> type(double) |> const()
-      h0 |> type(double) |> const()
-      d0 |> type(vec(double)) |> const()
+    argtypes(
+      Kd |> type(double) |> const(),
+      Kg |> type(double) |> const(),
+      h0 |> type(double) |> const(),
+      d0 |> type(vec(double)) |> const(),
       g |> type(double) |> const()
-    },
-    return_value = type(SolveD_HD_Result),
-    block = function(Kd, Kg, h0, d0, g) {
+    ),
+    return(SolveD_HD_Result),
+    {
       equation_h_gda <- fn(
-        f_args = function(h, params) {
-          h |> type(double)
+        argtypes(
+          h |> type(double),
           params |> type(EquationParamsGda)
-        },
-        return_value = type(double),
-        block = function(h, params) {
+        ),
+        return(double),
+        {
           if (h <= 0) {
             return(1.797693e+308)
           }
@@ -886,43 +890,45 @@ loss_fct_gda_a2a <- function(parameter, add_params) {
   return(total_err / add_params$n_sigs)
 }
 
-args_f_loss_gda <- function(parameter, add_params) {
-  parameter |> type(vec(double))
-  add_params |> type(AddParamsGda)
-}
 
 # Same coarse exponential grid search as grid_search_ida_a2a, specialized to
 # the GDA equation (d0 varying, g fixed) -- see that function's header
 # comment for why the whole loop is duplicated in C++ here.
 grid_search_gda_a2a <- function(lowerBounds, upperBounds, nGrid, add_params) {
+  argtypes(
+    lowerBounds |> type(double),
+    upperBounds |> type(double),
+    nGrid |> type(int),
+    add_params |> type(AddParamsGda)
+  )
   loss_fn <- fn(
-    f_args = function(Kga, add_params) {
-      Kga |> type(double)
+    argtypes(
+      Kga |> type(double),
       add_params |> type(AddParamsGda)
-    },
-    return_value = type(LossEval),
-    block = function(Kga, add_params) {
+    ),
+    return(LossEval),
+    {
       eval_out |> type(LossEval)
       eval_out$betas <- numeric(3L * add_params$n_sigs)
       eval_out$fitted_signal <- numeric(add_params$n_sigs * length(add_params$d0))
 
       solve_h_gda <- fn(
-        f_args = function(Kd, Kg, h0, d0, g) {
-          Kd |> type(double) |> const()
-          Kg |> type(double) |> const()
-          h0 |> type(double) |> const()
-          d0 |> type(vec(double)) |> const()
+        argtypes(
+          Kd |> type(double) |> const(),
+          Kg |> type(double) |> const(),
+          h0 |> type(double) |> const(),
+          d0 |> type(vec(double)) |> const(),
           g |> type(double) |> const()
-        },
-        return_value = type(SolveD_HD_Result),
-        block = function(Kd, Kg, h0, d0, g) {
+        ),
+        return(SolveD_HD_Result),
+        {
           equation_h_gda <- fn(
-            f_args = function(h, params) {
-              h |> type(double)
+            argtypes(
+              h |> type(double),
               params |> type(EquationParamsGda)
-            },
-            return_value = type(double),
-            block = function(h, params) {
+            ),
+            return(double),
+            {
               if (h <= 0) {
                 return(1.797693e+308)
               }
@@ -1065,9 +1071,3 @@ grid_search_gda_a2a <- function(lowerBounds, upperBounds, nGrid, add_params) {
   return(res)
 }
 
-args_f_grid_search_gda <- function(lowerBounds, upperBounds, nGrid, add_params) {
-  lowerBounds |> type(double)
-  upperBounds |> type(double)
-  nGrid |> type(int)
-  add_params |> type(AddParamsGda)
-}

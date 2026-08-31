@@ -13,7 +13,7 @@ check_loss_matches <- function(case, lossFctR, envBuild, additionalParameters, p
   df <- if (!is.data.frame(path)) tsf:::importData(path) else path
   spec <- tsf:::pso_a2a_spec(case)
   add_params <- spec$build_add_params(df, additionalParameters)
-  loss_a2a <- ast2ast::translate(spec$loss_fct, args_f = spec$args_f, types_f = spec$types_f)
+  loss_a2a <- ast2ast::translate(spec$loss_fct, types_f = spec$types_f)
 
   n_sigs <- add_params$n_sigs
   set.seed(seed)
