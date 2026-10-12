@@ -3,15 +3,38 @@ server <- function(input, output, session) {
     send_and_read_info(paste0("add:", session$token))
   })
 
+  task <- Task$new()
+  task$start(warm_ast2ast_cache)
+  progress_file <- file.path(tempdir(), paste0("tsf_progress_", session$token, ".log"))
+  file.create(progress_file)
+
+  showModal(modalDialog(
+    title = "Preparing analysis engine",
+    "Compiling the loss functions, this happens once per session...",
+    footer = NULL, easyClose = FALSE
+  ))
+  warmup_done <- reactiveVal(FALSE)
+  observe({
+    req(!warmup_done())
+    invalidateLater(500)
+    if (task$is_done()) {
+      task$collect()
+      warmup_done(TRUE)
+      removeModal()
+    }
+  })
+
   onSessionEnded(function() {
     isolate({
       send_and_read_info(paste0("remove:", session$token))
     })
+    task$destructor()
+    unlink(progress_file)
   })
 
   # data import
   # ============================================================================
-  data <- reactiveValues(df = NULL, nsigs = 0L)
+  data <- reactiveValues(df = NULL, nsigs = 0L, from_eln = FALSE)
 
   observeEvent(input$upload, {
     req(input$upload)
@@ -24,6 +47,7 @@ server <- function(input, output, session) {
         names(df)[2:ncol(df)] <- paste0("signal", seq_len(ncol(df) - 1L))
         data$df <- df
         data$nsigs <- ncol(df) - 1L
+        data$from_eln <- FALSE
         output$df <- renderDT(data$df)
       }
     } else {
@@ -76,6 +100,7 @@ server <- function(input, output, session) {
     }
     if (is.null(error) && is.list(list_dataframes) && length(list_dataframes) > 0) {
       data_batch$data_frames <- list_dataframes
+      data$from_eln <- FALSE
     }
     data$df <- data_batch$data_frames[[1]]
     output$active_df <- renderDT(data$df)
@@ -93,10 +118,42 @@ server <- function(input, output, session) {
     output$df <- renderDT(data$df)
   })
 
+  # ELN import
+  # ============================================================================
+  if (Sys.getenv("RUN_MODE") == "SERVER") observeEvent(session$clientData$url_search, once = TRUE, {
+    if (!identical(getQueryString(session)$method, "BindingIsotherm")) {
+      return()
+    }
+    if (!requireNamespace("COMELN", quietly = TRUE)) {
+      print_noti(paste(
+        "ELN import requires the 'COMELN' package.",
+        'Install it via remotes::install_github("ComPlat/OpenStats", subdir = "comeln")'
+      ), duration = 0)
+      return()
+    }
+    path <- getExportedValue("COMELN", "download")(session, tempdir())
+    res <- parse_eln_payload(path)
+    unlink(path)
+    if (is(res, "ErrorClass")) {
+      print_noti(res$message, duration = 0)
+      return()
+    }
+    data$df <- res$dfs[[1]]
+    data$nsigs <- 1L
+    data$from_eln <- TRUE
+    if (length(res$dfs) > 1) {
+      data_batch$data_frames <- res$dfs
+      output$active_df <- renderDT(data$df)
+    }
+    output$df <- renderDT(data$df)
+    eln_prefill_inputs(session, res$model, res$constants)
+    updateTabItems(session, "Sidebar", res$model)
+  })
+
   nclicks <- reactiveVal(0)
 
-  server_opti_sensi_batch("HG", data, data_batch, nclicks)
-  server_opti_sensi_batch("DBA", data, data_batch, nclicks)
-  server_opti_sensi_batch("IDA", data, data_batch, nclicks)
-  server_opti_sensi_batch("GDA", data, data_batch, nclicks)
+  server_opti_sensi_batch("HG", data, data_batch, nclicks, task, progress_file)
+  server_opti_sensi_batch("DBA", data, data_batch, nclicks, task, progress_file)
+  server_opti_sensi_batch("IDA", data, data_batch, nclicks, task, progress_file)
+  server_opti_sensi_batch("GDA", data, data_batch, nclicks, task, progress_file)
 }

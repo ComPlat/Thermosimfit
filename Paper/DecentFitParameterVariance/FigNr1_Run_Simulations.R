@@ -82,7 +82,7 @@ dba <- function() {
     ID = 10^7
   )
   additionalParameters <- c(
-    dye = 151 * 10^-6 # TODO: isnt this rather dye?
+    dye = 151 * 10^-6
   )
 
   # NOTE: data var column [M]

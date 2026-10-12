@@ -1,0 +1,88 @@
+---
+title: "Runtime benchmark: R vs. ast2ast (VAPRO grid search)"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+---
+
+```{r}
+#| label: setup
+library(microbenchmark)
+
+cases <- list(
+  DBA = list(
+    file = "dba_host_const_real.txt",
+    additionalParameters = c(host = 0.000151),
+    lowerBounds = 1, upperBounds = 1e5
+  ),
+  IDA = list(
+    file = "ida_real.txt",
+    additionalParameters = c(host = 4.3e-6, dye = 6e-6, kHD = 1.7e7),
+    lowerBounds = 1e-15, upperBounds = 1e10
+  ),
+  GDA = list(
+    file = "gda_real.txt",
+    additionalParameters = c(host = 50e-6, guest = 292e-6, kHD = 33000),
+    lowerBounds = 5e3, upperBounds = 3e5
+  )
+)
+nGrid <- 1000L
+times <- 10L
+```
+
+```{r}
+#| label: benchmark
+bms <- lapply(names(cases), function(case) {
+  cfg <- cases[[case]]
+  case_expected <- list(
+    DBA = "dba_host_const", IDA = "ida", GDA = "gda"
+  )[[case]]
+  path <- system.file("extdata", cfg$file, package = "tsf")
+  df <- read.csv(path, sep = "\t", dec = ".", header = TRUE)
+
+  spec <- tsf:::vapro_a2a_spec(case_expected)
+  env <- tsf:::vapro_build_env(case_expected, df,
+    cfg$additionalParameters, tsf:::get_error_calc_fct("Rel. Error")
+  )
+  add_params <- spec$build_add_params(df, cfg$additionalParameters)
+  # translated outside the benchmark: compilation is a one-time cost per session
+  loss_a2a <- ast2ast::translate(spec$loss_fct, types_f = spec$types_f)
+  loss_r <- tsf:::vapro_loss_fct(case_expected)
+
+  microbenchmark(
+    R = tsf:::vapro_grid_search(loss_r, env, cfg$lowerBounds, cfg$upperBounds, nGrid),
+    ast2ast = tsf:::vapro_grid_search_a2a(loss_a2a, add_params, cfg$lowerBounds, cfg$upperBounds, nGrid),
+    times = times
+  )
+})
+names(bms) <- names(cases)
+```
+
+```{r}
+#| label: tbl-speedup
+#| tbl-cap: "Median runtime of the VAPRO grid search (nGrid = 1000, 10 repetitions) and speedup of ast2ast over plain R."
+speedup <- do.call(rbind, lapply(names(bms), function(case) {
+  t <- bms[[case]]
+  med_r <- median(t$time[t$expr == "R"]) / 1e6
+  med_a2a <- median(t$time[t$expr == "ast2ast"]) / 1e6
+  data.frame(
+    Model = case,
+    `R [ms]` = med_r,
+    `ast2ast [ms]` = med_a2a,
+    Speedup = med_r / med_a2a,
+    check.names = FALSE
+  )
+}))
+knitr::kable(speedup, digits = c(0, 1, 1, 1))
+```
+
+```{r}
+#| label: raw-results
+for (case in names(bms)) {
+  cat("\n", case, "\n")
+  print(bms[[case]], unit = "ms")
+}
+```

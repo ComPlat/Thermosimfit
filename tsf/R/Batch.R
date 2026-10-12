@@ -101,84 +101,30 @@ seperate_batch_results <- function(list) {
   )
 }
 
-call_several_opti <- function(case, lb, ub,
-                              df_list, ap, seed_list,
-                              npop, ngen, topo,
-                              et, messages, env) {
-  env <- new.env()
-  env$intermediate_results <- vector("list", length(df_list))
-  tryCatch(
-    expr = {
-      for (i in seq_len(length(df_list))) {
-        df <- df_list[[i]]
-        seed <- seed_list[[i]]
-        m <- messages[[i]]
-        result <- tsf::opti(
-          case, lb, ub, df, ap, seed, npop, ngen,
-          topo, et, m
-        )
-        env$intermediate_results[[i]] <- result
-      }
-      return(env$intermediate_results)
-    },
-    interrupt = function(e) {
-      return(env$intermediate_results)
-    },
-    error = function(e) {
-      stop(conditionMessage(e))
-    }
-  )
-}
-
-call_several_opti_in_bg <- function(case, lb, ub, df_list, ap,
-                                    seed_list, npop, ngen, topo,
-                                    et, messages) {
-  process <- callr::r_bg(
-    function(case, lb, ub, df_list, ap,
-             seed_list, npop, ngen, topo,
-             et, messages) {
-      env <- new.env()
-      env$intermediate_results <- lapply(
-        seq_len(length((df_list))),
-        function(x) x
-      )
-
-      for (i in seq_len(length(df_list))) {
-        tryCatch(
-          expr = {
-            df <- df_list[[i]]
-            seed <- seed_list[[i]]
-            m <- messages[[i]]
-            result <- tsf::opti(
-              case, lb, ub, df, ap, seed, npop, ngen,
-              topo, et, m
-            )
-            env$intermediate_results[[i]] <- result
-            writeLines(paste0("i: ", i), "test.txt")
-            if (i == length(df_list)) {
-              return(env$intermediate_results)
-            } else {
-              next
-            }
-          },
-          interrupt = function(e) {
-            warning("interrupted!")
-            writeLines(paste0("interrupted i: ", i), "test.txt")
-            return(env$intermediate_results)
-          },
-          error = function(e) {
-            warning("\n\n Probably not finished optimisation \n\n")
-            writeLines(paste0("error i: ", i), "test.txt")
-            return(env$intermediate_results)
-          }
-        )
-      }
-    },
-    args = list(
-      case, lb, ub, df_list,
-      ap, seed_list, npop, ngen, topo,
-      et, messages
+run_batch_sequential_pso <- function(case, lb, ub, dfs, ap, seeds,
+                                      npop, ngen, topo, ecf, et, messages) {
+  df_reps <- lapply(messages, DfRepCombi$new)
+  results <- vector("list", length(dfs))
+  for (i in seq_along(dfs)) {
+    res <- tryCatch(
+      tsf::opti(case, lb, ub, dfs[[i]], ap, seeds[i], npop, ngen, topo, et, ecf,
+        add_info = messages[[i]]
+      ),
+      error = function(e) NULL
     )
-  )
-  return(process)
+    if (!is.null(res) && !inherits(res, "ErrorClass")) {
+      res$data$repetition <- df_reps[[i]]$rep
+      res$data$dataset <- df_reps[[i]]$df
+      res$parameter$repetition <- df_reps[[i]]$rep
+      res$parameter$dataset <- df_reps[[i]]$df
+      res$metrices$repetition <- df_reps[[i]]$rep
+      res$metrices$dataset <- df_reps[[i]]$df
+    } else {
+      res <- NULL
+    }
+    results[[i]] <- res
+    cat(sprintf("BATCH_JOB_DONE %d/%d\n", i, length(dfs)))
+    flush(stdout())
+  }
+  results
 }

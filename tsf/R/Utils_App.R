@@ -32,11 +32,6 @@ format_scientific <- function(x) {
   formatC(x, format = "e", digits = 3)
 }
 
-flush <- function(f) { # TODO: still needed?
-  file_con <- file(f, open = "w")
-  close(file_con)
-}
-
 extract_iter <- function(s) { # TODO: still needed?
   if (!is.character(s)) {
     return()
@@ -224,35 +219,17 @@ request_cores <- function(n_cores, token) {
   )
 }
 
-call_opti_in_bg <- function(case, lb, ub,
-                            df, ap, seed,
-                            npop, ngen, topo,
-                            et, ecf) {
-  callr::r_bg(
-    function(case, lb, ub, df, ap,
-             seed, npop, ngen, Topology, errorThreshold, error_calc_fct) {
-      res <- tsf::opti(
-        case, lb, ub, df, ap, seed, npop, ngen, Topology, errorThreshold, error_calc_fct
-      )
-      return(res)
-    },
-    args = list(
-      case, lb, ub, df,
-      ap, seed, npop, ngen, topo, et, ecf
-    )
-  )
-}
+# Warms Rcpp's compile cache for every case in this process; return value unused.
+warm_ast2ast_cache <- function() {
+  for (case in c("dba_dye_const", "dba_host_const", "ida", "gda")) {
+    pso_spec <- tsf:::pso_a2a_spec(case)
+    ast2ast::translate(pso_spec$loss_fct, types_f = pso_spec$types_f)
 
-call_sensi_in_bg <- function(case, optim_params, df, ap, sense_bounds, error_calc_fct) {
-  callr::r_bg(
-    function(case, optim_params, df, ap, sense_bounds, error_calc_fct) {
-      res <- tsf::sensitivity(
-        case, optim_params, df, ap, sense_bounds, error_calc_fct = error_calc_fct
-      )
-      return(res)
-    },
-    args = list(case, optim_params, df, ap, sense_bounds, error_calc_fct)
-  )
+    vapro_spec <- tsf:::vapro_a2a_spec(case)
+    ast2ast::translate(vapro_spec$loss_fct, types_f = vapro_spec$types_f)
+    ast2ast::translate(vapro_spec$grid_fct, types_f = vapro_spec$types_f)
+  }
+  invisible(TRUE)
 }
 
 determine_seed_case <- function(seed, num_rep) {
@@ -277,18 +254,26 @@ determine_seed_case <- function(seed, num_rep) {
 # ========================================================================================
 convert_num_to_int <- function(number) {
   if (!is.numeric(number)) {
-    return(0) # default value
+    return(0L) # default value
   }
-  return(round(number))
+  return(as.integer(round(number)))
 }
 
 is_integer <- function(x) {
-  return(is.numeric(x) && identical(round(x), x))
+  return(is.numeric(x) && x == round(x))
 }
 
 # download file
 # ========================================================================================
-download_file <- function(model, file, result_val) {
+add_uncertainty_sheet <- function(wb, uncertainty) {
+  if (is.null(uncertainty)) {
+    return()
+  }
+  addWorksheet(wb, "Uncertainty")
+  writeData(wb, "Uncertainty", uncertainty)
+}
+
+download_file <- function(model, file, result_val, uncertainty = NULL) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
   writeData(wb, "Results",
@@ -318,14 +303,22 @@ download_file <- function(model, file, result_val) {
   writeData(wb, "Results", metrices, startRow = curr_row)
   curr_row <- curr_row + dim(metrices)[1] + 5
 
-  ps <- result_val$signal_plots
   tempfile_plots <- list()
+
+  d_hd_plot_file <- tempfile(fileext = ".png")
+  ggsave(d_hd_plot_file,
+    plot = result_val$d_hd_plot, width = 15, height = 15, limitsize = FALSE
+  )
+  tempfile_plots[[1]] <- d_hd_plot_file
+  insertImage(wb, "Results", d_hd_plot_file, startRow = curr_row)
+  curr_row <- curr_row + 15
+
+  ps <- result_val$signal_plots
   for (i in seq_len(length(ps))) {
-    tempfile_plots[[i]] <- tempfile(fileext = ".png")
-    ggsave(tempfile_plots[[i]],
-      plot = ps[[i]], width = 15, height = 15, limitsize = FALSE
-    )
-    insertImage(wb, "Results", tempfile_plots[[i]], startRow = curr_row)
+    plot_file <- tempfile(fileext = ".png")
+    ggsave(plot_file, plot = ps[[i]], width = 15, height = 15, limitsize = FALSE)
+    tempfile_plots[[length(tempfile_plots) + 1]] <- plot_file
+    insertImage(wb, "Results", plot_file, startRow = curr_row)
     curr_row <- curr_row + 15
   }
 
@@ -354,6 +347,7 @@ download_file <- function(model, file, result_val) {
     startRow = curr_row
   )
 
+  add_uncertainty_sheet(wb, uncertainty)
   openxlsx::saveWorkbook(wb, file)
   lapply(tempfile_plots, unlink)
 }
@@ -410,6 +404,137 @@ download_csv <- function(model, file, result_val) {
   )
 }
 
+# VAPRO's lowerBounds/upperBounds are a single-column data.frame (only the
+# nonlinear binding constant is searched; I0/IHD/ID are profiled via NNLS),
+# unlike PSO's, which has one column per parameter matching `parameter` - so
+# they can't be rbind-ed onto `parameter` the way download_file/download_csv
+# do, and nGrid replaces npop/ngen/Topology/seed in the run-info block.
+download_file_vapro <- function(model, file, result_val, uncertainty = NULL) {
+  wb <- openxlsx::createWorkbook()
+  addWorksheet(wb, "Results")
+  writeData(wb, "Results",
+    paste0("Model: ", model, " (VAPRO)"),
+    startCol = 1,
+    startRow = 1
+  )
+
+  curr_row <- 3
+  data_trajectories <- result_val$data
+  writeData(wb, "Results", data_trajectories, startRow = curr_row)
+  curr_row <- curr_row + dim(data_trajectories)[1] + 5
+
+  parameter <- result_val$parameter
+  writeData(wb, "Results", parameter, startRow = curr_row)
+  curr_row <- curr_row + dim(parameter)[1] + 3
+
+  bounds <- data.frame(
+    info = c("lower boundary", "upper boundary"),
+    value = c(result_val$lowerBounds[[1]], result_val$upperBounds[[1]])
+  )
+  names(bounds)[2] <- names(result_val$lowerBounds)[1]
+  writeData(wb, "Results", bounds, startRow = curr_row)
+  curr_row <- curr_row + dim(bounds)[1] + 5
+
+  metrices <- result_val$metrices
+  writeData(wb, "Results", metrices, startRow = curr_row)
+  curr_row <- curr_row + dim(metrices)[1] + 5
+
+  tempfile_plots <- list()
+
+  d_hd_plot_file <- tempfile(fileext = ".png")
+  ggsave(d_hd_plot_file,
+    plot = result_val$d_hd_plot, width = 15, height = 15, limitsize = FALSE
+  )
+  tempfile_plots[[1]] <- d_hd_plot_file
+  insertImage(wb, "Results", d_hd_plot_file, startRow = curr_row)
+  curr_row <- curr_row + 15
+
+  ps <- result_val$signal_plots
+  for (i in seq_len(length(ps))) {
+    plot_file <- tempfile(fileext = ".png")
+    ggsave(plot_file, plot = ps[[i]], width = 15, height = 15, limitsize = FALSE)
+    tempfile_plots[[length(tempfile_plots) + 1]] <- plot_file
+    insertImage(wb, "Results", plot_file, startRow = curr_row)
+    curr_row <- curr_row + 15
+  }
+
+  add_info <- data.frame(
+    as.data.frame(t(result_val$additionalParameters)),
+    nGrid = result_val$nGrid
+  )
+  writeData(
+    wb, "Results",
+    add_info,
+    startRow = curr_row
+  )
+  curr_row <- curr_row + 5
+
+  writeData(wb, "Results",
+    as.data.frame(R.Version()),
+    startRow = curr_row
+  )
+  curr_row <- curr_row + 5
+
+  writeData(wb, "Results",
+    paste0("tsf version: ", packageVersion("tsf")),
+    startRow = curr_row
+  )
+
+  add_uncertainty_sheet(wb, uncertainty)
+  openxlsx::saveWorkbook(wb, file)
+  lapply(tempfile_plots, unlink)
+}
+
+download_csv_vapro <- function(model, file, result_val) {
+  write.table(paste0("Model: ", model, " (VAPRO)"), file)
+  data_trajectories <- result_val$data
+  write.table(data_trajectories, file,
+    append = TRUE,
+    sep = ",", row.names = FALSE
+  )
+
+  parameter <- result_val$parameter
+  write.table(parameter, file,
+    append = TRUE,
+    sep = ",", row.names = FALSE
+  )
+
+  bounds <- data.frame(
+    info = c("lower boundary", "upper boundary"),
+    value = c(result_val$lowerBounds[[1]], result_val$upperBounds[[1]])
+  )
+  names(bounds)[2] <- names(result_val$lowerBounds)[1]
+  write.table(bounds, file,
+    append = TRUE,
+    sep = ",", row.names = FALSE
+  )
+
+  metrices <- result_val$metrices
+  write.table(metrices, file,
+    append = TRUE,
+    sep = ",", row.names = FALSE
+  )
+
+  add_info <- data.frame(
+    as.data.frame(t(result_val$additionalParameters)),
+    nGrid = result_val$nGrid
+  )
+  write.table(add_info, file,
+    append = TRUE,
+    sep = ",", row.names = FALSE
+  )
+  write.table(as.data.frame(R.Version()), file,
+    append = TRUE,
+    sep = ",", row.names = FALSE
+  )
+  write.table(
+    as.data.frame(paste0("tsf version: ", packageVersion("tsf"))),
+    file,
+    append = TRUE,
+    sep = ",", row.names = FALSE
+  )
+}
+
 
 # download batch file
 # ========================================================================================
@@ -427,7 +552,7 @@ insert_plot_batch <- function(wb, p, start_row, env_files) {
   start_row + 20
 }
 
-download_batch_file <- function(model, file, list) {
+download_batch_file <- function(model, file, list, uncertainty = NULL) {
   env_files <- new.env(); env_files$l <- list()
   result_val <- list[[1]]
   wb <- openxlsx::createWorkbook()
@@ -527,6 +652,7 @@ download_batch_file <- function(model, file, list) {
     startRow = curr_row
   )
 
+  add_uncertainty_sheet(wb, uncertainty)
   openxlsx::saveWorkbook(wb, file)
   lapply(env_files$l, unlink)
 }

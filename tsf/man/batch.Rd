@@ -14,6 +14,7 @@ batch(
   npop = 40,
   ngen = 200,
   Topology = "random",
+  error_calc_fct = "Rel. Error",
   errorThreshold = -Inf,
   num_rep = 1,
   num_cores = 1
@@ -40,6 +41,10 @@ In case of \emph{ida} and \emph{ga} the order of the parameters is: \emph{kg}, \
 \item{ngen}{is an optional integer argument defining the number of generations of the particle swarm optimization. The default value is set to 200.}
 
 \item{Topology}{is an optional character argument defining which topology should be used by the particle swarm algorithm. The options are "star" and "random". The default topology is the "random" topology.}
+
+\item{error_calc_fct}{is an optional input defining how the error between the in silico signal and the measured signal is calculated.
+One can use one of the following predefined functions as character vectors: \emph{Rel. Error}, \emph{RMSE}, \emph{SSE}, or \emph{Huber}. The default function is \emph{Rel. Error}.
+Alternatively a function can be passed to opti, which has to expect two arguments, first the insilico signal followed by the measured signal.}
 
 \item{errorThreshold}{is an optional numeric argument defining a sufficient small error which acts as a stop signal for the particle swarm algorithm. The default value is set to -Inf.}
 

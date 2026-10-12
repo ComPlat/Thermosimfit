@@ -25,6 +25,20 @@
 #' @param save_swarm is a logical value defining whether the entire optimization should be saved.
 #' @param run_as_shiny is an internal parameter which is used when running the shiny app interface.
 #' @param add_message is an optional character argument which is printed during optimization
+#' @param engine is an optional character argument selecting the fitness-evaluation backend: "r"
+#'        (the default here -- \code{\link{opti}}, which always supplies loss_particle_a2a/
+#'        add_params, defaults to "ast2ast" instead) calls `loss` directly. "ast2ast" calls the
+#'        ast2ast-compiled loss_particle_a2a instead for every non-eval fitness evaluation, leaving
+#'        the rest of this function (RNG draw order, asynchronous per-particle updates, neighbor
+#'        lookups) untouched -- so results differ from engine = "r" only by floating-point-level
+#'        differences (a different uniroot implementation), not by a different PSO trajectory.
+#'        Requires loss_particle_a2a and add_params to be supplied; a generic caller of pso()
+#'        (like the examples below) has no compiled loss to pass, so must use engine = "r".
+#' @param loss_particle_a2a is the ast2ast-compiled per-particle loss function, required when
+#'        engine = "ast2ast".
+#' @param add_params is the struct passed to loss_particle_a2a, required when engine = "ast2ast".
+#' @param error_code selects the error function used by loss_particle_a2a when engine = "ast2ast"
+#'        (see pso_error_code()).
 #' @examples
 #' rosenbrock <- function(parameter, env, Ignore) {
 #'   value <- 0
@@ -42,7 +56,13 @@
 #'   0.00001, TRUE, FALSE
 #' )
 pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
-                save_swarm = FALSE, run_as_shiny = FALSE, add_message = "") {
+                save_swarm = FALSE, run_as_shiny = FALSE, add_message = "",
+                engine = c("r", "ast2ast"), loss_particle_a2a = NULL,
+                add_params = NULL, error_code = 1L) {
+  engine <- match.arg(engine)
+  if (engine == "ast2ast" && (is.null(loss_particle_a2a) || is.null(add_params))) {
+    stop("loss_particle_a2a and add_params are required when engine = \"ast2ast\"")
+  }
   stopifnot(length(lb) == length(ub))
   if (length(lb) != length(ub)) {
     stop("length of lb and ub differ")
@@ -106,8 +126,12 @@ pso <- function(env, lb, ub, loss, ngen, npop, error_threshold, global = FALSE,
     w <- paste(w, collapse = ", ")
     return(ErrorClass$new(paste("lb > ub for: ", w)))
   }
-  loss_fct <- function(...) {
-    e <- try(loss(...))
+  loss_fct <- function(parameter, env, eval = FALSE) {
+    if (engine == "ast2ast" && !isTRUE(eval)) {
+      e <- try(loss_particle_a2a(parameter, add_params, error_code))
+    } else {
+      e <- try(loss(parameter, env, eval))
+    }
     if (inherits(e, "try-error")) {
       stop("Could not evaluate the loss function")
     }
