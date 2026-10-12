@@ -37,12 +37,21 @@ for (case in names(cases)) {
   cfg <- cases[[case]]
   df <- read.csv(cfg$path, sep = "\t", dec = ".", header = TRUE)
 
-  cat("\n==============================\n", case, "\n==============================\n")
+  cat(
+    "\n\n==============================\n",
+    case,
+    "\n==============================\n"
+  )
 
   # ---- fit comparison: R vs ast2ast --------------------------------------
+  # NOTE: the function is only used to compare R and ast2ast, maybe not export it anymore?
   a2a_fit <- tsf:::opti_vapro_ast2ast(
     case, cfg$lowerBounds, cfg$upperBounds, df, cfg$additionalParameters,
     nGrid = 1000L
+  )
+  cat(
+    "\nParameter and loss:\n",
+    "------------------------------\n"
   )
   cat("R   param_hat:", a2a_fit$r$param_hat, " loss:", a2a_fit$r$loss_hat, "\n")
   cat("a2a param_hat:", a2a_fit$a2a$param_hat, " loss:", a2a_fit$a2a$loss_hat, "\n")
@@ -51,22 +60,29 @@ for (case in names(cases)) {
   spec <- tsf:::vapro_a2a_spec(case)
   env <- tsf:::vapro_build_env(case, df, cfg$additionalParameters, tsf:::get_error_calc_fct("Rel. Error"))
   add_params <- spec$build_add_params(df, cfg$additionalParameters)
-  loss_a2a <- ast2ast::translate(spec$loss_fct, args_f = spec$args_f_loss, types_f = spec$types_f)
-
+  loss_a2a <- ast2ast::translate(spec$loss_fct, types_f = spec$types_f)
   bm <- microbenchmark::microbenchmark(
     R = tsf:::vapro_grid_search(tsf:::vapro_loss_fct(case), env, cfg$lowerBounds, cfg$upperBounds, 1000L),
     ast2ast = tsf:::vapro_grid_search_a2a(loss_a2a, add_params, cfg$lowerBounds, cfg$upperBounds, 1000L),
     times = 10L
+  )
+  cat(
+    "\nBenchmark:\n",
+    "------------------------------\n"
   )
   print(bm)
 
   # ---- bootstrap smoke test -----------------------------------------------
   # small nBoot on purpose -- just checking it runs end to end and produces
   # sane output, not a real bootstrap run (bump nBoot up for that).
-  boot <- tsf:::vapro_ast2ast_bootstrap(
+
+  capture.output(boot <- tsf:::vapro_ast2ast_bootstrap(
     case, cfg$lowerBounds, cfg$upperBounds, df, cfg$additionalParameters,
     nBoot = 50L, nGrid = 500L, seed = 1234L
+  ))
+  cat(
+    "\nBootstrap result:\n",
+    "------------------------------\n"
   )
-  cat("n_success:", boot$n_success, " n_fail:", boot$n_fail, "\n")
   print(boot$summary)
 }
