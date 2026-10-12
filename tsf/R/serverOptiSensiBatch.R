@@ -1,6 +1,7 @@
 server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, task, progress_file) {
   df <- reactive({df_reactive$df})
   nsigs <- reactive({df_reactive$nsigs})
+  from_eln <- reactive({df_reactive$from_eln})
   df_list <- reactive({df_list_reactive$data_frames})
   moduleServer(id, function(input, output, session) {
 
@@ -948,6 +949,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
         process(NULL)
         return(NULL)
       }
+      clear_opti_dependents()
       opti_message("")
       process(NULL)
     })
@@ -1122,6 +1124,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
         vapro_process(NULL)
         return(NULL)
       }
+      clear_vapro_dependents()
       vapro_message("")
       vapro_process(NULL)
     })
@@ -1650,6 +1653,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
       if (batch_process_done() && !batch_results_created()) {
         get_data()
         batch_results_created(TRUE)
+        clear_uncertainty("pso_batch")
         # NOTE: clear status
         session$sendCustomMessage(
           type = get_update_field_batch(),
@@ -1973,6 +1977,10 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
     # code below doesn't need to know which method produced them.
     uncertainty_result_created <- reactiveVal(FALSE)
     uncertainty_result <- reactiveVal()
+    uncertainty_method_used <- reactiveVal()
+    # The PSO tab only displays its last run, but each method's result is kept
+    # here so the user can choose which one goes back to the ELN
+    eln_uncertainty <- reactiveValues(pso_batch = NULL, pso_direct = NULL, vapro_bootstrap = NULL)
     uncertainty_process <- reactiveVal()
     uncertainty_setup_done <- reactiveVal(FALSE)
     cancel_uncertainty_clicked <- reactiveVal(FALSE)
@@ -2068,6 +2076,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
 
       uncertainty_setup_done(FALSE)
       uncertainty_result_created(FALSE)
+      uncertainty_method_used(paste0("pso_", method))
       uncertainty_process(task)
       invalid_time(1100)
       nclicks(nclicks() + 1)
@@ -2119,6 +2128,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
         uncertainty_process(NULL)
         return(NULL)
       }
+      eln_uncertainty[[uncertainty_method_used()]] <- uncertainty_result()
       uncertainty_message("")
       uncertainty_process(NULL)
     })
@@ -2272,6 +2282,7 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
         vapro_uncertainty_process(NULL)
         return(NULL)
       }
+      eln_uncertainty$vapro_bootstrap <- vapro_uncertainty_result()
       vapro_uncertainty_message("")
       vapro_uncertainty_process(NULL)
     })
@@ -2307,6 +2318,91 @@ server_opti_sensi_batch <- function(id, df_reactive, df_list_reactive, nclicks, 
         write.table(vapro_uncertainty_result(), file, sep = ",", row.names = FALSE, col.names = TRUE)
       }
     )
+
+    # Clear results based on an outdated fit or dataset
+    # ===============================================================================
+    clear_uncertainty <- function(method) {
+      eln_uncertainty[[method]] <- NULL
+      if (method == "vapro_bootstrap") {
+        vapro_uncertainty_result(NULL)
+        vapro_uncertainty_result_created(FALSE)
+      } else if (identical(uncertainty_method_used(), method)) {
+        uncertainty_result(NULL)
+        uncertainty_result_created(FALSE)
+      }
+    }
+
+    clear_opti_dependents <- function() {
+      clear_uncertainty("pso_direct")
+      sensi_result(NULL)
+      sensi_result_created(FALSE)
+    }
+
+    clear_vapro_dependents <- function() {
+      clear_uncertainty("vapro_bootstrap")
+    }
+
+    observeEvent(df(), ignoreInit = TRUE, {
+      clear_opti_dependents()
+      clear_vapro_dependents()
+    })
+
+    observeEvent(df_list(), ignoreInit = TRUE, {
+      clear_uncertainty("pso_batch")
+    })
+
+    # Send to ELN
+    # ===============================================================================
+    observe({
+      if (isTRUE(from_eln())) {
+        showTab("ResultPanel", "ELN")
+      } else {
+        hideTab("ResultPanel", "ELN")
+      }
+    })
+
+    output$eln_panel <- renderUI({
+      available <- Filter(Negate(is.null), reactiveValuesToList(eln_uncertainty))
+      available <- available[intersect(names(ELN_UNCERTAINTY_LABELS), names(available))]
+      if (length(available) == 0) {
+        return(p("Run an uncertainty analysis (PSO or VAPRO) first."))
+      }
+      labels <- vapply(names(available), function(method) {
+        res <- eln_result_list(id, available[[method]], method)
+        if (is(res, "ErrorClass")) {
+          return(ELN_UNCERTAINTY_LABELS[[method]])
+        }
+        paste0(ELN_UNCERTAINTY_LABELS[[method]], ": Ka ",
+          signif(res$Ka, 3), " \u00b1 ", signif(res$ka_uncertainty, 3))
+      }, character(1))
+      tagList(
+        radioButtons(session$ns("eln_choice"), "Result to send",
+          choices = setNames(names(available), labels)
+        ),
+        actionButton(session$ns("Send_ELN"), "Send result to ELN", icon = icon("upload"))
+      )
+    })
+
+    observeEvent(input$Send_ELN, {
+      method <- input$eln_choice
+      unc <- eln_uncertainty[[method]]
+      rwn(!is.null(unc), "Please select a result")
+      write_xlsx <- switch(method,
+        pso_batch = {
+          rwn(!is.null(result_batch()), "Please run a batch analysis first")
+          function(file) download_batch_file(get_Model_capital(), file, result_batch(), unc)
+        },
+        pso_direct = {
+          rwn(!is.null(opti_result()), "Please run an optimization first")
+          function(file) download_file(get_Model_capital(), file, opti_result(), unc)
+        },
+        vapro_bootstrap = {
+          rwn(!is.null(vapro_opti_result()), "Please run a VAPRO optimization first")
+          function(file) download_file_vapro(get_Model_capital(), file, vapro_opti_result(), unc)
+        }
+      )
+      eln_send_result(session, id, write_xlsx, unc, method)
+    })
 
   })
 }

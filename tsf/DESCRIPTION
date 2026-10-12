@@ -26,8 +26,9 @@ Imports:
   RColorBrewer,
   plotly,
   ks,
-  nnls
-Suggests: knitr, rmarkdown, tinytest, shinytest2
+  nnls,
+  jsonlite
+Suggests: knitr, rmarkdown, tinytest, shinytest2, COMELN
 VignetteBuilder: knitr
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

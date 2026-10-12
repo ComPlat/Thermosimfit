@@ -490,6 +490,11 @@ hgUI <- function(id) {
             )
           )
         ),
+        tabPanel(
+          "ELN",
+          value = "ELN",
+          fluidRow(box(uiOutput(NS(id, "eln_panel")), width = 12))
+        ),
         width = 12
       )
     )

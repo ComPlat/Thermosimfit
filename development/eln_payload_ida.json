@@ -1,0 +1,376 @@
+{
+  "id": "67",
+  "request_id": "9d01dbe1-f513-4092-a165-16657c5a6edd",
+  "columnOrder": [
+    "metadata.group",
+    "reactants.734.amount",
+    "products.735.volume"
+  ],
+  "segment": {
+    "Mol interactions": {
+      "binding_props": {
+        "Ka": {
+          "label": "Ka",
+          "value": "",
+          "unit": "umol_l",
+          "type": "system-defined"
+        },
+        "ka_uncertainty": {
+          "label": "Spread",
+          "value": null,
+          "unit": "umol_l",
+          "type": "system-defined"
+        },
+        "Kd": {
+          "label": "Kd",
+          "value": "3e6",
+          "unit": "umol_l",
+          "type": "system-defined"
+        },
+        "kd_uncertainty": {
+          "label": "Spread",
+          "value": null,
+          "unit": "umol_l",
+          "type": "system-defined"
+        },
+        "logKa": {
+          "label": "log(Ka)",
+          "value": null,
+          "unit": null,
+          "type": "number"
+        },
+        "logka_uncertainty": {
+          "label": "Spread",
+          "value": null,
+          "unit": null,
+          "type": "number"
+        },
+        "deltaG": {
+          "label": "ΔG [kJ / mol]",
+          "value": null,
+          "unit": null,
+          "type": "number"
+        },
+        "deltag_uncertainty": {
+          "label": "Spread  [kJ / mol]",
+          "value": null,
+          "unit": null,
+          "type": "number"
+        }
+      },
+      "bind_partners": {
+        "Molecule": {
+          "label": "Molecule",
+          "value": "1e-6",
+          "unit": "mol_l",
+          "type": "system-defined"
+        },
+        "molecule_stoich": {
+          "label": "Stoichiometry",
+          "value": 1,
+          "unit": null,
+          "type": "number"
+        },
+        "Partner": {
+          "label": "Partner",
+          "value": null,
+          "unit": "mol_l",
+          "type": "system-defined"
+        },
+        "partner_stoich": {
+          "label": "Stoichiometry",
+          "value": 1,
+          "unit": null,
+          "type": "number"
+        },
+        "Cofactor": {
+          "label": "Cofactor",
+          "value": null,
+          "unit": "mol_l",
+          "type": "system-defined"
+        },
+        "cofactor_stoich": {
+          "label": "Stoichiometry",
+          "value": null,
+          "unit": null,
+          "type": "number"
+        },
+        "Indicator": {
+          "label": "Indicator",
+          "value": "1e-6",
+          "unit": "mol_l",
+          "type": "system-defined"
+        },
+        "indicator_stoich": {
+          "label": "Stoichiometry",
+          "value": 1,
+          "unit": null,
+          "type": "number"
+        }
+      }
+    }
+  },
+  "variations": [
+    {
+      "id": 1,
+      "uuid": "04716a6e-5053-4605-b97b-40e8b0d589f9",
+      "properties": {},
+      "metadata": {
+        "group": {
+          "group": 1,
+          "subgroup": 1
+        }
+      },
+      "reactants": {
+        "734": {
+          "mass": {
+            "value": null,
+            "unit": "g"
+          },
+          "amount": {
+            "value": 0,
+            "unit": "mol"
+          },
+          "volume": {
+            "value": 0,
+            "unit": "l"
+          },
+          "equivalent": {
+            "value": 0,
+            "unit": null
+          },
+          "concentration": {
+            "value": 0,
+            "unit": "mol/l"
+          },
+          "aux": {
+            "coefficient": 1,
+            "isReference": false,
+            "loading": null,
+            "purity": 1,
+            "molarity": 0,
+            "molecularWeight": 58.1222,
+            "sumFormula": "C4H10",
+            "gasType": "off",
+            "vesselVolume": null,
+            "materialType": "reactants",
+            "density": 0,
+            "name": "Guest",
+            "shortLabel": "reactant"
+          }
+        }
+      },
+      "products": {
+        "735": {
+          "mass": {
+            "value": 0,
+            "unit": "g"
+          },
+          "amount": {
+            "value": null,
+            "unit": "mol"
+          },
+          "volume": {
+            "value": 1000,
+            "unit": "l"
+          },
+          "yield": {
+            "value": null,
+            "unit": "%"
+          },
+          "aux": {
+            "coefficient": 1,
+            "isReference": false,
+            "loading": null,
+            "purity": 1,
+            "molarity": 0,
+            "molecularWeight": null,
+            "sumFormula": "mixture structure",
+            "gasType": "off",
+            "vesselVolume": null,
+            "materialType": "products",
+            "density": 0,
+            "name": "Host-Dye",
+            "shortLabel": "kkr-96"
+          }
+        }
+      },
+      "solvents": {},
+      "startingMaterials": {}
+    },
+    {
+      "id": 2,
+      "uuid": "383bb23c-002d-4dc9-a825-fe8aa3666912",
+      "properties": {},
+      "metadata": {
+        "group": {
+          "group": 1,
+          "subgroup": 2
+        }
+      },
+      "reactants": {
+        "734": {
+          "mass": {
+            "value": 581.222,
+            "unit": "g"
+          },
+          "amount": {
+            "value": 10,
+            "unit": "mol"
+          },
+          "volume": {
+            "value": 0,
+            "unit": "l"
+          },
+          "equivalent": {
+            "value": 0,
+            "unit": null
+          },
+          "concentration": {
+            "value": 0,
+            "unit": "mol/l"
+          },
+          "aux": {
+            "coefficient": 1,
+            "isReference": false,
+            "loading": null,
+            "purity": 1,
+            "molarity": 0,
+            "molecularWeight": 58.1222,
+            "sumFormula": "C4H10",
+            "gasType": "off",
+            "vesselVolume": null,
+            "materialType": "reactants",
+            "density": 0,
+            "name": "Guest",
+            "shortLabel": "reactant"
+          }
+        }
+      },
+      "products": {
+        "735": {
+          "mass": {
+            "value": 0,
+            "unit": "g"
+          },
+          "amount": {
+            "value": null,
+            "unit": "mol"
+          },
+          "volume": {
+            "value": 900,
+            "unit": "l"
+          },
+          "yield": {
+            "value": null,
+            "unit": "%"
+          },
+          "aux": {
+            "coefficient": 1,
+            "isReference": false,
+            "loading": null,
+            "purity": 1,
+            "molarity": 0,
+            "molecularWeight": null,
+            "sumFormula": "mixture structure",
+            "gasType": "off",
+            "vesselVolume": null,
+            "materialType": "products",
+            "density": 0,
+            "name": "Host-Dye",
+            "shortLabel": "kkr-96"
+          }
+        }
+      },
+      "solvents": {},
+      "startingMaterials": {}
+    },
+    {
+      "id": 3,
+      "uuid": "ca9efc58-421d-4c63-b99b-3f4142c329a6",
+      "properties": {},
+      "metadata": {
+        "group": {
+          "group": 1,
+          "subgroup": 3
+        }
+      },
+      "reactants": {
+        "734": {
+          "mass": {
+            "value": 5812.22,
+            "unit": "g"
+          },
+          "amount": {
+            "value": 100,
+            "unit": "mol"
+          },
+          "volume": {
+            "value": 0,
+            "unit": "l"
+          },
+          "equivalent": {
+            "value": 0,
+            "unit": null
+          },
+          "concentration": {
+            "value": 0,
+            "unit": "mol/l"
+          },
+          "aux": {
+            "coefficient": 1,
+            "isReference": false,
+            "loading": null,
+            "purity": 1,
+            "molarity": 0,
+            "molecularWeight": 58.1222,
+            "sumFormula": "C4H10",
+            "gasType": "off",
+            "vesselVolume": null,
+            "materialType": "reactants",
+            "density": 0,
+            "name": "Guest",
+            "shortLabel": "reactant"
+          }
+        }
+      },
+      "products": {
+        "735": {
+          "mass": {
+            "value": 0,
+            "unit": "g"
+          },
+          "amount": {
+            "value": "n.d",
+            "unit": "mol"
+          },
+          "volume": {
+            "value": 0,
+            "unit": "l"
+          },
+          "yield": {
+            "value": null,
+            "unit": "%"
+          },
+          "aux": {
+            "coefficient": 1,
+            "isReference": false,
+            "loading": null,
+            "purity": 1,
+            "molarity": 0,
+            "molecularWeight": null,
+            "sumFormula": "mixture structure",
+            "gasType": "off",
+            "vesselVolume": null,
+            "materialType": "products",
+            "density": 0,
+            "name": "Host-Dye",
+            "shortLabel": "kkr-96"
+          }
+        }
+      },
+      "solvents": {},
+      "startingMaterials": {}
+    }
+  ]
+}

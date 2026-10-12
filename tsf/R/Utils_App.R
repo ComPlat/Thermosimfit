@@ -265,7 +265,15 @@ is_integer <- function(x) {
 
 # download file
 # ========================================================================================
-download_file <- function(model, file, result_val) {
+add_uncertainty_sheet <- function(wb, uncertainty) {
+  if (is.null(uncertainty)) {
+    return()
+  }
+  addWorksheet(wb, "Uncertainty")
+  writeData(wb, "Uncertainty", uncertainty)
+}
+
+download_file <- function(model, file, result_val, uncertainty = NULL) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
   writeData(wb, "Results",
@@ -339,6 +347,7 @@ download_file <- function(model, file, result_val) {
     startRow = curr_row
   )
 
+  add_uncertainty_sheet(wb, uncertainty)
   openxlsx::saveWorkbook(wb, file)
   lapply(tempfile_plots, unlink)
 }
@@ -400,7 +409,7 @@ download_csv <- function(model, file, result_val) {
 # unlike PSO's, which has one column per parameter matching `parameter` - so
 # they can't be rbind-ed onto `parameter` the way download_file/download_csv
 # do, and nGrid replaces npop/ngen/Topology/seed in the run-info block.
-download_file_vapro <- function(model, file, result_val) {
+download_file_vapro <- function(model, file, result_val, uncertainty = NULL) {
   wb <- openxlsx::createWorkbook()
   addWorksheet(wb, "Results")
   writeData(wb, "Results",
@@ -471,6 +480,7 @@ download_file_vapro <- function(model, file, result_val) {
     startRow = curr_row
   )
 
+  add_uncertainty_sheet(wb, uncertainty)
   openxlsx::saveWorkbook(wb, file)
   lapply(tempfile_plots, unlink)
 }
@@ -542,7 +552,7 @@ insert_plot_batch <- function(wb, p, start_row, env_files) {
   start_row + 20
 }
 
-download_batch_file <- function(model, file, list) {
+download_batch_file <- function(model, file, list, uncertainty = NULL) {
   env_files <- new.env(); env_files$l <- list()
   result_val <- list[[1]]
   wb <- openxlsx::createWorkbook()
@@ -642,6 +652,7 @@ download_batch_file <- function(model, file, list) {
     startRow = curr_row
   )
 
+  add_uncertainty_sheet(wb, uncertainty)
   openxlsx::saveWorkbook(wb, file)
   lapply(env_files$l, unlink)
 }
