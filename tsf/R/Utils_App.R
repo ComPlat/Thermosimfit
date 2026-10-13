@@ -219,19 +219,6 @@ request_cores <- function(n_cores, token) {
   )
 }
 
-# Warms Rcpp's compile cache for every case in this process; return value unused.
-warm_ast2ast_cache <- function() {
-  for (case in c("dba_dye_const", "dba_host_const", "ida", "gda")) {
-    pso_spec <- tsf:::pso_a2a_spec(case)
-    tsf:::a2a_function(pso_spec$loss_fct, pso_spec$types_f)
-
-    vapro_spec <- tsf:::vapro_a2a_spec(case)
-    tsf:::a2a_function(vapro_spec$loss_fct, vapro_spec$types_f)
-    tsf:::a2a_function(vapro_spec$grid_fct, vapro_spec$types_f)
-  }
-  invisible(TRUE)
-}
-
 determine_seed_case <- function(seed, num_rep) {
   if (num_rep > 1 && !is.na(seed)) {
     print_noti("Found number of replications > 1 and a seed was defined.

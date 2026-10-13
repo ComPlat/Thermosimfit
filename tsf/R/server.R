@@ -4,25 +4,8 @@ server <- function(input, output, session) {
   })
 
   task <- Task$new()
-  task$start(warm_ast2ast_cache)
   progress_file <- file.path(tempdir(), paste0("tsf_progress_", session$token, ".log"))
   file.create(progress_file)
-
-  showModal(modalDialog(
-    title = "Preparing analysis engine",
-    "Compiling the loss functions, this happens once per session...",
-    footer = NULL, easyClose = FALSE
-  ))
-  warmup_done <- reactiveVal(FALSE)
-  observe({
-    req(!warmup_done())
-    invalidateLater(500)
-    if (task$is_done()) {
-      task$collect()
-      warmup_done(TRUE)
-      removeModal()
-    }
-  })
 
   onSessionEnded(function() {
     isolate({

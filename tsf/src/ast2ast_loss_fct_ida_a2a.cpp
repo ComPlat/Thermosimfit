@@ -118,6 +118,179 @@ inline void print(const GridResult<ETR_REAL>& x) {
 		etr::print(x.fitted_signal);
 }
 template<typename ETR_REAL>
+struct EquationParamsDba{
+	ETR_REAL Kd;
+	ETR_REAL h0;
+	ETR_REAL d0;
+	explicit EquationParamsDba(SEXP arg) :
+	 Kd(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "Kd", 3, "EquationParamsDba"))), h0(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "h0", 3, "EquationParamsDba"))), d0(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "d0", 3, "EquationParamsDba"))) {}
+	template<typename ETR_REAL_OTHER>
+	EquationParamsDba(const EquationParamsDba<ETR_REAL_OTHER>& o) { Kd = o.Kd; h0 = o.h0; d0 = o.d0; }
+	SEXP to_SEXP() const {
+		SEXP res = PROTECT(Rf_allocVector(VECSXP, 3));
+		SET_VECTOR_ELT(res, 0, etr::Cast(Kd));
+		SET_VECTOR_ELT(res, 1, etr::Cast(h0));
+		SET_VECTOR_ELT(res, 2, etr::Cast(d0));
+		SEXP names = PROTECT(Rf_allocVector(STRSXP, 3));
+		SET_STRING_ELT(names, 0, Rf_mkChar("Kd"));
+		SET_STRING_ELT(names, 1, Rf_mkChar("h0"));
+		SET_STRING_ELT(names, 2, Rf_mkChar("d0"));
+		Rf_setAttrib(res, R_NamesSymbol, names);
+		Rf_setAttrib(res, R_ClassSymbol, Rf_mkString("EquationParamsDba"));
+		UNPROTECT(2);
+		return res;
+	}
+	EquationParamsDba() = default;
+	EquationParamsDba(const EquationParamsDba&) = default;
+	EquationParamsDba(EquationParamsDba&&) noexcept = default;
+	EquationParamsDba& operator=(const EquationParamsDba&) = default;
+	EquationParamsDba& operator=(EquationParamsDba&&) noexcept = default;
+};
+template<typename ETR_REAL>
+inline void print(const EquationParamsDba<ETR_REAL>& x) {
+	PRINT_STREAM << "EquationParamsDba" << std::endl;
+		PRINT_STREAM << "  Kd: " << x.Kd << std::endl;
+		PRINT_STREAM << "  h0: " << x.h0 << std::endl;
+		PRINT_STREAM << "  d0: " << x.d0 << std::endl;
+}
+template<typename ETR_REAL>
+struct AddParamsDba{
+	etr::Array<ETR_REAL, etr::Buffer<ETR_REAL>> h0;
+	etr::Array<ETR_REAL, etr::Buffer<ETR_REAL>> d0;
+	etr::Integer n_sigs;
+	etr::Array<ETR_REAL, etr::Buffer<ETR_REAL>> signal;
+	explicit AddParamsDba(SEXP arg) :
+	 h0(etr::checked_elt(arg, "h0", 4, "AddParamsDba")), d0(etr::checked_elt(arg, "d0", 4, "AddParamsDba")), n_sigs(etr::SEXP2Scalar<etr::Integer>(etr::checked_elt(arg, "n_sigs", 4, "AddParamsDba"))), signal(etr::checked_elt(arg, "signal", 4, "AddParamsDba")) {}
+	template<typename ETR_REAL_OTHER>
+	AddParamsDba(const AddParamsDba<ETR_REAL_OTHER>& o) { h0 = o.h0; d0 = o.d0; n_sigs = o.n_sigs; signal = o.signal; }
+	SEXP to_SEXP() const {
+		SEXP res = PROTECT(Rf_allocVector(VECSXP, 4));
+		SET_VECTOR_ELT(res, 0, etr::Cast(h0));
+		SET_VECTOR_ELT(res, 1, etr::Cast(d0));
+		SET_VECTOR_ELT(res, 2, etr::Cast(n_sigs));
+		SET_VECTOR_ELT(res, 3, etr::Cast(signal));
+		SEXP names = PROTECT(Rf_allocVector(STRSXP, 4));
+		SET_STRING_ELT(names, 0, Rf_mkChar("h0"));
+		SET_STRING_ELT(names, 1, Rf_mkChar("d0"));
+		SET_STRING_ELT(names, 2, Rf_mkChar("n_sigs"));
+		SET_STRING_ELT(names, 3, Rf_mkChar("signal"));
+		Rf_setAttrib(res, R_NamesSymbol, names);
+		Rf_setAttrib(res, R_ClassSymbol, Rf_mkString("AddParamsDba"));
+		UNPROTECT(2);
+		return res;
+	}
+	AddParamsDba() = default;
+	AddParamsDba(const AddParamsDba&) = default;
+	AddParamsDba(AddParamsDba&&) noexcept = default;
+	AddParamsDba& operator=(const AddParamsDba&) = default;
+	AddParamsDba& operator=(AddParamsDba&&) noexcept = default;
+};
+template<typename ETR_REAL>
+inline void print(const AddParamsDba<ETR_REAL>& x) {
+	PRINT_STREAM << "AddParamsDba" << std::endl;
+		PRINT_STREAM << "  h0:" << std::endl;
+		etr::print(x.h0);
+		PRINT_STREAM << "  d0:" << std::endl;
+		etr::print(x.d0);
+		PRINT_STREAM << "  n_sigs: " << x.n_sigs << std::endl;
+		PRINT_STREAM << "  signal:" << std::endl;
+		etr::print(x.signal);
+}
+template<typename ETR_REAL>
+struct EquationParamsGda{
+	ETR_REAL Kd;
+	ETR_REAL Kg;
+	ETR_REAL h0;
+	ETR_REAL d0;
+	ETR_REAL g;
+	explicit EquationParamsGda(SEXP arg) :
+	 Kd(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "Kd", 5, "EquationParamsGda"))), Kg(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "Kg", 5, "EquationParamsGda"))), h0(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "h0", 5, "EquationParamsGda"))), d0(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "d0", 5, "EquationParamsGda"))), g(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "g", 5, "EquationParamsGda"))) {}
+	template<typename ETR_REAL_OTHER>
+	EquationParamsGda(const EquationParamsGda<ETR_REAL_OTHER>& o) { Kd = o.Kd; Kg = o.Kg; h0 = o.h0; d0 = o.d0; g = o.g; }
+	SEXP to_SEXP() const {
+		SEXP res = PROTECT(Rf_allocVector(VECSXP, 5));
+		SET_VECTOR_ELT(res, 0, etr::Cast(Kd));
+		SET_VECTOR_ELT(res, 1, etr::Cast(Kg));
+		SET_VECTOR_ELT(res, 2, etr::Cast(h0));
+		SET_VECTOR_ELT(res, 3, etr::Cast(d0));
+		SET_VECTOR_ELT(res, 4, etr::Cast(g));
+		SEXP names = PROTECT(Rf_allocVector(STRSXP, 5));
+		SET_STRING_ELT(names, 0, Rf_mkChar("Kd"));
+		SET_STRING_ELT(names, 1, Rf_mkChar("Kg"));
+		SET_STRING_ELT(names, 2, Rf_mkChar("h0"));
+		SET_STRING_ELT(names, 3, Rf_mkChar("d0"));
+		SET_STRING_ELT(names, 4, Rf_mkChar("g"));
+		Rf_setAttrib(res, R_NamesSymbol, names);
+		Rf_setAttrib(res, R_ClassSymbol, Rf_mkString("EquationParamsGda"));
+		UNPROTECT(2);
+		return res;
+	}
+	EquationParamsGda() = default;
+	EquationParamsGda(const EquationParamsGda&) = default;
+	EquationParamsGda(EquationParamsGda&&) noexcept = default;
+	EquationParamsGda& operator=(const EquationParamsGda&) = default;
+	EquationParamsGda& operator=(EquationParamsGda&&) noexcept = default;
+};
+template<typename ETR_REAL>
+inline void print(const EquationParamsGda<ETR_REAL>& x) {
+	PRINT_STREAM << "EquationParamsGda" << std::endl;
+		PRINT_STREAM << "  Kd: " << x.Kd << std::endl;
+		PRINT_STREAM << "  Kg: " << x.Kg << std::endl;
+		PRINT_STREAM << "  h0: " << x.h0 << std::endl;
+		PRINT_STREAM << "  d0: " << x.d0 << std::endl;
+		PRINT_STREAM << "  g: " << x.g << std::endl;
+}
+template<typename ETR_REAL>
+struct AddParamsGda{
+	ETR_REAL kd;
+	ETR_REAL h0;
+	etr::Array<ETR_REAL, etr::Buffer<ETR_REAL>> d0;
+	ETR_REAL g;
+	etr::Integer n_sigs;
+	etr::Array<ETR_REAL, etr::Buffer<ETR_REAL>> signal;
+	explicit AddParamsGda(SEXP arg) :
+	 kd(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "kd", 6, "AddParamsGda"))), h0(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "h0", 6, "AddParamsGda"))), d0(etr::checked_elt(arg, "d0", 6, "AddParamsGda")), g(etr::SEXP2Scalar<ETR_REAL>(etr::checked_elt(arg, "g", 6, "AddParamsGda"))), n_sigs(etr::SEXP2Scalar<etr::Integer>(etr::checked_elt(arg, "n_sigs", 6, "AddParamsGda"))), signal(etr::checked_elt(arg, "signal", 6, "AddParamsGda")) {}
+	template<typename ETR_REAL_OTHER>
+	AddParamsGda(const AddParamsGda<ETR_REAL_OTHER>& o) { kd = o.kd; h0 = o.h0; d0 = o.d0; g = o.g; n_sigs = o.n_sigs; signal = o.signal; }
+	SEXP to_SEXP() const {
+		SEXP res = PROTECT(Rf_allocVector(VECSXP, 6));
+		SET_VECTOR_ELT(res, 0, etr::Cast(kd));
+		SET_VECTOR_ELT(res, 1, etr::Cast(h0));
+		SET_VECTOR_ELT(res, 2, etr::Cast(d0));
+		SET_VECTOR_ELT(res, 3, etr::Cast(g));
+		SET_VECTOR_ELT(res, 4, etr::Cast(n_sigs));
+		SET_VECTOR_ELT(res, 5, etr::Cast(signal));
+		SEXP names = PROTECT(Rf_allocVector(STRSXP, 6));
+		SET_STRING_ELT(names, 0, Rf_mkChar("kd"));
+		SET_STRING_ELT(names, 1, Rf_mkChar("h0"));
+		SET_STRING_ELT(names, 2, Rf_mkChar("d0"));
+		SET_STRING_ELT(names, 3, Rf_mkChar("g"));
+		SET_STRING_ELT(names, 4, Rf_mkChar("n_sigs"));
+		SET_STRING_ELT(names, 5, Rf_mkChar("signal"));
+		Rf_setAttrib(res, R_NamesSymbol, names);
+		Rf_setAttrib(res, R_ClassSymbol, Rf_mkString("AddParamsGda"));
+		UNPROTECT(2);
+		return res;
+	}
+	AddParamsGda() = default;
+	AddParamsGda(const AddParamsGda&) = default;
+	AddParamsGda(AddParamsGda&&) noexcept = default;
+	AddParamsGda& operator=(const AddParamsGda&) = default;
+	AddParamsGda& operator=(AddParamsGda&&) noexcept = default;
+};
+template<typename ETR_REAL>
+inline void print(const AddParamsGda<ETR_REAL>& x) {
+	PRINT_STREAM << "AddParamsGda" << std::endl;
+		PRINT_STREAM << "  kd: " << x.kd << std::endl;
+		PRINT_STREAM << "  h0: " << x.h0 << std::endl;
+		PRINT_STREAM << "  d0:" << std::endl;
+		etr::print(x.d0);
+		PRINT_STREAM << "  g: " << x.g << std::endl;
+		PRINT_STREAM << "  n_sigs: " << x.n_sigs << std::endl;
+		PRINT_STREAM << "  signal:" << std::endl;
+		etr::print(x.signal);
+}
+template<typename ETR_REAL>
 struct EquationParamsIda{
 	ETR_REAL Kd;
 	ETR_REAL Kg;
@@ -243,8 +416,6 @@ struct loss_eval_ida_t {
      ETR_REAL obs;
      ETR_REAL aobs;
      ETR_REAL denom;
-    etr::current_line() = "tsf: ida.R:74 (loss_eval_ida): type(eval_out, LossEval<ETR_REAL>)";
-    eval_out;
     etr::current_line() = "tsf: ida.R:75 (loss_eval_ida): eval_out$betas <- numeric(3L * add_params$n_sigs)";
     eval_out.betas = etr::numeric_of<ETR_REAL>(etr::Integer(3) * add_params.n_sigs);
     etr::current_line() = "tsf: ida.R:76 (loss_eval_ida): eval_out$fitted_signal <- numeric(add_params$n_sigs * length(add_params$ga))";
@@ -253,8 +424,6 @@ struct loss_eval_ida_t {
     sol = loss_fct_ida_a2a_impl::solve_h_ida_t<ETR_REAL>{}(add_params.kd, Kga, add_params.h0, add_params.d0, add_params.ga);
     etr::current_line() = "tsf: ida.R:85 (loss_eval_ida): n <- length(sol$d)";
     n = etr::length(sol.d);
-    etr::current_line() = "tsf: ida.R:86 (loss_eval_ida): type(X, matrix(double))";
-    X;
     etr::current_line() = "tsf: ida.R:87 (loss_eval_ida): X <- matrix(numeric(n * 3L), n, 3L)";
     X = etr::matrix(etr::numeric_of<ETR_REAL>(n * etr::Integer(3)), n, etr::Integer(3));
     etr::current_line() = "tsf: ida.R:88 (loss_eval_ida): eps <- 1e-12";
@@ -279,8 +448,6 @@ struct loss_eval_ida_t {
     }
     etr::current_line() = "tsf: ida.R:102 (loss_eval_ida): for (s in 1L : add_params$n_sigs)";
     for(const auto s : etr::colon(etr::Integer(1), add_params.n_sigs)) {
-     etr::current_line() = "tsf: ida.R:103 (loss_eval_ida): type(Xw, matrix(double))";
-     Xw;
      etr::current_line() = "tsf: ida.R:104 (loss_eval_ida): Xw <- matrix(numeric(n * 3L), n, 3L)";
      Xw = etr::matrix(etr::numeric_of<ETR_REAL>(n * etr::Integer(3)), n, etr::Integer(3));
      etr::current_line() = "tsf: ida.R:105 (loss_eval_ida): yw <- numeric(n)";
@@ -363,14 +530,10 @@ struct solve_h_ida_t {
      ETR_REAL d_sol;
     etr::current_line() = "tsf: ida.R:35 (solve_h_ida): n <- length(g)";
     n = etr::length(g);
-    etr::current_line() = "tsf: ida.R:36 (solve_h_ida): type(out, SolveD_HD_Result<ETR_REAL>)";
-    out;
     etr::current_line() = "tsf: ida.R:37 (solve_h_ida): out$d <- numeric(n)";
     out.d = etr::numeric_of<ETR_REAL>(n);
     etr::current_line() = "tsf: ida.R:38 (solve_h_ida): out$hd <- numeric(n)";
     out.hd = etr::numeric_of<ETR_REAL>(n);
-    etr::current_line() = "tsf: ida.R:40 (solve_h_ida): type(params, EquationParamsIda<ETR_REAL>)";
-    params;
     etr::current_line() = "tsf: ida.R:41 (solve_h_ida): params$Kd <- Kd";
     params.Kd = Kd;
     etr::current_line() = "tsf: ida.R:42 (solve_h_ida): params$Kg <- Kg";

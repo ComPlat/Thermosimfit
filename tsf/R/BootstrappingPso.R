@@ -119,7 +119,7 @@ opti_bootstrap <- function(case, lowerBounds, upperBounds, path,
   numberOfObservations <- nrow(df)
 
   spec <- pso_a2a_spec(case)
-  loss_a2a <- a2a_function(spec$loss_fct, spec$types_f)
+  loss_a2a <- spec$loss_fct
   lossFct <- pso_loss_fct(case)
   env <- vapro_build_env(case, df, additionalParameters, error_fct)
   runAsShiny <- new.env()

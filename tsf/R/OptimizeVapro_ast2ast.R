@@ -20,7 +20,7 @@ build_add_params_ida_a2a <- function(df, additionalParameters) {
 
 # Shared by both dba_dye_const (host varies, dye/d0 fixed) and
 # dba_host_const (dye varies, host/h0 fixed) -- same underlying equation
-# (see types_f_dba's header comment in lossFunctions_ast2ast.R), only the
+# (see the header comment of inst/tools/dba.R), only the
 # fixed quantity is recycled to the varying one's length here, mirroring
 # solve_h_dba()'s own rep_len() in DerivedForwardEquations.R.
 build_add_params_dba_a2a <- function(df, additionalParameters, case) {
@@ -50,7 +50,7 @@ build_add_params_dba_a2a <- function(df, additionalParameters, case) {
 }
 
 # GDA sweeps dye (d0) at fixed host (h0) and guest (ga0) -- IDA's mirror
-# image, see types_f_gda's header comment in lossFunctions_ast2ast.R.
+# image, see the header comment of inst/tools/gda.R.
 build_add_params_gda_a2a <- function(df, additionalParameters) {
   names(df)[1] <- "dye"
   dye <- df[, 1]
@@ -72,12 +72,11 @@ build_add_params_gda_a2a <- function(df, additionalParameters) {
 }
 
 # Dispatch table mirroring vapro_loss_fct()/vapro_build_env() (OptimizeVapro.R)
-# for the ast2ast-compiled side: which types_f/loss/grid-search functions and
+# for the side compiled from inst/tools/: which loss/grid-search functions and
 # add_params builder apply to a given `case`.
 vapro_a2a_spec <- function(case) {
   if (case %in% c("dba_dye_const", "dba_host_const")) {
     list(
-      types_f = types_f_dba,
       loss_fct = loss_fct_dba_a2a,
       grid_fct = grid_search_dba_a2a,
       build_add_params = function(df, additionalParameters) {
@@ -87,7 +86,6 @@ vapro_a2a_spec <- function(case) {
     )
   } else if (case == "ida") {
     list(
-      types_f = NULL,
       loss_fct = loss_fct_ida_a2a,
       grid_fct = grid_search_ida_a2a,
       build_add_params = build_add_params_ida_a2a,
@@ -95,7 +93,6 @@ vapro_a2a_spec <- function(case) {
     )
   } else if (case == "gda") {
     list(
-      types_f = types_f_gda,
       loss_fct = loss_fct_gda_a2a,
       grid_fct = grid_search_gda_a2a,
       build_add_params = build_add_params_gda_a2a,
@@ -157,8 +154,7 @@ opti_vapro_ast2ast <- function(case, lowerBounds, upperBounds,
 
   # ---- ast2ast approach ---------------------------------------------------
   add_params <- spec$build_add_params(df, additionalParameters)
-  loss_a2a <- a2a_function(spec$loss_fct, spec$types_f)
-  a2a_fit <- vapro_grid_search_a2a(loss_a2a, add_params, lowerBounds, upperBounds, nGrid)
+  a2a_fit <- vapro_grid_search_a2a(spec$loss_fct, add_params, lowerBounds, upperBounds, nGrid)
 
   list(r = r_fit, a2a = a2a_fit)
 }
@@ -205,7 +201,7 @@ vapro_ast2ast_bootstrap <- function(case, lowerBounds, upperBounds,
   numberOfSignals <- ncol(df) - 1L
   numberOfObservations <- nrow(df)
 
-  grid_a2a <- a2a_function(spec$grid_fct, spec$types_f)
+  grid_a2a <- spec$grid_fct
 
   originalAddParams <- spec$build_add_params(df, additionalParameters)
 

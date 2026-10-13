@@ -11,8 +11,6 @@ make_df_reactive <- function(path) {
 }
 
 task <- tsf:::Task$new()
-task$start(tsf:::warm_ast2ast_cache)
-task$wait()
 
 progress_file <- tempfile()
 file.create(progress_file)

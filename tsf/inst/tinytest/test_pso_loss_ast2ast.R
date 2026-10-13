@@ -1,5 +1,5 @@
 # Per-particle parity between the plain-R PSO loss functions (lossFunctions.R)
-# and their ast2ast-compiled counterparts (lossFunctionsPso_ast2ast.R), for
+# and their ast2ast-compiled counterparts (inst/tools/), for
 # one candidate parameter vector, across all four built-in error functions
 # and all four cases. This is the unit underlying opti(engine = "ast2ast")'s
 # per-particle fitness calls (see test_pso_vs_ast2ast.R for the full-run
@@ -13,7 +13,7 @@ check_loss_matches <- function(case, lossFctR, envBuild, additionalParameters, p
   df <- if (!is.data.frame(path)) tsf:::importData(path) else path
   spec <- tsf:::pso_a2a_spec(case)
   add_params <- spec$build_add_params(df, additionalParameters)
-  loss_a2a <- ast2ast::translate(spec$loss_fct, types_f = spec$types_f)
+  loss_a2a <- spec$loss_fct
 
   n_sigs <- add_params$n_sigs
   set.seed(seed)

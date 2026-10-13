@@ -4,8 +4,6 @@ library(tinytest)
 if (!requireNamespace("shiny", quietly = TRUE)) exit_file("needs shiny")
 
 task <- tsf:::Task$new()
-task$start(tsf:::warm_ast2ast_cache)
-task$wait()
 
 progress_file <- tempfile()
 file.create(progress_file)

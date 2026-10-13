@@ -27,6 +27,48 @@ new_type(
   )
 )
 
+# DBA (dba_dye_const / dba_host_const)
+new_type(
+  EquationParamsDba,
+  slots(
+    Kd |> type(double),
+    h0 |> type(double),
+    d0 |> type(double)
+  )
+)
+new_type(
+  AddParamsDba,
+  slots(
+    h0 |> type(vec(double)),
+    d0 |> type(vec(double)),
+    n_sigs |> type(int),
+    signal |> type(vec(double))
+  )
+)
+
+# GDA
+new_type(
+  EquationParamsGda,
+  slots(
+    Kd |> type(double),
+    Kg |> type(double),
+    h0 |> type(double),
+    d0 |> type(double),
+    g |> type(double)
+  )
+)
+new_type(
+  AddParamsGda,
+  slots(
+    kd |> type(double),
+    h0 |> type(double),
+    d0 |> type(vec(double)),
+    g |> type(double),
+    n_sigs |> type(int),
+    signal |> type(vec(double))
+  )
+)
+
 # IDA
 new_type(
   EquationParamsIda,

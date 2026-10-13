@@ -11,6 +11,34 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// grid_search_dba_a2a
+SEXP grid_search_dba_a2a(SEXP lowerBoundsSEXP, SEXP upperBoundsSEXP, SEXP nGridSEXP, SEXP add_paramsSEXP);
+RcppExport SEXP _tsf_grid_search_dba_a2a(SEXP lowerBoundsSEXPSEXP, SEXP upperBoundsSEXPSEXP, SEXP nGridSEXPSEXP, SEXP add_paramsSEXPSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type lowerBoundsSEXP(lowerBoundsSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upperBoundsSEXP(upperBoundsSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type nGridSEXP(nGridSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type add_paramsSEXP(add_paramsSEXPSEXP);
+    rcpp_result_gen = Rcpp::wrap(grid_search_dba_a2a(lowerBoundsSEXP, upperBoundsSEXP, nGridSEXP, add_paramsSEXP));
+    return rcpp_result_gen;
+END_RCPP
+}
+// grid_search_gda_a2a
+SEXP grid_search_gda_a2a(SEXP lowerBoundsSEXP, SEXP upperBoundsSEXP, SEXP nGridSEXP, SEXP add_paramsSEXP);
+RcppExport SEXP _tsf_grid_search_gda_a2a(SEXP lowerBoundsSEXPSEXP, SEXP upperBoundsSEXPSEXP, SEXP nGridSEXPSEXP, SEXP add_paramsSEXPSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type lowerBoundsSEXP(lowerBoundsSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upperBoundsSEXP(upperBoundsSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type nGridSEXP(nGridSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type add_paramsSEXP(add_paramsSEXPSEXP);
+    rcpp_result_gen = Rcpp::wrap(grid_search_gda_a2a(lowerBoundsSEXP, upperBoundsSEXP, nGridSEXP, add_paramsSEXP));
+    return rcpp_result_gen;
+END_RCPP
+}
 // grid_search_ida_a2a
 SEXP grid_search_ida_a2a(SEXP lowerBoundsSEXP, SEXP upperBoundsSEXP, SEXP nGridSEXP, SEXP add_paramsSEXP);
 RcppExport SEXP _tsf_grid_search_ida_a2a(SEXP lowerBoundsSEXPSEXP, SEXP upperBoundsSEXPSEXP, SEXP nGridSEXPSEXP, SEXP add_paramsSEXPSEXP) {
@@ -25,6 +53,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// loss_fct_dba_a2a
+SEXP loss_fct_dba_a2a(SEXP parameterSEXP, SEXP add_paramsSEXP);
+RcppExport SEXP _tsf_loss_fct_dba_a2a(SEXP parameterSEXPSEXP, SEXP add_paramsSEXPSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type parameterSEXP(parameterSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type add_paramsSEXP(add_paramsSEXPSEXP);
+    rcpp_result_gen = Rcpp::wrap(loss_fct_dba_a2a(parameterSEXP, add_paramsSEXP));
+    return rcpp_result_gen;
+END_RCPP
+}
+// loss_fct_gda_a2a
+SEXP loss_fct_gda_a2a(SEXP parameterSEXP, SEXP add_paramsSEXP);
+RcppExport SEXP _tsf_loss_fct_gda_a2a(SEXP parameterSEXPSEXP, SEXP add_paramsSEXPSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type parameterSEXP(parameterSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type add_paramsSEXP(add_paramsSEXPSEXP);
+    rcpp_result_gen = Rcpp::wrap(loss_fct_gda_a2a(parameterSEXP, add_paramsSEXP));
+    return rcpp_result_gen;
+END_RCPP
+}
 // loss_fct_ida_a2a
 SEXP loss_fct_ida_a2a(SEXP parameterSEXP, SEXP add_paramsSEXP);
 RcppExport SEXP _tsf_loss_fct_ida_a2a(SEXP parameterSEXPSEXP, SEXP add_paramsSEXPSEXP) {
@@ -34,6 +86,32 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type parameterSEXP(parameterSEXPSEXP);
     Rcpp::traits::input_parameter< SEXP >::type add_paramsSEXP(add_paramsSEXPSEXP);
     rcpp_result_gen = Rcpp::wrap(loss_fct_ida_a2a(parameterSEXP, add_paramsSEXP));
+    return rcpp_result_gen;
+END_RCPP
+}
+// loss_fct_pso_dba_a2a
+SEXP loss_fct_pso_dba_a2a(SEXP parameterSEXP, SEXP add_paramsSEXP, SEXP error_codeSEXP);
+RcppExport SEXP _tsf_loss_fct_pso_dba_a2a(SEXP parameterSEXPSEXP, SEXP add_paramsSEXPSEXP, SEXP error_codeSEXPSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type parameterSEXP(parameterSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type add_paramsSEXP(add_paramsSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type error_codeSEXP(error_codeSEXPSEXP);
+    rcpp_result_gen = Rcpp::wrap(loss_fct_pso_dba_a2a(parameterSEXP, add_paramsSEXP, error_codeSEXP));
+    return rcpp_result_gen;
+END_RCPP
+}
+// loss_fct_pso_gda_a2a
+SEXP loss_fct_pso_gda_a2a(SEXP parameterSEXP, SEXP add_paramsSEXP, SEXP error_codeSEXP);
+RcppExport SEXP _tsf_loss_fct_pso_gda_a2a(SEXP parameterSEXPSEXP, SEXP add_paramsSEXPSEXP, SEXP error_codeSEXPSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type parameterSEXP(parameterSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type add_paramsSEXP(add_paramsSEXPSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type error_codeSEXP(error_codeSEXPSEXP);
+    rcpp_result_gen = Rcpp::wrap(loss_fct_pso_gda_a2a(parameterSEXP, add_paramsSEXP, error_codeSEXP));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -52,8 +130,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_tsf_grid_search_dba_a2a", (DL_FUNC) &_tsf_grid_search_dba_a2a, 4},
+    {"_tsf_grid_search_gda_a2a", (DL_FUNC) &_tsf_grid_search_gda_a2a, 4},
     {"_tsf_grid_search_ida_a2a", (DL_FUNC) &_tsf_grid_search_ida_a2a, 4},
+    {"_tsf_loss_fct_dba_a2a", (DL_FUNC) &_tsf_loss_fct_dba_a2a, 2},
+    {"_tsf_loss_fct_gda_a2a", (DL_FUNC) &_tsf_loss_fct_gda_a2a, 2},
     {"_tsf_loss_fct_ida_a2a", (DL_FUNC) &_tsf_loss_fct_ida_a2a, 2},
+    {"_tsf_loss_fct_pso_dba_a2a", (DL_FUNC) &_tsf_loss_fct_pso_dba_a2a, 3},
+    {"_tsf_loss_fct_pso_gda_a2a", (DL_FUNC) &_tsf_loss_fct_pso_gda_a2a, 3},
     {"_tsf_loss_fct_pso_ida_a2a", (DL_FUNC) &_tsf_loss_fct_pso_ida_a2a, 3},
     {NULL, NULL, 0}
 };

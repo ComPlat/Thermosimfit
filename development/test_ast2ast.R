@@ -1,4 +1,4 @@
-# Dev smoke test for the ast2ast-compiled VAPRO path (tsf/R/lossFunctions_ast2ast.R,
+# Dev smoke test for the ast2ast-compiled VAPRO path (tsf/inst/tools/,
 # tsf/R/OptimizeVapro_ast2ast.R), covering all four cases: dba_dye_const,
 # dba_host_const, ida and gda. For each case:
 #   1. opti_vapro_ast2ast() runs both the plain-R fit and the ast2ast fit on
@@ -60,7 +60,7 @@ for (case in names(cases)) {
   spec <- tsf:::vapro_a2a_spec(case)
   env <- tsf:::vapro_build_env(case, df, cfg$additionalParameters, tsf:::get_error_calc_fct("Rel. Error"))
   add_params <- spec$build_add_params(df, cfg$additionalParameters)
-  loss_a2a <- ast2ast::translate(spec$loss_fct, types_f = spec$types_f)
+  loss_a2a <- spec$loss_fct
   bm <- microbenchmark::microbenchmark(
     R = tsf:::vapro_grid_search(tsf:::vapro_loss_fct(case), env, cfg$lowerBounds, cfg$upperBounds, 1000L),
     ast2ast = tsf:::vapro_grid_search_a2a(loss_a2a, add_params, cfg$lowerBounds, cfg$upperBounds, 1000L),

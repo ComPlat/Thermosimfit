@@ -1,7 +1,9 @@
 ast2ast::make_package(
-  files = file.path("inst", "tools", c("types.R", "ida.R")),
+  files = file.path("inst", "tools", c("types.R", "dba.R", "ida.R", "gda.R")),
   entry_points = c(
-    "loss_fct_ida_a2a", "grid_search_ida_a2a", "loss_fct_pso_ida_a2a"
+    "loss_fct_dba_a2a", "grid_search_dba_a2a", "loss_fct_pso_dba_a2a",
+    "loss_fct_ida_a2a", "grid_search_ida_a2a", "loss_fct_pso_ida_a2a",
+    "loss_fct_gda_a2a", "grid_search_gda_a2a", "loss_fct_pso_gda_a2a"
   ),
   package_dir = "tsf"
 )
