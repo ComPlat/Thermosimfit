@@ -87,7 +87,7 @@ vapro_a2a_spec <- function(case) {
     )
   } else if (case == "ida") {
     list(
-      types_f = types_f_ida,
+      types_f = NULL,
       loss_fct = loss_fct_ida_a2a,
       grid_fct = grid_search_ida_a2a,
       build_add_params = build_add_params_ida_a2a,
@@ -157,7 +157,7 @@ opti_vapro_ast2ast <- function(case, lowerBounds, upperBounds,
 
   # ---- ast2ast approach ---------------------------------------------------
   add_params <- spec$build_add_params(df, additionalParameters)
-  loss_a2a <- ast2ast::translate(spec$loss_fct, types_f = spec$types_f)
+  loss_a2a <- a2a_function(spec$loss_fct, spec$types_f)
   a2a_fit <- vapro_grid_search_a2a(loss_a2a, add_params, lowerBounds, upperBounds, nGrid)
 
   list(r = r_fit, a2a = a2a_fit)
@@ -205,7 +205,7 @@ vapro_ast2ast_bootstrap <- function(case, lowerBounds, upperBounds,
   numberOfSignals <- ncol(df) - 1L
   numberOfObservations <- nrow(df)
 
-  grid_a2a <- ast2ast::translate(spec$grid_fct, types_f = spec$types_f)
+  grid_a2a <- a2a_function(spec$grid_fct, spec$types_f)
 
   originalAddParams <- spec$build_add_params(df, additionalParameters)
 

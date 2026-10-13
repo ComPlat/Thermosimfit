@@ -1,3 +1,10 @@
+ast2ast::make_package(
+  files = file.path("inst", "tools", c("types.R", "ida.R")),
+  entry_points = c(
+    "loss_fct_ida_a2a", "grid_search_ida_a2a", "loss_fct_pso_ida_a2a"
+  ),
+  package_dir = "tsf"
+)
 roxygen2::roxygenise("tsf")
 install.packages("tsf", repos = NULL, type = "source")
 tsf::runApp(4005)

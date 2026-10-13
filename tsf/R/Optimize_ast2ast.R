@@ -24,6 +24,11 @@ pso_error_code <- function(error_calc_fct) {
   }
 }
 
+# NOTE: transitional until every case is compiled via make_package (types_f = NULL)
+a2a_function <- function(f, types_f) {
+  if (is.null(types_f)) f else ast2ast::translate(f, types_f = types_f)
+}
+
 # Dispatch table mirroring vapro_a2a_spec() (OptimizeVapro_ast2ast.R), for
 # the PSO (full-parameter, no NNLS) ast2ast loss functions.
 pso_a2a_spec <- function(case) {
@@ -37,7 +42,7 @@ pso_a2a_spec <- function(case) {
     )
   } else if (case == "ida") {
     list(
-      types_f = types_f_ida,
+      types_f = NULL,
       loss_fct = loss_fct_pso_ida_a2a,
       build_add_params = build_add_params_ida_a2a
     )

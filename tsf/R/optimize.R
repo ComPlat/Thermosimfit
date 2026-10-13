@@ -228,9 +228,7 @@ opti <- function(case, lowerBounds, upperBounds,
   if (engine == "ast2ast") {
     spec <- pso_a2a_spec(case)
     add_params <- spec$build_add_params(df, additionalParameters)
-    loss_particle_a2a <- ast2ast::translate(
-      spec$loss_fct, types_f = spec$types_f
-    )
+    loss_particle_a2a <- a2a_function(spec$loss_fct, spec$types_f)
   }
 
   runAsShiny <- tryCatch(expr = {

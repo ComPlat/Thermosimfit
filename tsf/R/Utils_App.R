@@ -223,11 +223,11 @@ request_cores <- function(n_cores, token) {
 warm_ast2ast_cache <- function() {
   for (case in c("dba_dye_const", "dba_host_const", "ida", "gda")) {
     pso_spec <- tsf:::pso_a2a_spec(case)
-    ast2ast::translate(pso_spec$loss_fct, types_f = pso_spec$types_f)
+    tsf:::a2a_function(pso_spec$loss_fct, pso_spec$types_f)
 
     vapro_spec <- tsf:::vapro_a2a_spec(case)
-    ast2ast::translate(vapro_spec$loss_fct, types_f = vapro_spec$types_f)
-    ast2ast::translate(vapro_spec$grid_fct, types_f = vapro_spec$types_f)
+    tsf:::a2a_function(vapro_spec$loss_fct, vapro_spec$types_f)
+    tsf:::a2a_function(vapro_spec$grid_fct, vapro_spec$types_f)
   }
   invisible(TRUE)
 }

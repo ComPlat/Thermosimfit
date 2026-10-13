@@ -27,10 +27,12 @@ Imports:
   plotly,
   ks,
   nnls,
-  jsonlite
+  jsonlite,
+  Rcpp
+LinkingTo: Rcpp, RcppThread
 Suggests: knitr, rmarkdown, tinytest, shinytest2, COMELN
 VignetteBuilder: knitr
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 URL: https://complat.github.io/Thermosimfit/
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0
